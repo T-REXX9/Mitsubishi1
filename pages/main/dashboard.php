@@ -4,7 +4,7 @@ include_once(dirname(dirname(__DIR__)) . '/includes/init.php');
 
 // Check if user is logged in
 if (!isLoggedIn()) {
-  header("Location: /Mitsubishi/pages/user/login.php");
+  header("Location: ../../pages/login.php");
   exit();
 }
 
@@ -88,15 +88,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $instructor = $_POST['instructor'] ?? '';
         $notes = $_POST['notes'] ?? '';
 
-        $sql = "UPDATE test_drive_requests 
-                        SET status = 'Approved', 
-                            approved_at = NOW(), 
-                            instructor_agent = ?, 
-                            notes = ? 
-                        WHERE id = ?";
+        // Check if a gate pass number already exists for this request
+        $stmtGp = $pdo->prepare("SELECT gate_pass_number FROM test_drive_requests WHERE id = ?");
+        $stmtGp->execute([$request_id]);
+        $existingGp = $stmtGp->fetchColumn();
 
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([$instructor, $notes, $request_id]);
+        if (empty($existingGp)) {
+          // Generate a new gate pass number if missing
+          $newGatePass = 'MAG-' . strtoupper(substr(md5(uniqid($request_id . '-' . time(), true)), 0, 8));
+
+          $sql = "UPDATE test_drive_requests 
+                          SET status = 'Approved', 
+                              approved_at = NOW(), 
+                              instructor_agent = ?, 
+                              notes = ?,
+                              gate_pass_number = ?
+                          WHERE id = ?";
+
+          $stmt = $pdo->prepare($sql);
+          $stmt->execute([$instructor, $notes, $newGatePass, $request_id]);
+        } else {
+          $sql = "UPDATE test_drive_requests 
+                          SET status = 'Approved', 
+                              approved_at = NOW(), 
+                              instructor_agent = ?, 
+                              notes = ? 
+                          WHERE id = ?";
+
+          $stmt = $pdo->prepare($sql);
+          $stmt->execute([$instructor, $notes, $request_id]);
+        }
 
         // --- Notification Logic ---
         require_once dirname(dirname(__DIR__)) . '/includes/api/notification_api.php';

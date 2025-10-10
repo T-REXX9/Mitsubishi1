@@ -70,61 +70,77 @@ try {
         exit;
     }
     
-    // Process uploaded images if any
-    $mainImage = null;
-    $additionalImages = null;
-    $view360Images = null;
+    // Process uploaded images if any - save to file system and store relative paths
+    $mainImagePath = null;
+    $additionalImagesPath = null;
+    $view360ImagesPath = null;
     $imageUpdates = [];
     
     // Check and process main image
     if (isset($_FILES['main_image']) && $_FILES['main_image']['error'] === UPLOAD_ERR_OK) {
-        $mainImage = file_get_contents($_FILES['main_image']['tmp_name']);
-        $imageUpdates[] = "main_image = :main_image";
+        $uploadDir = dirname(dirname(__DIR__)) . '/uploads/vehicle_images/main/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+        
+        $fileExtension = strtolower(pathinfo($_FILES['main_image']['name'], PATHINFO_EXTENSION));
+        $fileName = 'vehicle_' . $vehicleId . '_main_update_' . time() . '.' . $fileExtension;
+        $uploadPath = $uploadDir . $fileName;
+        
+        if (move_uploaded_file($_FILES['main_image']['tmp_name'], $uploadPath)) {
+            // Store relative path (no leading slash)
+            $mainImagePath = 'uploads/vehicle_images/main/' . $fileName;
+            $imageUpdates[] = "main_image = :main_image";
+        }
     }
     
-    // Process additional images (simple implementation)
+    // Process additional images
     if (isset($_FILES['additional_images']) && is_array($_FILES['additional_images']['name'])) {
-        // Check if at least one file was uploaded correctly
-        $hasValidAdditionalImage = false;
-        foreach ($_FILES['additional_images']['error'] as $error) {
-            if ($error === UPLOAD_ERR_OK) {
-                $hasValidAdditionalImage = true;
-                break;
-            }
+        $uploadDir = dirname(dirname(__DIR__)) . '/uploads/vehicle_images/additional/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
         }
         
-        if ($hasValidAdditionalImage) {
-            // For simplicity, we're just taking the first valid image
-            for ($i = 0; $i < count($_FILES['additional_images']['name']); $i++) {
-                if ($_FILES['additional_images']['error'][$i] === UPLOAD_ERR_OK) {
-                    $additionalImages = file_get_contents($_FILES['additional_images']['tmp_name'][$i]);
-                    $imageUpdates[] = "additional_images = :additional_images";
-                    break; // Just use the first valid image for now
+        $additionalPaths = [];
+        foreach ($_FILES['additional_images']['tmp_name'] as $key => $tmpName) {
+            if ($_FILES['additional_images']['error'][$key] === UPLOAD_ERR_OK) {
+                $fileExtension = strtolower(pathinfo($_FILES['additional_images']['name'][$key], PATHINFO_EXTENSION));
+                $fileName = 'vehicle_' . $vehicleId . '_additional_update_' . $key . '_' . time() . '.' . $fileExtension;
+                $uploadPath = $uploadDir . $fileName;
+                
+                if (move_uploaded_file($tmpName, $uploadPath)) {
+                    $additionalPaths[] = 'uploads/vehicle_images/additional/' . $fileName;
                 }
             }
+        }
+        if (!empty($additionalPaths)) {
+            $additionalImagesPath = json_encode($additionalPaths);
+            $imageUpdates[] = "additional_images = :additional_images";
         }
     }
     
-    // Process 360 view images (simple implementation)
+    // Process 360 view images
     if (isset($_FILES['view_360_images']) && is_array($_FILES['view_360_images']['name'])) {
-        // Check if at least one file was uploaded correctly
-        $hasValid360Image = false;
-        foreach ($_FILES['view_360_images']['error'] as $error) {
-            if ($error === UPLOAD_ERR_OK) {
-                $hasValid360Image = true;
-                break;
-            }
+        $uploadDir = dirname(dirname(__DIR__)) . '/uploads/vehicle_images/360/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
         }
         
-        if ($hasValid360Image) {
-            // For simplicity, we're just taking the first valid image
-            for ($i = 0; $i < count($_FILES['view_360_images']['name']); $i++) {
-                if ($_FILES['view_360_images']['error'][$i] === UPLOAD_ERR_OK) {
-                    $view360Images = file_get_contents($_FILES['view_360_images']['tmp_name'][$i]);
-                    $imageUpdates[] = "view_360_images = :view_360_images";
-                    break; // Just use the first valid image for now
+        $view360Paths = [];
+        foreach ($_FILES['view_360_images']['tmp_name'] as $key => $tmpName) {
+            if ($_FILES['view_360_images']['error'][$key] === UPLOAD_ERR_OK) {
+                $fileExtension = strtolower(pathinfo($_FILES['view_360_images']['name'][$key], PATHINFO_EXTENSION));
+                $fileName = 'vehicle_' . $vehicleId . '_360_update_' . $key . '_' . time() . '.' . $fileExtension;
+                $uploadPath = $uploadDir . $fileName;
+                
+                if (move_uploaded_file($tmpName, $uploadPath)) {
+                    $view360Paths[] = 'uploads/vehicle_images/360/' . $fileName;
                 }
             }
+        }
+        if (!empty($view360Paths)) {
+            $view360ImagesPath = json_encode($view360Paths);
+            $imageUpdates[] = "view_360_images = :view_360_images";
         }
     }
     
@@ -206,16 +222,16 @@ try {
     $stmt->bindParam(':id', $vehicleId);
     
     // Bind image parameters if needed
-    if ($mainImage !== null) {
-        $stmt->bindParam(':main_image', $mainImage, PDO::PARAM_LOB);
+    if ($mainImagePath !== null) {
+        $stmt->bindParam(':main_image', $mainImagePath);
     }
     
-    if ($additionalImages !== null) {
-        $stmt->bindParam(':additional_images', $additionalImages, PDO::PARAM_LOB);
+    if ($additionalImagesPath !== null) {
+        $stmt->bindParam(':additional_images', $additionalImagesPath);
     }
     
-    if ($view360Images !== null) {
-        $stmt->bindParam(':view_360_images', $view360Images, PDO::PARAM_LOB);
+    if ($view360ImagesPath !== null) {
+        $stmt->bindParam(':view_360_images', $view360ImagesPath);
     }
     
     // Execute the update

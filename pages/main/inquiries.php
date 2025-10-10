@@ -1,10 +1,10 @@
 <?php
 include_once(dirname(dirname(__DIR__)) . '/includes/init.php');
 
-// Check access: allow Admin and Sales Agent
+// Check access: allow Admin and SalesAgent
 $role = $_SESSION['user_role'] ?? '';
-if (!isset($_SESSION['user_id']) || !in_array($role, ['Admin', 'Sales Agent'])) {
-    header("Location: ../../auth/login.php");
+if (!isset($_SESSION['user_id']) || !in_array($role, ['Admin', 'SalesAgent'])) {
+    header("Location: ../../pages/login.php");
     exit();
 }
 // Current user id for filtering
@@ -42,14 +42,14 @@ function getInquiriesWithAccounts($pdo) {
     FROM inquiries i
     LEFT JOIN accounts a ON i.AccountId = a.Id
     LEFT JOIN customer_information ci ON i.AccountId = ci.account_id";
-    // Apply Sales Agent filter
-    if (($_SESSION['user_role'] ?? '') === 'Sales Agent') {
-      $query .= " WHERE ci.agent_id = :agent_id";
+    // Apply SalesAgent filter
+    if (($_SESSION['user_role'] ?? '') === 'SalesAgent') {
+      $query .= " WHERE (ci.agent_id = :agent_id OR i.CreatedBy = :agent_id)";
     }
     $query .= " ORDER BY i.InquiryDate DESC";
     
     $stmt = $pdo->prepare($query);
-    if (($_SESSION['user_role'] ?? '') === 'Sales Agent') {
+    if (($_SESSION['user_role'] ?? '') === 'SalesAgent') {
       $stmt->bindValue(':agent_id', $_SESSION['user_id'], PDO::PARAM_INT);
     }
     $stmt->execute();
@@ -66,9 +66,9 @@ function getInquiryStats($pdo) {
   
   try {
     $role = $_SESSION['user_role'] ?? '';
-    $isAgent = ($role === 'Sales Agent');
+    $isAgent = ($role === 'SalesAgent');
     $filterJoin = $isAgent ? " LEFT JOIN customer_information ci ON i.AccountId = ci.account_id" : "";
-    $filterWhere = $isAgent ? " WHERE ci.agent_id = :agent_id" : "";
+    $filterWhere = $isAgent ? " WHERE (ci.agent_id = :agent_id OR i.CreatedBy = :agent_id)" : "";
 
     // Total inquiries
     $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM inquiries i" . $filterJoin . $filterWhere);
@@ -152,7 +152,7 @@ $stats = getInquiryStats($pdo);
     }
     
     body {
-      zoom: 75%;
+      zoom: 80%;
     }
 
     .inquiry-stats {
@@ -608,6 +608,104 @@ $stats = getInquiryStats($pdo);
     </div>
   </div>
 
+  <!-- Add New Inquiry Modal -->
+  <div class="modal-overlay" id="addInquiryModal">
+    <div class="modal" style="max-width: 800px;">
+      <div class="modal-header">
+        <h3>Add New Inquiry</h3>
+        <button class="modal-close" onclick="closeAddInquiryModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <form id="addInquiryForm">
+        <div class="modal-body">
+          <div class="form-section">
+            <h3>Customer Information</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="add_full_name">Full Name *</label>
+                <input type="text" id="add_full_name" name="full_name" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label for="add_email">Email Address *</label>
+                <input type="email" id="add_email" name="email" class="form-control" required>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="add_phone">Phone Number *</label>
+                <input type="tel" id="add_phone" name="phone_number" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label for="add_account_id">Link to Account (Optional)</label>
+                <select id="add_account_id" name="account_id" class="form-control">
+                  <option value="">Select existing account (optional)</option>
+                  <!-- Options will be loaded dynamically -->
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h3>Vehicle Information</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="add_vehicle_model">Vehicle Model *</label>
+                <select id="add_vehicle_model" name="vehicle_model" class="form-control" required>
+                  <option value="">Select Vehicle Model</option>
+                  <!-- Options will be loaded dynamically -->
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="add_vehicle_variant">Vehicle Variant</label>
+                <input type="text" id="add_vehicle_variant" name="vehicle_variant" class="form-control">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="add_vehicle_year">Vehicle Year</label>
+                <input type="number" id="add_vehicle_year" name="vehicle_year" class="form-control" min="2020" max="2030">
+              </div>
+              <div class="form-group">
+                <label for="add_vehicle_color">Preferred Color</label>
+                <input type="text" id="add_vehicle_color" name="vehicle_color" class="form-control">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h3>Additional Information</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="add_financing_required">Financing Required</label>
+                <select id="add_financing_required" name="financing_required" class="form-control">
+                  <option value="">Select Option</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                  <option value="Maybe">Maybe</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="add_trade_in">Trade-in Vehicle Details</label>
+                <input type="text" id="add_trade_in" name="trade_in_vehicle_details" class="form-control" placeholder="Make, Model, Year">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="add_comments">Comments/Special Requests</label>
+              <textarea id="add_comments" name="comments" class="form-control" rows="4" placeholder="Any specific requirements or questions..."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeAddInquiryModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Inquiry
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Add SweetAlert CDN -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="../../includes/js/common-scripts.js"></script>
@@ -652,10 +750,15 @@ $stats = getInquiryStats($pdo);
 
     // Modal functions
     function viewInquiryDetails(inquiryId) {
+      console.log('viewInquiryDetails called with ID:', inquiryId);
       const inquiry = inquiriesData.find(i => i.Id == inquiryId);
-      if (!inquiry) return;
+      if (!inquiry) {
+        console.error('Inquiry not found:', inquiryId);
+        return;
+      }
 
       currentInquiryId = inquiryId;
+      console.log('Set currentInquiryId to:', currentInquiryId);
       
       const content = `
         <div class="inquiry-details-section">
@@ -741,8 +844,10 @@ $stats = getInquiryStats($pdo);
     }
 
     function closeInquiryDetailsModal() {
+      console.log('closeInquiryDetailsModal called');
       document.getElementById('inquiryDetailsModal').classList.remove('active');
-      currentInquiryId = null;
+      // Don't reset currentInquiryId here to preserve it for respondToCurrentInquiry
+      console.log('Modal closed, currentInquiryId preserved:', currentInquiryId);
     }
 
     function respondToInquiry(inquiryId) {
@@ -768,16 +873,30 @@ $stats = getInquiryStats($pdo);
     }
 
     function respondToCurrentInquiry() {
+      console.log('respondToCurrentInquiry called, currentInquiryId:', currentInquiryId);
+      
       if (currentInquiryId) {
         closeInquiryDetailsModal();
-        respondToInquiry(currentInquiryId);
+        setTimeout(() => {
+          respondToInquiry(currentInquiryId);
+        }, 100); // Small delay to ensure modal closes properly
+      } else {
+        console.error('No current inquiry ID set');
+        Swal.fire({
+          title: 'Error!',
+          text: 'No inquiry selected. Please try again.',
+          icon: 'error',
+          confirmButtonColor: '#d60000'
+        });
       }
     }
 
     function closeResponseModal() {
+      console.log('closeResponseModal called');
       document.getElementById('responseModal').classList.remove('active');
       document.getElementById('responseForm').reset();
-      currentInquiryId = null;
+      currentInquiryId = null; // Reset here after response modal is closed
+      console.log('Response modal closed, currentInquiryId reset');
     }
 
     function deleteInquiry(inquiryId) {
@@ -940,8 +1059,148 @@ $stats = getInquiryStats($pdo);
       });
     }
 
+    // Add New Inquiry Modal Functions
+    function openAddInquiryModal() {
+      // Load vehicle models and accounts
+      loadVehicleModels();
+      loadAccounts();
+      
+      // Clear form
+      document.getElementById('addInquiryForm').reset();
+      
+      // Show modal
+      document.getElementById('addInquiryModal').classList.add('active');
+    }
+
+    function closeAddInquiryModal() {
+      document.getElementById('addInquiryModal').classList.remove('active');
+      document.getElementById('addInquiryForm').reset();
+    }
+
+    function loadVehicleModels() {
+      fetch('../../api/vehicles.php')
+        .then(response => response.json())
+        .then(data => {
+          const select = document.getElementById('add_vehicle_model');
+          select.innerHTML = '<option value="">Select Vehicle Model</option>';
+          
+          if (data.success && data.data) {
+            // Get unique models
+            const uniqueModels = [...new Set(data.data.map(v => v.model_name))];
+            uniqueModels.forEach(model => {
+              const option = document.createElement('option');
+              option.value = model;
+              option.textContent = model;
+              select.appendChild(option);
+            });
+          }
+        })
+        .catch(error => {
+          console.error('Error loading vehicle models:', error);
+        });
+    }
+
+    function loadAccounts() {
+      fetch('inquiry_actions.php?action=get_accounts')
+        .then(response => response.json())
+        .then(data => {
+          const select = document.getElementById('add_account_id');
+          select.innerHTML = '<option value="">Select existing account (optional)</option>';
+          
+          if (data.success && data.accounts) {
+            data.accounts.forEach(account => {
+              const option = document.createElement('option');
+              option.value = account.Id;
+              option.textContent = `${account.FirstName} ${account.LastName} (${account.Username})`;
+              select.appendChild(option);
+            });
+          }
+        })
+        .catch(error => {
+          console.error('Error loading accounts:', error);
+        });
+    }
+
+    function handleAddInquirySubmit() {
+      const form = document.getElementById('addInquiryForm');
+      const formData = new FormData(form);
+      
+      // Add action parameter
+      formData.append('action', 'add_inquiry');
+      
+      // Validate required fields
+      const fullName = formData.get('full_name');
+      const email = formData.get('email');
+      const phoneNumber = formData.get('phone_number');
+      const vehicleModel = formData.get('vehicle_model');
+      
+      if (!fullName || !email || !phoneNumber || !vehicleModel) {
+        Swal.fire({
+          title: 'Error!',
+          text: 'Please fill in all required fields',
+          icon: 'error',
+          confirmButtonColor: '#d60000'
+        });
+        return;
+      }
+      
+      // Show loading state
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+      submitBtn.disabled = true;
+      
+      // Send to inquiry_actions.php
+      fetch('inquiry_actions.php', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Close modal
+          closeAddInquiryModal();
+          
+          // Show success message
+          Swal.fire({
+            title: 'Success!',
+            text: 'New inquiry has been added successfully',
+            icon: 'success',
+            confirmButtonColor: '#d60000'
+          }).then(() => {
+            location.reload();
+          });
+        } else {
+          throw new Error(data.message || 'Failed to add inquiry');
+        }
+      })
+      .catch(error => {
+        Swal.fire({
+          title: 'Error!',
+          text: 'Failed to add inquiry: ' + error.message,
+          icon: 'error',
+          confirmButtonColor: '#d60000'
+        });
+      })
+      .finally(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+      });
+    }
+
     // Initialize page
     document.addEventListener('DOMContentLoaded', function() {
+      // Add New Inquiry button event listener
+      document.getElementById('addNewInquiryBtn').addEventListener('click', function() {
+        openAddInquiryModal();
+      });
+
+      // Add New Inquiry form submission
+      document.getElementById('addInquiryForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        handleAddInquirySubmit();
+      });
+
       // Response form submission
       document.getElementById('responseForm').addEventListener('submit', function(e) {
         e.preventDefault();

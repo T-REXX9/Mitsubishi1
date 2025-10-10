@@ -32,6 +32,12 @@ function getAllOrders()
     global $connect;
     
     try {
+        // Get filter parameters
+        $search = $_GET['search'] ?? '';
+        $status = $_GET['status'] ?? 'all';
+        $clientType = $_GET['client_type'] ?? 'all';
+        $dateRange = $_GET['date_range'] ?? 'all';
+        
         $sql = "SELECT 
                     o.order_id,
                     o.order_number,
@@ -68,24 +74,79 @@ function getAllOrders()
                 LEFT JOIN accounts acc ON ci.account_id = acc.Id
                 LEFT JOIN accounts agent ON o.sales_agent_id = agent.Id
                 LEFT JOIN vehicles v ON o.vehicle_id = v.id
-                WHERE o.sales_agent_id = ?
-                ORDER BY o.created_at DESC";
+                WHERE o.sales_agent_id = ?";
+        
+        $params = [$_SESSION['user_id']];
+        
+        // Add search filter
+        if (!empty($search)) {
+            $sql .= " AND (o.order_number LIKE ? OR 
+                          CONCAT(ci.firstname, ' ', ci.lastname) LIKE ? OR 
+                          o.vehicle_model LIKE ? OR 
+                          acc.Email LIKE ?)";
+            $searchParam = "%$search%";
+            $params = array_merge($params, [$searchParam, $searchParam, $searchParam, $searchParam]);
+        }
+        
+        // Add status filter
+        if ($status !== 'all') {
+            $sql .= " AND o.order_status = ?";
+            $params[] = $status;
+        }
+        
+        // Add client type filter
+        if ($clientType !== 'all') {
+            $sql .= " AND o.client_type = ?";
+            $params[] = $clientType;
+        }
+        
+        // Add date range filter
+        switch ($dateRange) {
+            case 'today':
+                $sql .= " AND DATE(o.created_at) = CURDATE()";
+                break;
+            case 'week':
+                $sql .= " AND o.created_at >= DATE_SUB(NOW(), INTERVAL 1 WEEK)";
+                break;
+            case 'month':
+                $sql .= " AND o.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)";
+                break;
+        }
+        
+        $sql .= " ORDER BY o.created_at DESC";
         
         $stmt = $connect->prepare($sql);
-        $stmt->execute([$_SESSION['user_id']]);
+        $stmt->execute($params);
         $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Format the data for frontend
         $formattedOrders = [];
         foreach ($orders as $order) {
-            $customerName = 'Walk-in Customer';
-            $customerEmail = 'walkin.customer@temp.com';
-            $customerNote = 'Created as walk-in';
+            // Initialize default values
+            $customerName = 'Unknown Customer';
+            $customerEmail = 'No email provided';
+            $customerNote = 'Customer information';
             
-            if ($order['client_type'] === 'handled' && $order['firstname'] && $order['lastname']) {
-                $customerName = $order['firstname'] . ' ' . $order['lastname'];
+            // Check if we have customer data (works for both handled and walk-in clients)
+            if ($order['firstname'] && $order['lastname']) {
+                $customerName = trim($order['firstname'] . ' ' . $order['lastname']);
                 $customerEmail = $order['email'] ?? 'No email provided';
-                $customerNote = 'Client since: ' . date('M Y', strtotime($order['created_at']));
+                
+                if ($order['client_type'] === 'handled') {
+                    $customerNote = 'Client since: ' . date('M Y', strtotime($order['created_at']));
+                } else if ($order['client_type'] === 'walkin') {
+                    $customerNote = 'Walk-in customer - ' . date('M j, Y', strtotime($order['created_at']));
+                }
+            } else {
+                // Fallback for cases where customer data is missing
+                if ($order['client_type'] === 'walkin') {
+                    $customerName = 'Walk-in Customer';
+                    $customerEmail = 'walkin.customer@temp.com';
+                    $customerNote = 'Walk-in customer - data incomplete';
+                } else {
+                    $customerName = 'Handled Customer';
+                    $customerNote = 'Customer data incomplete';
+                }
             }
             
             $formattedOrders[] = [

@@ -36,43 +36,75 @@ function addVehicle($connect) {
             }
         }
         
-        // Handle file uploads - directly read file content for LONGBLOB storage
-        $main_image_content = null;
-        $additional_images_content = null;
-        $view_360_images_content = null;
+        // Handle file uploads - save to file system and store relative paths
+        $main_image_path = null;
+        $additional_images_path = null;
+        $view_360_images_path = null;
         
         // Process main image
         if (isset($_FILES['main_image']) && $_FILES['main_image']['error'] == 0) {
-            $main_image_content = file_get_contents($_FILES['main_image']['tmp_name']);
+            $uploadDir = dirname(dirname(__DIR__)) . '/uploads/vehicle_images/main/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            
+            $fileExtension = strtolower(pathinfo($_FILES['main_image']['name'], PATHINFO_EXTENSION));
+            $fileName = 'vehicle_' . time() . '_main.' . $fileExtension;
+            $uploadPath = $uploadDir . $fileName;
+            
+            if (move_uploaded_file($_FILES['main_image']['tmp_name'], $uploadPath)) {
+                // Store relative path (no leading slash)
+                $main_image_path = 'uploads/vehicle_images/main/' . $fileName;
+            }
         }
         
         // Process additional images
         if (isset($_FILES['additional_images'])) {
-            $additional_images_array = [];
+            $uploadDir = dirname(dirname(__DIR__)) . '/uploads/vehicle_images/additional/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            
+            $additional_paths = [];
             foreach ($_FILES['additional_images']['tmp_name'] as $key => $tmp_name) {
                 if ($_FILES['additional_images']['error'][$key] == 0) {
-                    // Add the image content to our array
-                    $additional_images_array[] = file_get_contents($tmp_name);
+                    $fileExtension = strtolower(pathinfo($_FILES['additional_images']['name'][$key], PATHINFO_EXTENSION));
+                    $fileName = 'vehicle_' . time() . '_additional_' . $key . '.' . $fileExtension;
+                    $uploadPath = $uploadDir . $fileName;
+                    
+                    if (move_uploaded_file($tmp_name, $uploadPath)) {
+                        $additional_paths[] = 'uploads/vehicle_images/additional/' . $fileName;
+                    }
                 }
             }
-            // If we have images, serialize them for storage
-            if (!empty($additional_images_array)) {
-                $additional_images_content = serialize($additional_images_array);
+            // If we have images, store as JSON
+            if (!empty($additional_paths)) {
+                $additional_images_path = json_encode($additional_paths);
             }
         }
         
         // Process 360 view images
         if (isset($_FILES['view_360_images'])) {
-            $view_360_images_array = [];
+            $uploadDir = dirname(dirname(__DIR__)) . '/uploads/vehicle_images/360/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            
+            $view_360_paths = [];
             foreach ($_FILES['view_360_images']['tmp_name'] as $key => $tmp_name) {
                 if ($_FILES['view_360_images']['error'][$key] == 0) {
-                    // Add the image content to our array
-                    $view_360_images_array[] = file_get_contents($tmp_name);
+                    $fileExtension = strtolower(pathinfo($_FILES['view_360_images']['name'][$key], PATHINFO_EXTENSION));
+                    $fileName = 'vehicle_' . time() . '_360_' . $key . '.' . $fileExtension;
+                    $uploadPath = $uploadDir . $fileName;
+                    
+                    if (move_uploaded_file($tmp_name, $uploadPath)) {
+                        $view_360_paths[] = 'uploads/vehicle_images/360/' . $fileName;
+                    }
                 }
             }
-            // If we have images, serialize them for storage
-            if (!empty($view_360_images_array)) {
-                $view_360_images_content = serialize($view_360_images_array);
+            // If we have images, store as JSON
+            if (!empty($view_360_paths)) {
+                $view_360_images_path = json_encode($view_360_paths);
             }
         }
         
@@ -109,9 +141,9 @@ function addVehicle($connect) {
         $stmt->bindParam(':financing_terms', $_POST['financing_terms']);
         $stmt->bindParam(':color_options', $_POST['color_options']);
         $stmt->bindParam(':popular_color', $_POST['popular_color']);
-        $stmt->bindParam(':main_image', $main_image_content, PDO::PARAM_LOB);
-        $stmt->bindParam(':additional_images', $additional_images_content, PDO::PARAM_LOB);
-        $stmt->bindParam(':view_360_images', $view_360_images_content, PDO::PARAM_LOB);
+        $stmt->bindParam(':main_image', $main_image_path);
+        $stmt->bindParam(':additional_images', $additional_images_path);
+        $stmt->bindParam(':view_360_images', $view_360_images_path);
         $stmt->bindParam(':stock_quantity', $_POST['stock_quantity']);
         $stmt->bindParam(':min_stock_alert', $_POST['min_stock_alert']);
         $stmt->bindParam(':availability_status', $_POST['availability_status']);

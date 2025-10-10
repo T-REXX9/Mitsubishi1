@@ -4,6 +4,16 @@ ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
 ini_set('session.cookie_samesite', 'Lax');
 
+// Enhanced error logging for debugging
+ini_set('log_errors', 1);
+error_reporting(E_ALL);
+
+// Log script start
+error_log("inquiry_actions.php: Script started - " . date('Y-m-d H:i:s'));
+error_log("inquiry_actions.php: REQUEST_METHOD = " . $_SERVER['REQUEST_METHOD']);
+error_log("inquiry_actions.php: POST data = " . print_r($_POST, true));
+error_log("inquiry_actions.php: GET data = " . print_r($_GET, true));
+
 header('Content-Type: application/json');
 
 // Ensure session is started
@@ -11,11 +21,17 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
+error_log("inquiry_actions.php: Session status = " . session_status());
+error_log("inquiry_actions.php: Session data = " . print_r($_SESSION, true));
+
 include_once(dirname(dirname(__DIR__)) . '/includes/init.php');
 require_once(dirname(dirname(__DIR__)) . '/includes/api/notification_api.php');
 
+error_log("inquiry_actions.php: Files included successfully");
+
 // Check if user is Admin or Sales Agent for inquiry responses
 if (!isset($_SESSION['user_role'])) {
+    error_log("inquiry_actions.php: No user role found in session");
     http_response_code(403);
     echo json_encode([
         'success' => false, 
@@ -26,6 +42,7 @@ if (!isset($_SESSION['user_role'])) {
 }
 
 if (!in_array($_SESSION['user_role'], ['Admin', 'SalesAgent'])) {
+    error_log("inquiry_actions.php: Invalid role: " . $_SESSION['user_role']);
     http_response_code(403);
     echo json_encode([
         'success' => false, 
@@ -35,14 +52,19 @@ if (!in_array($_SESSION['user_role'], ['Admin', 'SalesAgent'])) {
     exit();
 }
 
+error_log("inquiry_actions.php: User role validation passed: " . $_SESSION['user_role']);
+
 // Use the database connection from init.php
 $pdo = $GLOBALS['pdo'] ?? null;
 
 if (!$pdo) {
+    error_log("inquiry_actions.php: Database connection not available");
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Database connection not available']);
     exit();
 }
+
+error_log("inquiry_actions.php: Database connection established successfully");
 
 // Determine the action
 $action = '';
@@ -58,27 +80,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $action = $input['action'];
         }
     }
+} elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
+    $action = $_GET['action'];
 }
 
 try {
+    error_log("inquiry_actions.php: Processing action: " . $action);
+    
     switch ($action) {
         case 'delete':
+            error_log("inquiry_actions.php: Handling delete action");
             handleDeleteInquiry($pdo, $input);
             break;
         
         case 'respond':
+            error_log("inquiry_actions.php: Handling respond action");
             handleRespondToInquiry($pdo, $_POST);
             break;
             
         case 'get_inquiry':
+            error_log("inquiry_actions.php: Handling get_inquiry action");
             handleGetInquiry($pdo, $_GET);
             break;
             
-        case 'create':
+        case 'add_inquiry':
+            error_log("inquiry_actions.php: Handling add_inquiry action");
             handleCreateInquiry($pdo, $_POST);
             break;
             
+        case 'get_accounts':
+            error_log("inquiry_actions.php: Handling get_accounts action");
+            handleGetAccounts($pdo);
+            break;
+            
         default:
+            error_log("inquiry_actions.php: Default case - REQUEST_METHOD: " . $_SERVER['REQUEST_METHOD']);
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Default to respond action for form submissions
                 handleRespondToInquiry($pdo, $_POST);
@@ -89,7 +125,8 @@ try {
             break;
     }
 } catch (Exception $e) {
-    error_log("Inquiry action error: " . $e->getMessage());
+    error_log("inquiry_actions.php: Exception caught: " . $e->getMessage());
+    error_log("inquiry_actions.php: Exception trace: " . $e->getTraceAsString());
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
 }
@@ -129,7 +166,20 @@ function handleRespondToInquiry($pdo, $data) {
     $inquiryId = (int)$data['inquiry_id'];
     $responseType = trim($data['response_type']);
     $responseMessage = trim($data['response_message']);
-    $followUpDate = !empty($data['follow_up_date']) ? $data['follow_up_date'] : null;
+    
+    // Validate and sanitize follow-up date
+    $followUpDate = null;
+    if (!empty($data['follow_up_date'])) {
+        $dateValue = trim($data['follow_up_date']);
+        // Check if the value is 'none' or any invalid placeholder
+        if (strtolower($dateValue) !== 'none') {
+            // Validate that it's a proper date format (YYYY-MM-DD)
+            $dateObj = DateTime::createFromFormat('Y-m-d', $dateValue);
+            if ($dateObj && $dateObj->format('Y-m-d') === $dateValue) {
+                $followUpDate = $dateValue;
+            }
+        }
+    }
 
     // Validate message length
     if (strlen($responseMessage) < 10) {
@@ -263,26 +313,46 @@ function handleGetInquiry($pdo, $data) {
 }
 
 function handleCreateInquiry($pdo, $data) {
+    error_log("inquiry_actions.php: handleCreateInquiry called with data: " . print_r($data, true));
+    
     $requiredFields = ['full_name', 'email', 'vehicle_model', 'vehicle_year', 'vehicle_color'];
     
     foreach ($requiredFields as $field) {
         if (!isset($data[$field]) || empty(trim($data[$field]))) {
+            error_log("inquiry_actions.php: Missing required field: " . $field);
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => "Field '$field' is required"]);
             return;
         }
     }
 
+    error_log("inquiry_actions.php: All required fields validated successfully");
+
     try {
+        error_log("inquiry_actions.php: Preparing SQL statement");
         $stmt = $pdo->prepare("
             INSERT INTO inquiries 
             (AccountId, FullName, Email, PhoneNumber, VehicleModel, VehicleVariant, 
-             VehicleYear, VehicleColor, TradeInVehicleDetails, FinancingRequired, Comments) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             VehicleYear, VehicleColor, TradeInVehicleDetails, FinancingRequired, Comments, CreatedBy) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         
-        $result = $stmt->execute([
-            $data['account_id'] ?? null,
+        // Handle AccountId properly - use 0 if not provided or empty
+        $accountId = 0;
+        if (isset($data['account_id']) && !empty(trim($data['account_id']))) {
+            $accountId = (int)$data['account_id'];
+        }
+        
+        // Set CreatedBy based on user role - only set if user is SalesAgent or Admin
+        $createdBy = null;
+        if (isset($_SESSION['user_id']) && isset($_SESSION['user_role'])) {
+            if ($_SESSION['user_role'] === 'SalesAgent' || $_SESSION['user_role'] === 'Admin') {
+                $createdBy = (int)$_SESSION['user_id'];
+            }
+        }
+        
+        $params = [
+            $accountId,
             trim($data['full_name']),
             trim($data['email']),
             trim($data['phone_number'] ?? ''),
@@ -292,31 +362,48 @@ function handleCreateInquiry($pdo, $data) {
             trim($data['vehicle_color']),
             trim($data['trade_in_details'] ?? ''),
             trim($data['financing_required'] ?? ''),
-            trim($data['comments'] ?? '')
-        ]);
+            trim($data['comments'] ?? ''),
+            $createdBy
+        ];
+        
+        error_log("inquiry_actions.php: Executing SQL with params: " . print_r($params, true));
+        $result = $stmt->execute($params);
 
         if ($result) {
             $inquiryId = $pdo->lastInsertId();
-            logAdminAction($pdo, $_SESSION['user_id'], 'CREATE_INQUIRY', $inquiryId, 
-                "Created inquiry for {$data['full_name']} - {$data['vehicle_model']}");
-            // Enhanced notification logic: multi-channel ready, extensible
-            createNotification(null, 'Admin', 'New Inquiry Submitted', "A new inquiry (ID: $inquiryId) was submitted by {$data['full_name']}.", 'inquiry', $inquiryId);
-            createNotification(null, 'SalesAgent', 'New Inquiry Submitted', "A new inquiry (ID: $inquiryId) was submitted by {$data['full_name']}.", 'inquiry', $inquiryId);
-            if (!empty($data['account_id'])) {
-                createNotification($data['account_id'], null, 'Inquiry Submitted', "Your inquiry (ID: $inquiryId) has been received. We will contact you soon.", 'inquiry', $inquiryId);
+            error_log("inquiry_actions.php: Inquiry created successfully with ID: " . $inquiryId);
+            
+            // Try to log admin action (don't fail if it doesn't work)
+            try {
+                logAdminAction($pdo, $_SESSION['user_id'], 'CREATE_INQUIRY', $inquiryId, 
+                    "Created inquiry for {$data['full_name']} - {$data['vehicle_model']}");
+            } catch (Exception $e) {
+                error_log("inquiry_actions.php: Failed to log admin action: " . $e->getMessage());
             }
-            // Placeholder for future: queueNotificationForChannels(...)
+            
+            // Try to create notifications (don't fail if it doesn't work)
+            try {
+                createNotification(null, 'Admin', 'New Inquiry Submitted', "A new inquiry (ID: $inquiryId) was submitted by {$data['full_name']}.", 'inquiry', $inquiryId);
+                createNotification(null, 'SalesAgent', 'New Inquiry Submitted', "A new inquiry (ID: $inquiryId) was submitted by {$data['full_name']}.", 'inquiry', $inquiryId);
+                if (!empty($data['account_id'])) {
+                    createNotification($data['account_id'], null, 'Inquiry Submitted', "Your inquiry (ID: $inquiryId) has been received. We will contact you soon.", 'inquiry', $inquiryId);
+                }
+            } catch (Exception $e) {
+                error_log("inquiry_actions.php: Failed to create notifications: " . $e->getMessage());
+            }
+            
             echo json_encode([
                 'success' => true, 
                 'message' => 'Inquiry created successfully',
                 'inquiry_id' => $inquiryId
             ]);
         } else {
+            error_log("inquiry_actions.php: SQL execution returned false");
             throw new Exception('Failed to create inquiry');
         }
     } catch (PDOException $e) {
-        error_log("Create inquiry error: " . $e->getMessage());
-        throw new Exception('Failed to create inquiry');
+        error_log("inquiry_actions.php: PDO Exception in handleCreateInquiry: " . $e->getMessage());
+        throw new Exception('Failed to create inquiry: ' . $e->getMessage());
     }
 }
 
@@ -347,6 +434,28 @@ function logAdminAction($pdo, $adminId, $actionType, $targetId, $description) {
     } catch (Exception $e) {
         error_log("General error in logAdminAction: " . $e->getMessage());
         return false;
+    }
+}
+
+function handleGetAccounts($pdo) {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT Id, Username, FirstName, LastName, Email, Status
+            FROM accounts 
+            WHERE Status = 'Active' 
+            ORDER BY FirstName, LastName
+        ");
+        $stmt->execute();
+        $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        echo json_encode([
+            'success' => true,
+            'accounts' => $accounts
+        ]);
+    } catch (PDOException $e) {
+        error_log("Get accounts error: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Failed to fetch accounts']);
     }
 }
 ?>

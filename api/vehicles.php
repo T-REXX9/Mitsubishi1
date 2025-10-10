@@ -12,6 +12,28 @@ ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
 
+// Detect oversized POST (likely exceeded post_max_size or web server body limit)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && empty($_FILES)) {
+    $contentLength = isset($_SERVER['CONTENT_LENGTH']) ? (int)$_SERVER['CONTENT_LENGTH'] : 0;
+    if ($contentLength > 0) {
+        // Compute readable ini values
+        $postMax = ini_get('post_max_size');
+        $uploadMax = ini_get('upload_max_filesize');
+        http_response_code(413);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Upload failed: request size exceeds server limits. Please reduce file size or increase server limits.',
+            'debug' => [
+                'content_length' => $contentLength,
+                'post_max_size' => $postMax,
+                'upload_max_filesize' => $uploadMax
+            ]
+        ]);
+        ob_end_flush();
+        exit;
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     ob_end_clean();
     exit(0);
@@ -248,7 +270,7 @@ function updateVehicleStock($pdo) {
         } else {
             throw new Exception('Invalid operation');
         }
-
+        
         $stmt = $pdo->prepare($sql);
         $success = $stmt->execute($params);
 
@@ -561,8 +583,9 @@ function updateVehicle($pdo) {
                                 'type' => $_FILES['view_360_images']['type'][$key],
                                 'size' => $_FILES['view_360_images']['size'][$key]
                             ];
-                            // Determine upload directory based on file type
-                            $uploadDir = (pathinfo($file['name'], PATHINFO_EXTENSION) === 'glb' || pathinfo($file['name'], PATHINFO_EXTENSION) === 'gltf') 
+                            // Determine upload directory based on file type (case-insensitive)
+                            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                            $uploadDir = ($ext === 'glb' || $ext === 'gltf') 
                                 ? '../uploads/3d_models/' 
                                 : '../uploads/vehicle_images/360/';
                             $path = handleFileUpload($file, $uploadDir, $vehicleId . '_360_update_' . $key);

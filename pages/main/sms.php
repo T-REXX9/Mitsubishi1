@@ -387,14 +387,6 @@ $current_page = 'sms';
                   <div id="recipientError" class="error-text" aria-live="polite"></div>
                 </div>
 
-                <div class="form-field" id="senderIdField" style="display: none;">
-                  <label for="senderId">Sender ID</label>
-                  <select id="senderId" name="senderId" aria-label="Sender ID">
-                    <option value="">Default</option>
-                  </select>
-                  <div class="help-text">Optional. Visible if configured for your account.</div>
-                </div>
-
                 <div class="form-field">
                   <label for="message">Message</label>
                   <textarea id="message"
@@ -556,10 +548,6 @@ $current_page = 'sms';
       }
 
       // Feature flags
-      const supportsSenderId = false;
-      const senderIdField = document.getElementById('senderIdField');
-      if (senderIdField) senderIdField.style.display = supportsSenderId ? 'block' : 'none';
-
       // Tabs: roving tabindex + keyboard navigation
       const tablist = document.getElementById('smsTablist');
       const tabs = Array.from(tablist?.querySelectorAll('.tab') || []);
@@ -1028,15 +1016,22 @@ $current_page = 'sms';
         renderHistory();
       })();
 
-      // Send handler (UI-only)
-      document.getElementById('sendForm')?.addEventListener('submit', function (e) {
+      // Send handler (integrated with backend API)
+      document.getElementById('sendForm')?.addEventListener('submit', async function (e) {
+        // DEBUG LOG: Form submit triggered
+        console.log('[SMS DEBUG] Submit event triggered', e); // DEBUG LOG
+
         e.preventDefault();
         if (!validateRecipient()) {
+          // DEBUG LOG: Recipient validation failed
+          console.log('[SMS DEBUG] Recipient validation failed', recipientInput.value); // DEBUG LOG
           recipientInput.focus();
           return;
         }
         const message = (messageInput.value || '').trim();
         if (!message) {
+          // DEBUG LOG: Message is empty
+          console.log('[SMS DEBUG] Message is empty'); // DEBUG LOG
           if (window.Swal) Swal.fire({ icon: 'error', title: 'Message required', text: 'Please enter a message.', heightAuto: false });
           else alert('Please enter a message.');
           return;
@@ -1046,45 +1041,94 @@ $current_page = 'sms';
         sendBtn.disabled = true;
         sendBtn.textContent = 'Sending...';
 
-        // Compute segments
-        const meta = computeSegments(message);
+        // DEBUG LOG: Preparing payload
+        console.log('[SMS DEBUG] Preparing payload', {
+          numbers: [recipientInput.value.trim()],
+          message: message
+        }); // DEBUG LOG
 
-        // Simulate success (no network)
-        setTimeout(() => {
-          // Append to local history
-          const rec = {
-            id: Date.now(),
-            recipient: recipientInput.value.trim(),
-            message: message,
-            status: 'Sent',
-            segments: meta.segments || 1,
-            date: new Date().toISOString()
-          };
-          const all = readLS(LS_HISTORY, []);
-          all.push(rec);
-          writeLS(LS_HISTORY, all);
+        // Prepare payload
+        const numbers = [recipientInput.value.trim()];
 
-          // Reset UI
+        // DEBUG LOG: Type and value of numbers before fetch
+        console.log('[SMS DEBUG] About to send fetch. numbers type:', Array.isArray(numbers) ? 'array' : typeof numbers, '| value:', numbers);
+
+        try {
+          // DEBUG LOG: Sending fetch request
+          console.log('[SMS DEBUG] Sending fetch request to ../../api/send_sms.php', {
+            numbers, message
+          }); // DEBUG LOG
+
+          const response = await fetch('../../api/send_sms.php', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              numbers: numbers,
+              message: message
+            })
+          });
+
+          // DEBUG LOG: Received response
+          console.log('[SMS DEBUG] Received response', response); // DEBUG LOG
+
+          const data = await response.json();
+
+          // DEBUG LOG: Parsed response JSON
+          console.log('[SMS DEBUG] Parsed response JSON', data); // DEBUG LOG
+
+          sendBtn.disabled = false;
+          sendBtn.textContent = 'Send';
+
+          if (response.ok && data && data.success) {
+            // DEBUG LOG: SMS sent successfully
+            console.log('[SMS DEBUG] SMS sent successfully', data); // DEBUG LOG
+            if (window.Swal) {
+              Swal.fire({
+                icon: 'success',
+                title: 'Message sent',
+                text: data.message || 'Your SMS has been queued for delivery.',
+                timer: 1200,
+                showConfirmButton: false,
+                heightAuto: false
+              });
+            }
+            // Optionally clear message only
+            messageInput.value = '';
+            updateMessageCounters();
+            renderHistory();
+          } else {
+            // DEBUG LOG: SMS send failed
+            console.log('[SMS DEBUG] SMS send failed', data); // DEBUG LOG
+            let errorMsg = (data && data.error) ? data.error : 'Failed to send SMS. Please try again.';
+            if (window.Swal) {
+              Swal.fire({
+                icon: 'error',
+                title: 'Send failed',
+                text: errorMsg,
+                heightAuto: false
+              });
+            } else {
+              alert(errorMsg);
+            }
+          }
+        } catch (err) {
+          // DEBUG LOG: Network or fetch error
+          console.log('[SMS DEBUG] Network or fetch error', err); // DEBUG LOG
           sendBtn.disabled = false;
           sendBtn.textContent = 'Send';
           if (window.Swal) {
             Swal.fire({
-              icon: 'success',
-              title: 'Message sent',
-              text: 'Your SMS has been queued for delivery.',
-              timer: 1200,
-              showConfirmButton: false,
+              icon: 'error',
+              title: 'Network error',
+              text: 'Could not connect to SMS service. Please try again.',
               heightAuto: false
             });
+          } else {
+            alert('Could not connect to SMS service. Please try again.');
           }
-
-          // Optionally clear message only
-          messageInput.value = '';
-          updateMessageCounters();
-
-          // If History tab is visible, re-render
-          renderHistory();
-        }, 500);
+        }
       });
 
     })();

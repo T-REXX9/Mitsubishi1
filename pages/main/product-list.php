@@ -3,7 +3,7 @@ include_once(dirname(dirname(__DIR__)) . '/includes/init.php');
 
 // Check if user is Admin
 if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'Admin') {
-    header("Location: ../../auth/login.php");
+    header("Location: ../../pages/login.php");
     exit();
 }
 
@@ -56,7 +56,7 @@ try {
     }
     
     body {
-      zoom: 75%;
+      zoom: 80%;
     }
 
     .delivery-stats {
@@ -707,6 +707,14 @@ try {
     .btn-secondary:hover {
       background-color: #545b62;
     }
+
+    /* Autocomplete dropdown styles for vehicle model field */
+    .vehicle-autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; z-index: 1000; background: #fff; border: 1px solid #e5e7eb; border-top: none; max-height: 280px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.12); border-radius: 0 0 8px 8px; }
+    .vehicle-autocomplete-list .autocomplete-item { padding: 10px 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; }
+    .vehicle-autocomplete-list .autocomplete-item:last-child { border-bottom: none; }
+    .vehicle-autocomplete-list .autocomplete-item:hover { background: #f8fafc; }
+    .vehicle-autocomplete-list .autocomplete-item .year { color: #6b7280; font-size: 0.85rem; }
+    .vehicle-autocomplete-list .autocomplete-item.no-result { color: #6b7280; cursor: default; }
   </style>
 </head>
 <body>
@@ -860,7 +868,8 @@ try {
                <div class="form-group">
                 <label for="vehicle_model">Vehicle Model *</label>
                 <div class="vehicle-selection-wrapper">
-                  <input type="text" id="vehicle_model_display" class="form-control" placeholder="Click to select vehicle" readonly onclick="openVehicleSelectionModal()" style="cursor: pointer;">
+                  <input type="text" id="vehicle_model_display" class="form-control" placeholder="Type to search vehicle model..." autocomplete="off" style="cursor: text;">
+                  <div id="vehicleAutocomplete" class="vehicle-autocomplete-list" style="display: none;"></div>
                   <input type="hidden" id="vehicle_id" name="vehicle_id">
                   <input type="hidden" id="model_name" name="model_name">
                   <input type="hidden" id="variant" name="variant">
@@ -1357,6 +1366,140 @@ try {
     if (globalVehiclesData.length > 0) {
       console.log('Sample vehicle IDs:', globalVehiclesData.map(v => v.id).slice(0, 5));
     }
+
+    // Autocomplete setup for vehicle model field
+    function setupVehicleAutocomplete() {
+      const input = document.getElementById('vehicle_model_display');
+      const list = document.getElementById('vehicleAutocomplete');
+      const hiddenId = document.getElementById('vehicle_id');
+      const hiddenModel = document.getElementById('model_name');
+      const hiddenVariant = document.getElementById('variant');
+      const hiddenColor = document.getElementById('color');
+      const unitPriceInput = document.getElementById('unit_price');
+
+      if (!input || !list) return;
+
+      function normalize(str) { return (str || '').toString().toLowerCase(); }
+
+      function effectivePrice(v) {
+        const promo = parseFloat(v.promotional_price || 0);
+        const base = parseFloat(v.base_price || 0);
+        return (promo && promo > 0) ? promo : base;
+      }
+
+      function renderList(items) {
+        if (!items || items.length === 0) {
+          list.innerHTML = '<div class="autocomplete-item no-result">No matching vehicles</div>';
+          list.style.display = 'block';
+          return;
+        }
+
+        const html = items.map(v => {
+          const left = `${v.model_name || ''}${v.variant ? ' - ' + v.variant : ''}`;
+          const metaParts = [];
+          if (v.year_model) metaParts.push(v.year_model);
+          if (v.popular_color) metaParts.push(v.popular_color);
+          const right = metaParts.length ? ` <span class=\"year\">${metaParts.join(' · ')}</span>` : '';
+          return `<div class=\"autocomplete-item\" data-id=\"${v.id}\" data-model=\"${v.model_name || ''}\" data-variant=\"${v.variant || ''}\" data-color=\"${v.popular_color || ''}\">${left}${right}</div>`;
+        }).join('');
+
+        list.innerHTML = html;
+        list.style.display = 'block';
+      }
+
+      function filter(query) {
+        const q = normalize(query);
+        if (!q) {
+          renderList((globalVehiclesData || []).slice(0, 20));
+          return;
+        }
+        const results = (globalVehiclesData || []).filter(v =>
+          normalize(v.model_name).includes(q) ||
+          normalize(v.variant).includes(q) ||
+          normalize(v.year_model).includes(q) ||
+          normalize(v.popular_color).includes(q) ||
+          normalize(v.category).includes(q)
+        ).slice(0, 50);
+        renderList(results);
+      }
+
+      function clearSelection() {
+        if (hiddenId) hiddenId.value = '';
+        if (hiddenModel) hiddenModel.value = '';
+        if (hiddenVariant) hiddenVariant.value = '';
+        if (hiddenColor) hiddenColor.value = '';
+      }
+
+      function selectFromItem(el) {
+        const id = el.getAttribute('data-id');
+        const model = el.getAttribute('data-model');
+        const variant = el.getAttribute('data-variant');
+        const color = el.getAttribute('data-color');
+
+        if (hiddenId) hiddenId.value = id || '';
+        if (hiddenModel) hiddenModel.value = model || '';
+        if (hiddenVariant) hiddenVariant.value = variant || '';
+        if (hiddenColor) hiddenColor.value = color || '';
+
+        const label = `${model || ''}${variant ? ' - ' + variant : ''}`;
+        input.value = label;
+
+        // Set unit price based on selected vehicle
+        const selected = (globalVehiclesData || []).find(v => v.id == id);
+        if (selected && unitPriceInput) {
+          unitPriceInput.value = effectivePrice(selected) || 0;
+        }
+
+        // Recalculate total if needed
+        if (typeof calculateTotalValue === 'function') {
+          calculateTotalValue();
+        }
+
+        list.style.display = 'none';
+      }
+
+      // Input events
+      input.addEventListener('input', function(e) {
+        clearSelection();
+        filter(e.target.value);
+      });
+
+      input.addEventListener('focus', function() {
+        filter(input.value);
+      });
+
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          list.style.display = 'none';
+        }
+      });
+
+      input.addEventListener('blur', function() {
+        setTimeout(() => { list.style.display = 'none'; }, 150);
+      });
+
+      list.addEventListener('mousedown', function(e) {
+        const item = e.target.closest('.autocomplete-item');
+        if (item && !item.classList.contains('no-result')) {
+          e.preventDefault();
+          selectFromItem(item);
+        }
+      });
+
+      // Hide when clicking outside
+      document.addEventListener('mousedown', function(e) {
+        if (!list.contains(e.target) && e.target !== input) {
+          list.style.display = 'none';
+        }
+      });
+
+      // Ensure the input is editable
+      input.removeAttribute('readonly');
+      input.style.cursor = 'text';
+    }
+
+    // Expose globally
+    window.setupVehicleAutocomplete = setupVehicleAutocomplete;
     
     // Enhanced button setup with multiple fallbacks
     
@@ -1411,14 +1554,9 @@ try {
     // Vehicle Selection Modal Functions - already defined globally above
     // Removed duplicate definitions
 
-    // Event listener for vehicle selection input
+    // Initialize vehicle autocomplete on DOM ready
     document.addEventListener('DOMContentLoaded', function() {
-      const vehicleInput = document.getElementById('vehicle_model_display');
-      if (vehicleInput) {
-        vehicleInput.addEventListener('click', function() {
-          openVehicleSelectionModal();
-        });
-      }
+      try { setupVehicleAutocomplete && setupVehicleAutocomplete(); } catch (e) { console.warn('Autocomplete init failed', e); }
     });
   </script>
 

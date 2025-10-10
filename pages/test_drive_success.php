@@ -118,6 +118,9 @@ $instructor_agent = 'Reo Remos';
             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
         }
 
+        /* Ensure in-pass logo has a fixed, small size */
+        .gate-pass-logo { width: 64px; max-width: 64px; height: auto; display: block; }
+
         .company-name {
             font-size: 1.2rem;
             font-weight: 700;
@@ -281,6 +284,23 @@ $instructor_agent = 'Reo Remos';
             .gate-pass-body {
                 padding: 20px;
             }
+        }
+
+        /* Print: Only print the gate pass card and keep the logo small */
+        @media print {
+            body { background: #ffffff !important; }
+            /* Hide non-essential UI during print */
+            .header, .success-message, .action-buttons, .logout-btn { display: none !important; }
+            .download-btn, .print-btn, .back-btn { display: none !important; }
+
+            /* Focus printing on the gate pass only */
+            body * { visibility: hidden; }
+            .gate-pass-container, .gate-pass-container * { visibility: visible; }
+            .gate-pass-container { position: relative; margin: 0 !important; box-shadow: none !important; border: 1px solid #ddd; }
+            .container { padding: 0 !important; max-width: 100% !important; }
+
+            /* Ensure logo never overflows */
+            .gate-pass-logo { width: 48px !important; max-width: 48px !important; height: auto !important; }
         }
     </style>
 </head>

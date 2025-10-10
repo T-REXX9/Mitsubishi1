@@ -13,6 +13,9 @@
   --transition: all 0.3s ease;
 }
 
+/* Import notification styles */
+@import url('notification-styles.css');
+
 /* Complete CSS Reset and Layout Fix */
 * {
   box-sizing: border-box;

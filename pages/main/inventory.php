@@ -3,7 +3,7 @@ include_once(dirname(dirname(__DIR__)) . '/includes/init.php');
 
 // Check if user is logged in
 if (!isset($_SESSION['user_role'])) {
-    header("Location: ../../auth/login.php");
+    header("Location: ../../pages/login.php");
     exit();
 }
 
@@ -34,7 +34,7 @@ if ($user_role === 'Sales Agent') {
     }
     
     body {
-      zoom: 75%;
+      zoom: 80%;
     }
     .page-header {
       display: flex;

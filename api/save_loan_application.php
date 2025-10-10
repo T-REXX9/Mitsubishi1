@@ -1,5 +1,8 @@
 <?php
+ini_set('session.gc_maxlifetime', 10800);
+ini_set('session.cookie_lifetime', 10800);
 session_start();
+// Removed session_regenerate_id(true) here to avoid logging users out during submission; regenerate on login instead for security
 header('Content-Type: application/json');
 include_once(dirname(__DIR__) . '/includes/database/db_conn.php');
 include_once(dirname(__DIR__) . '/includes/backend/loan_backend.php');
@@ -154,11 +157,11 @@ try {
     ]);
 
 } catch (Exception $e) {
-    // Validation or other error
+    error_log("Loan application error: " . $e->getMessage());
     http_response_code(422);
     echo json_encode([
         'success' => false,
-        'message' => $e->getMessage()
+        'message' => 'An error occurred during submission. Please try again or contact support if the problem persists.'
     ]);
 }
 ?>

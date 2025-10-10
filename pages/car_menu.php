@@ -605,7 +605,7 @@ try {
 <body>
     <header class="header">
         <div class="logo-section">
-            <img src="../includes/images/Mitsubishi_logo.png" alt="Mitsubishi Logo" class="logo">
+            <img src="../includes/images/mitsubishi_logo.png" alt="Mitsubishi Logo" class="logo">
             <div class="brand-text">MITSUBISHI MOTORS</div>
         </div>
         <div class="user-section">
@@ -645,19 +645,62 @@ try {
                     <?php foreach ($vehicles as $vehicle): ?>
                         <div class="swiper-slide" data-category="<?php echo strtolower(htmlspecialchars($vehicle['category'])); ?>">
                             <?php if (!empty($vehicle['main_image'])): ?>
-                                <?php 
+                                <?php
+                                // DEBUG: Log the raw image value
+                                error_log("DEBUG Vehicle ID {$vehicle['id']}: Raw main_image length = " . strlen($vehicle['main_image']));
+                                error_log("DEBUG Vehicle ID {$vehicle['id']}: First 100 chars = " . substr($vehicle['main_image'], 0, 100));
+                                
                                 // Check if it's a file path or base64 data
-                                if (strpos($vehicle['main_image'], 'uploads') !== false || strpos($vehicle['main_image'], '.png') !== false || strpos($vehicle['main_image'], '.jpg') !== false || strpos($vehicle['main_image'], '.jpeg') !== false) {
+                                if (strpos($vehicle['main_image'], 'uploads') !== false ||
+                                    strpos(strtolower($vehicle['main_image']), '.png') !== false ||
+                                    strpos(strtolower($vehicle['main_image']), '.jpg') !== false ||
+                                    strpos(strtolower($vehicle['main_image']), '.jpeg') !== false) {
+                                    
                                     // It's a file path - convert to web path
-                                    $webPath = str_replace('\\', '/', $vehicle['main_image']);
-                                    $webPath = preg_replace('/^.*\/htdocs\//', '/', $webPath);
+                                    $webPath = $vehicle['main_image'];
+                                    error_log("DEBUG Vehicle ID {$vehicle['id']}: Detected as FILE PATH");
+                                    
+                                    // Convert backslashes to forward slashes
+                                    $webPath = str_replace('\\', '/', $webPath);
+                                    error_log("DEBUG Vehicle ID {$vehicle['id']}: After backslash conversion = " . $webPath);
+                                    
+                                    // Remove any Windows drive letter (e.g., C:)
+                                    $webPath = preg_replace('/^[A-Za-z]:/i', '', $webPath);
+                                    error_log("DEBUG Vehicle ID {$vehicle['id']}: After drive letter removal = " . $webPath);
+                                    
+                                    // Extract the path starting from 'uploads'
+                                    if (preg_match('/uploads.*$/i', $webPath, $matches)) {
+                                        $webPath = $matches[0];
+                                        error_log("DEBUG Vehicle ID {$vehicle['id']}: After uploads extraction = " . $webPath);
+                                    }
+                                    
+                                    // Build relative path from /pages to project root so it works under subdirectories (e.g., /Mitsubishi)
+                                    $webPath = '../' . ltrim($webPath, '/');
+                                    error_log("DEBUG Vehicle ID {$vehicle['id']}: Final webPath = " . $webPath);
+                                    
+                                    // Check if file exists
+                                    $checkPath = __DIR__ . '/' . $webPath;
+                                    error_log("DEBUG Vehicle ID {$vehicle['id']}: File exists check = " . ($checkPath) . " => " . (file_exists($checkPath) ? "YES" : "NO"));
+                                    
+                                    // Do NOT force lowercase on Linux to avoid case-mismatch on real files
+                                    
                                     echo '<img src="' . htmlspecialchars($webPath) . '" alt="' . htmlspecialchars($vehicle['model_name']) . '" class="car-image" draggable="false">';
                                 } else if (preg_match('/^[A-Za-z0-9+\/=]+$/', $vehicle['main_image']) && strlen($vehicle['main_image']) > 100) {
                                     // It's base64 data
+                                    error_log("DEBUG Vehicle ID {$vehicle['id']}: Detected as BASE64 data");
                                     echo '<img src="data:image/jpeg;base64,' . $vehicle['main_image'] . '" alt="' . htmlspecialchars($vehicle['model_name']) . '" class="car-image" draggable="false">';
                                 } else {
-                                    // Fallback to default image
-                                    echo '<img src="../includes/images/default-car.svg" alt="' . htmlspecialchars($vehicle['model_name']) . '" class="car-image" draggable="false">';
+                                    // Attempt to render as binary by base64-encoding (handles legacy BLOB records)
+                                    error_log("DEBUG Vehicle ID {$vehicle['id']}: Detected as BINARY/OTHER - attempting base64 encode");
+                                    $encoded = base64_encode($vehicle['main_image']);
+                                    if (!empty($encoded)) {
+                                        error_log("DEBUG Vehicle ID {$vehicle['id']}: Base64 encoding successful, length = " . strlen($encoded));
+                                        echo '<img src="data:image/jpeg;base64,' . $encoded . '" alt="' . htmlspecialchars($vehicle['model_name']) . '" class="car-image" draggable="false">';
+                                    } else {
+                                        // Fallback to default image
+                                        error_log("DEBUG Vehicle ID {$vehicle['id']}: Base64 encoding failed - using default image");
+                                        echo '<img src="../includes/images/default-car.svg" alt="' . htmlspecialchars($vehicle['model_name']) . '" class="car-image" draggable="false">';
+                                    }
                                 }
                                 ?>
                             <?php else: ?>
@@ -673,9 +716,11 @@ try {
                                 </p>
                                 <?php if ($vehicle['base_price']): ?>
                                     <p style="color: #ffd700; font-size: 1.2rem; font-weight: bold; margin-top: 10px;">
-                                        ₱<?php echo number_format($vehicle['base_price'], 2); ?>
                                         <?php if ($vehicle['promotional_price'] && $vehicle['promotional_price'] < $vehicle['base_price']): ?>
-                                            <span style="color: #ff6b6b; text-decoration: line-through; font-size: 0.9rem; margin-left: 10px;">₱<?php echo number_format($vehicle['promotional_price'], 2); ?></span>
+                                            ₱<?php echo number_format($vehicle['promotional_price'], 2); ?>
+                                            <span style="color: #ff6b6b; text-decoration: line-through; font-size: 0.9rem; margin-left: 10px;">₱<?php echo number_format($vehicle['base_price'], 2); ?></span>
+                                        <?php else: ?>
+                                            ₱<?php echo number_format($vehicle['base_price'], 2); ?>
                                         <?php endif; ?>
                                     </p>
                                 <?php endif; ?>

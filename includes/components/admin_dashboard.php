@@ -1460,7 +1460,7 @@ $accountStats = getAccountStats($connect);
     let currentCustomerId = null;
     let currentAccountId = null;
 
-    // Update the review account function - remove reject button logic
+    // Review account function with robust error handling
     window.reviewAccount = function(cusID, accountId, isComplete) {
       // Store current customer data
       currentCustomerId = cusID;
@@ -1472,21 +1472,20 @@ $accountStats = getAccountStats($connect);
 
       // Use either cusID or accountId for fetching details
       const queryParam = cusID ? `cusID=${cusID}` : `accountId=${accountId}`;
-      console.log('Fetching customer details with:', queryParam);
 
       // Fetch customer details via AJAX
       fetch(`/Mitsubishi/pages/main/admin_actions.php?action=get_customer_details&${queryParam}`)
         .then(response => {
-          console.log('Response status:', response.status);
-          console.log('Response headers:', response.headers);
-
           if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+            throw new Error(`Server error: ${response.status}`);
           }
           return response.text();
         })
         .then(text => {
-          console.log('Raw response:', text);
+          // Handle empty response
+          if (!text || !text.trim()) {
+            throw new Error('Empty response received from server');
+          }
 
           // Clean the response text by removing any non-JSON content
           let cleanText = text.trim();
@@ -1495,41 +1494,47 @@ $accountStats = getAccountStats($connect);
           const jsonStart = cleanText.indexOf('{');
           const jsonEnd = cleanText.lastIndexOf('}') + 1;
           
-          if (jsonStart !== -1 && jsonEnd > jsonStart) {
-            cleanText = cleanText.substring(jsonStart, jsonEnd);
+          if (jsonStart === -1 || jsonEnd <= jsonStart) {
+            throw new Error('Invalid response format - no JSON data found');
           }
 
-          if (!cleanText) {
-            throw new Error('Empty or invalid response from server');
-          }
+          cleanText = cleanText.substring(jsonStart, jsonEnd);
 
+          // Parse JSON response
+          let data;
           try {
-            const data = JSON.parse(cleanText);
-            if (data.success) {
-              displayCustomerDetails(data.customer);
-            } else {
-              throw new Error(data.message || 'Failed to fetch customer details');
-            }
-          } catch (e) {
-            console.error('JSON parsing error:', e);
-            console.error('Cleaned text:', cleanText);
-            throw new Error('Invalid JSON response from server. Check server logs for PHP errors.');
+            data = JSON.parse(cleanText);
+          } catch (parseError) {
+            throw new Error('Unable to parse server response');
           }
+
+          // Check for success and valid data
+          if (!data) {
+            throw new Error('No data received from server');
+          }
+
+          if (data.success === false) {
+            throw new Error(data.message || 'Failed to fetch customer details');
+          }
+
+          if (!data.customer) {
+            throw new Error('Customer data is missing from response');
+          }
+
+          displayCustomerDetails(data.customer);
         })
         .catch(error => {
-          console.error('Error fetching customer details:', error);
-          document.getElementById('customerReviewContent').innerHTML = 
-            `<div style="text-align: center; padding: 20px; color: red;">
-              <p>Error loading customer information:</p>
-              <p style="font-size: 0.9em;">${error.message}</p>
-              <button type="button" class="btn btn-secondary" onclick="closeCustomerReviewModal()">Close</button>
+          const errorMessage = error.message || 'An unexpected error occurred';
+          document.getElementById('customerReviewContent').innerHTML =
+            `<div style="text-align: center; padding: 20px; color: #dc3545;">
+              <p><strong>Error Loading Customer Information</strong></p>
+              <p style="font-size: 0.9em; margin-top: 10px;">${errorMessage}</p>
+              <button type="button" class="btn btn-secondary" style="margin-top: 15px;" onclick="closeCustomerReviewModal()">Close</button>
             </div>`;
         });
     };
 
     function displayCustomerDetails(customer) {
-      console.log('Displaying customer details:', customer);
-      
       const content = `
         <div class="customer-details-card">
           <h4>Account Information</h4>
@@ -1675,37 +1680,47 @@ $accountStats = getAccountStats($connect);
         body: formData
       })
       .then(response => {
-        console.log('Response status:', response.status);
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status}`);
+        }
         return response.text();
       })
       .then(text => {
-        console.log('Raw response:', text);
-        try {
-          const data = JSON.parse(text);
-          if (data.success) {
-            SwalSuccess.fire({
-              title: 'Success!',
-              text: 'Customer has been rejected successfully!'
-            });
-            closeRejectModal();
-            closeCustomerReviewModal();
-            // Refresh the page to update the UI
-            setTimeout(() => location.reload(), 2000);
-          } else {
-            console.error('Response data:', data);
-            throw new Error(data.message || 'Failed to reject customer');
-          }
-        } catch (parseError) {
-          console.error('JSON parse error:', parseError);
-          console.error('Response text:', text);
-          throw new Error('Invalid response from server');
+        // Handle empty response
+        if (!text || !text.trim()) {
+          throw new Error('Empty response received from server');
         }
+
+        // Parse JSON with error handling
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (parseError) {
+          throw new Error('Unable to parse server response');
+        }
+
+        // Validate response
+        if (!data) {
+          throw new Error('No data received from server');
+        }
+
+        if (data.success === false) {
+          throw new Error(data.message || 'Failed to reject customer');
+        }
+
+        SwalSuccess.fire({
+          title: 'Success!',
+          text: 'Customer has been rejected successfully!'
+        });
+        closeRejectModal();
+        closeCustomerReviewModal();
+        setTimeout(() => location.reload(), 2000);
       })
       .catch(error => {
-        console.error('Error rejecting customer:', error);
+        const errorMessage = error.message || 'An unexpected error occurred';
         SwalError.fire({
           title: 'Error!',
-          text: 'Error rejecting customer: ' + error.message
+          text: errorMessage
         });
       })
       .finally(() => {
@@ -1745,35 +1760,45 @@ $accountStats = getAccountStats($connect);
         body: formData
       })
       .then(response => {
-        console.log('Response status:', response.status);
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status}`);
+        }
         return response.text();
       })
       .then(text => {
-        console.log('Raw response:', text);
-        try {
-          const data = JSON.parse(text);
-          if (data.success) {
-            SwalSuccess.fire({
-              title: 'Success!',
-              text: 'Customer approved successfully!'
-            });
-            // Refresh the page to update the UI
-            setTimeout(() => location.reload(), 2000);
-          } else {
-            console.error('Response data:', data);
-            throw new Error(data.message || 'Failed to approve customer');
-          }
-        } catch (parseError) {
-          console.error('JSON parse error:', parseError);
-          console.error('Response text:', text);
-          throw new Error('Invalid response from server');
+        // Handle empty response
+        if (!text || !text.trim()) {
+          throw new Error('Empty response received from server');
         }
+
+        // Parse JSON with error handling
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (parseError) {
+          throw new Error('Unable to parse server response');
+        }
+
+        // Validate response
+        if (!data) {
+          throw new Error('No data received from server');
+        }
+
+        if (data.success === false) {
+          throw new Error(data.message || 'Failed to approve customer');
+        }
+
+        SwalSuccess.fire({
+          title: 'Success!',
+          text: 'Customer approved successfully!'
+        });
+        setTimeout(() => location.reload(), 2000);
       })
       .catch(error => {
-        console.error('Error approving customer:', error);
+        const errorMessage = error.message || 'An unexpected error occurred';
         SwalError.fire({
           title: 'Error!',
-          text: 'Error approving customer: ' + error.message
+          text: errorMessage
         });
       })
       .finally(() => {
@@ -1798,24 +1823,61 @@ $accountStats = getAccountStats($connect);
 
       // Fetch customer details
       fetch(`/Mitsubishi/pages/main/admin_actions.php?action=get_customer_details&cusID=${cusID}`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            displayCustomerDetails(data.customer);
-          } else {
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+          }
+          return response.text();
+        })
+        .then(text => {
+          // Handle empty response
+          if (!text || !text.trim()) {
+            throw new Error('Empty response received from server');
+          }
+
+          // Parse JSON with proper error handling
+          let data;
+          try {
+            // Clean any non-JSON content
+            let cleanText = text.trim();
+            const jsonStart = cleanText.indexOf('{');
+            const jsonEnd = cleanText.lastIndexOf('}') + 1;
+            
+            if (jsonStart !== -1 && jsonEnd > jsonStart) {
+              cleanText = cleanText.substring(jsonStart, jsonEnd);
+            }
+            
+            data = JSON.parse(cleanText);
+          } catch (parseError) {
+            throw new Error('Unable to parse server response');
+          }
+
+          // Validate response data
+          if (!data) {
+            throw new Error('No data received from server');
+          }
+
+          if (data.success === false) {
             throw new Error(data.message || 'Failed to fetch customer details');
           }
+
+          if (!data.customer) {
+            throw new Error('Customer data is missing from response');
+          }
+
+          displayCustomerDetails(data.customer);
         })
         .catch(error => {
-          console.error('Error fetching customer details:', error);
-          document.getElementById('customerReviewContent').innerHTML = 
-            `<div style="text-align: center; padding: 20px; color: red;">
-              <p>Error loading customer information: ${error.message}</p>
-              <button type="button" class="btn btn-secondary" onclick="closeCustomerReviewModal()">Close</button>
+          const errorMessage = error.message || 'An unexpected error occurred';
+          document.getElementById('customerReviewContent').innerHTML =
+            `<div style="text-align: center; padding: 20px; color: #dc3545;">
+              <p><strong>Error Loading Customer Information</strong></p>
+              <p style="font-size: 0.9em; margin-top: 10px;">${errorMessage}</p>
+              <button type="button" class="btn btn-secondary" style="margin-top: 15px;" onclick="closeCustomerReviewModal()">Close</button>
             </div>`;
           SwalError.fire({
             title: 'Error!',
-            text: 'Error loading customer information: ' + error.message
+            text: errorMessage
           });
         });
     };
@@ -1836,31 +1898,61 @@ $accountStats = getAccountStats($connect);
 
       // Fetch account details
       fetch(`/Mitsubishi/pages/main/admin_actions.php?action=get_customer_details&accountId=${accountId}`)
-        .then(response => response.text())
-        .then(text => {
-          console.log('Raw response:', text);
-          try {
-            const data = JSON.parse(text);
-            if (data.success) {
-              displayCustomerDetails(data.customer);
-            } else {
-              throw new Error(data.message || 'Failed to fetch account details');
-            }
-          } catch (parseError) {
-            console.error('JSON parse error:', parseError);
-            throw new Error('Invalid response from server');
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
           }
+          return response.text();
+        })
+        .then(text => {
+          // Handle empty response
+          if (!text || !text.trim()) {
+            throw new Error('Empty response received from server');
+          }
+
+          // Parse JSON with proper error handling
+          let data;
+          try {
+            // Clean any non-JSON content
+            let cleanText = text.trim();
+            const jsonStart = cleanText.indexOf('{');
+            const jsonEnd = cleanText.lastIndexOf('}') + 1;
+            
+            if (jsonStart !== -1 && jsonEnd > jsonStart) {
+              cleanText = cleanText.substring(jsonStart, jsonEnd);
+            }
+            
+            data = JSON.parse(cleanText);
+          } catch (parseError) {
+            throw new Error('Unable to parse server response');
+          }
+
+          // Validate response data
+          if (!data) {
+            throw new Error('No data received from server');
+          }
+
+          if (data.success === false) {
+            throw new Error(data.message || 'Failed to fetch account details');
+          }
+
+          if (!data.customer) {
+            throw new Error('Account data is missing from response');
+          }
+
+          displayCustomerDetails(data.customer);
         })
         .catch(error => {
-          console.error('Error fetching account details:', error);
-          document.getElementById('customerReviewContent').innerHTML = 
-            `<div style="text-align: center; padding: 20px; color: red;">
-              <p>Error loading account information: ${error.message}</p>
-              <button type="button" class="btn btn-secondary" onclick="closeCustomerReviewModal()">Close</button>
+          const errorMessage = error.message || 'An unexpected error occurred';
+          document.getElementById('customerReviewContent').innerHTML =
+            `<div style="text-align: center; padding: 20px; color: #dc3545;">
+              <p><strong>Error Loading Account Information</strong></p>
+              <p style="font-size: 0.9em; margin-top: 10px;">${errorMessage}</p>
+              <button type="button" class="btn btn-secondary" style="margin-top: 15px;" onclick="closeCustomerReviewModal()">Close</button>
             </div>`;
           SwalError.fire({
             title: 'Error!',
-            text: 'Error loading account information: ' + error.message
+            text: errorMessage
           });
         });
     };
@@ -1896,35 +1988,45 @@ $accountStats = getAccountStats($connect);
         body: formData
       })
       .then(response => {
-        console.log('Response status:', response.status);
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status}`);
+        }
         return response.text();
       })
       .then(text => {
-        console.log('Raw response:', text);
-        try {
-          const data = JSON.parse(text);
-          if (data.success) {
-            SwalSuccess.fire({
-              title: 'Success!',
-              text: 'Customer re-approved successfully!'
-            });
-            // Refresh the page to update the UI
-            setTimeout(() => location.reload(), 2000);
-          } else {
-            console.error('Response data:', data);
-            throw new Error(data.message || 'Failed to re-approve customer');
-          }
-        } catch (parseError) {
-          console.error('JSON parse error:', parseError);
-          console.error('Response text:', text);
-          throw new Error('Invalid response from server');
+        // Handle empty response
+        if (!text || !text.trim()) {
+          throw new Error('Empty response received from server');
         }
+
+        // Parse JSON with error handling
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (parseError) {
+          throw new Error('Unable to parse server response');
+        }
+
+        // Validate response
+        if (!data) {
+          throw new Error('No data received from server');
+        }
+
+        if (data.success === false) {
+          throw new Error(data.message || 'Failed to re-approve customer');
+        }
+
+        SwalSuccess.fire({
+          title: 'Success!',
+          text: 'Customer re-approved successfully!'
+        });
+        setTimeout(() => location.reload(), 2000);
       })
       .catch(error => {
-        console.error('Error re-approving customer:', error);
+        const errorMessage = error.message || 'An unexpected error occurred';
         SwalError.fire({
           title: 'Error!',
-          text: 'Error re-approving customer: ' + error.message
+          text: errorMessage
         });
       })
       .finally(() => {
@@ -1933,50 +2035,6 @@ $accountStats = getAccountStats($connect);
       });
     };
 
-    // Function to view account details (for accounts without customer_information)
-    window.viewAccountDetails = function(accountId) {
-      if (!accountId) {
-        SwalError.fire({
-          title: 'Error!',
-          text: 'Invalid account ID'
-        });
-        return;
-      }
-
-      // Show loading in modal
-      document.getElementById('customerReviewContent').innerHTML = '<div style="text-align: center; padding: 20px;"><p>Loading account information...</p></div>';
-      document.getElementById('customerReviewModal').style.display = 'flex';
-
-      // Fetch account details
-      fetch(`/Mitsubishi/pages/main/admin_actions.php?action=get_customer_details&accountId=${accountId}`)
-        .then(response => response.text())
-        .then(text => {
-          console.log('Raw response:', text);
-          try {
-            const data = JSON.parse(text);
-            if (data.success) {
-              displayCustomerDetails(data.customer);
-            } else {
-              throw new Error(data.message || 'Failed to fetch account details');
-            }
-          } catch (parseError) {
-            console.error('JSON parse error:', parseError);
-            throw new Error('Invalid response from server');
-          }
-        })
-        .catch(error => {
-          console.error('Error fetching account details:', error);
-          document.getElementById('customerReviewContent').innerHTML = 
-            `<div style="text-align: center; padding: 20px; color: red;">
-              <p>Error loading account information: ${error.message}</p>
-              <button type="button" class="btn btn-secondary" onclick="closeCustomerReviewModal()">Close</button>
-            </div>`;
-          SwalError.fire({
-            title: 'Error!',
-            text: 'Error loading account information: ' + error.message
-          });
-        });
-    };
 
     // Function to re-approve an account (for accounts without customer_information)
     window.reapproveAccount = function(accountId) {
@@ -2009,35 +2067,45 @@ $accountStats = getAccountStats($connect);
         body: formData
       })
       .then(response => {
-        console.log('Response status:', response.status);
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status}`);
+        }
         return response.text();
       })
       .then(text => {
-        console.log('Raw response:', text);
-        try {
-          const data = JSON.parse(text);
-          if (data.success) {
-            SwalSuccess.fire({
-              title: 'Success!',
-              text: 'Account re-approved successfully!'
-            });
-            // Refresh the page to update the UI
-            setTimeout(() => location.reload(), 2000);
-          } else {
-            console.error('Response data:', data);
-            throw new Error(data.message || 'Failed to re-approve account');
-          }
-        } catch (parseError) {
-          console.error('JSON parse error:', parseError);
-          console.error('Response text:', text);
-          throw new Error('Invalid response from server');
+        // Handle empty response
+        if (!text || !text.trim()) {
+          throw new Error('Empty response received from server');
         }
+
+        // Parse JSON with error handling
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (parseError) {
+          throw new Error('Unable to parse server response');
+        }
+
+        // Validate response
+        if (!data) {
+          throw new Error('No data received from server');
+        }
+
+        if (data.success === false) {
+          throw new Error(data.message || 'Failed to re-approve account');
+        }
+
+        SwalSuccess.fire({
+          title: 'Success!',
+          text: 'Account re-approved successfully!'
+        });
+        setTimeout(() => location.reload(), 2000);
       })
       .catch(error => {
-        console.error('Error re-approving account:', error);
+        const errorMessage = error.message || 'An unexpected error occurred';
         SwalError.fire({
           title: 'Error!',
-          text: 'Error re-approving account: ' + error.message
+          text: errorMessage
         });
       })
       .finally(() => {
@@ -2047,6 +2115,88 @@ $accountStats = getAccountStats($connect);
     };
 
   });
+
+  // Add Vehicle Form Handler
+  document.addEventListener('DOMContentLoaded', function() {
+    const addVehicleForm = document.getElementById('addVehicleForm');
+    
+    if (addVehicleForm) {
+      addVehicleForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Show loading state
+        const submitBtn = addVehicleForm.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding Vehicle...';
+        submitBtn.disabled = true;
+        
+        try {
+          const formData = new FormData(addVehicleForm);
+          
+          const response = await fetch('../../api/vehicles.php', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            SwalSuccess.fire({
+              title: 'Success!',
+              text: result.message || 'Vehicle added successfully!'
+            });
+            
+            // Reset form
+            addVehicleForm.reset();
+            
+            // Optionally reload the page or update the UI
+            setTimeout(() => {
+              location.reload();
+            }, 2000);
+          } else {
+            SwalError.fire({
+              title: 'Error!',
+              text: result.message || 'Failed to add vehicle'
+            });
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          SwalError.fire({
+            title: 'Error!',
+            text: 'An error occurred while adding the vehicle'
+          });
+        } finally {
+          // Restore button state
+          submitBtn.innerHTML = originalText;
+          submitBtn.disabled = false;
+        }
+      });
+      
+      // Clear Form Button Handler
+      const clearFormBtn = document.getElementById('clearFormBtn');
+      if (clearFormBtn) {
+        clearFormBtn.addEventListener('click', function() {
+          if (confirm('Are you sure you want to clear all form data?')) {
+            addVehicleForm.reset();
+          }
+        });
+      }
+      
+      // Save Draft Button Handler (optional functionality)
+      const saveDraftBtn = document.getElementById('saveDraftBtn');
+      if (saveDraftBtn) {
+        saveDraftBtn.addEventListener('click', function() {
+          // You can implement draft saving functionality here
+          SwalSuccess.fire({
+            title: 'Draft Saved!',
+            text: 'Your vehicle draft has been saved locally',
+            timer: 2000
+          });
+        });
+      }
+    }
+  });
+
 </script>
 
 <style>

@@ -4,10 +4,9 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET');
 header('Access-Control-Allow-Headers: Content-Type');
 
-require_once dirname(dirname(__DIR__)) . '/includes/database/db_conn.php';
+require_once dirname(dirname(__DIR__)) . '/includes/init.php';
 
 // Check if user is authenticated
-session_start();
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
@@ -73,7 +72,7 @@ try {
     
     echo json_encode([
         'success' => true,
-        'vehicles' => $vehicles,
+        'data' => $vehicles,
         'count' => count($vehicles)
     ]);
 
@@ -85,47 +84,5 @@ try {
         'message' => 'Failed to fetch vehicles',
         'error' => $e->getMessage()
     ]);
-}
-?>
-        'vehicles' => $vehicles,
-        'count' => count($vehicles)
-    ]);
-
-} catch (Exception $e) {
-    error_log("Error in get_vehicles.php: " . $e->getMessage());
-    http_response_code(500);
-    echo json_encode([
-        'success' => false,
-        'message' => 'Failed to fetch vehicles',
-        'error' => $e->getMessage()
-    ]);
-}
-?>
-        'success' => false,
-        'message' => 'Failed to fetch vehicles'
-    ]);
-}
-
-// Helper function to get placeholder images based on vehicle model
-function getVehicleImageUrl($modelName) {
-    $imageMap = [
-        'Montero Sport' => 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=250&fit=crop&auto=format',
-        'Xpander' => 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&h=250&fit=crop&auto=format',
-        'Strada' => 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=400&h=250&fit=crop&auto=format',
-        'Mirage' => 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400&h=250&fit=crop&auto=format',
-        'Outlander' => 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=400&h=250&fit=crop&auto=format',
-        'Eclipse Cross' => 'https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?w=400&h=250&fit=crop&auto=format',
-        'Pajero' => 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=400&h=250&fit=crop&auto=format',
-        'Lancer' => 'https://images.unsplash.com/photo-1542362567-b07e54358753?w=400&h=250&fit=crop&auto=format'
-    ];
-    
-    foreach ($imageMap as $model => $url) {
-        if (stripos($modelName, $model) !== false) {
-            return $url;
-        }
-    }
-    
-    // Default image if model not found
-    return 'https://images.unsplash.com/photo-1494976525762-fe3452d52f42?w=400&h=250&fit=crop&auto=format';
 }
 ?>

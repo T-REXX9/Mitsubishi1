@@ -93,7 +93,7 @@ try {
     }
     
     body {
-      zoom: 75%;
+      zoom: 80%;
     }
     .page-header {
       display: flex;
@@ -433,7 +433,7 @@ try {
       border-radius: 12px;
       width: 95%;
       max-width: 1300px; /* Increased from 700px */
-      max-height: 800px; /* Increased from 95vh */
+      max-height: 95vh; /* Changed back to 95vh for better responsiveness */
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
       animation: slideIn 0.3s ease-out;
       display: flex;
@@ -469,7 +469,7 @@ try {
     }
 
     .modal-body {
-      max-height: 80vh; /* Increased from 60vh */
+      max-height: calc(95vh - 140px); /* Adjusted to account for header and footer */
       overflow-y: auto;
       flex: 1;
       padding: 25px;
@@ -483,8 +483,7 @@ try {
       gap: 10px;
       flex-shrink: 0;
       background: white;
-      position: sticky;
-      bottom: 0;
+      border-radius: 0 0 12px 12px;
     }
 
     /* Button Styles */
@@ -637,6 +636,27 @@ try {
 
     .info-value {
       color: var(--text-light);
+    }
+
+    /* Responsive modal adjustments */
+    @media (max-height: 768px) {
+      .modal {
+        max-height: 90vh;
+      }
+      
+      .modal-body {
+        max-height: calc(90vh - 140px);
+      }
+    }
+
+    @media (max-height: 600px) {
+      .modal {
+        max-height: 85vh;
+      }
+      
+      .modal-body {
+        max-height: calc(85vh - 140px);
+      }
     }
 
     /* Fix SweetAlert positioning */

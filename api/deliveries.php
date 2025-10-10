@@ -207,20 +207,14 @@ function createDelivery($pdo) {
         return;
     }
 
-    // Check if vehicle exists and has sufficient stock
-    $vehicleStmt = $pdo->prepare("SELECT stock_quantity, model_name, variant FROM vehicles WHERE id = ?");
+    // Inbound deliveries: just verify vehicle exists (no stock sufficiency check)
+    $vehicleStmt = $pdo->prepare("SELECT id FROM vehicles WHERE id = ?");
     $vehicleStmt->execute([$input['vehicle_id']]);
     $vehicle = $vehicleStmt->fetch(PDO::FETCH_ASSOC);
-    
+
     if (!$vehicle) {
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'Vehicle not found']);
-        return;
-    }
-
-    if ($vehicle['stock_quantity'] < (int)$input['units_delivered']) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => "Insufficient stock. Available: {$vehicle['stock_quantity']} units"]);
         return;
     }
 
@@ -251,10 +245,10 @@ function createDelivery($pdo) {
 
         $deliveryId = $pdo->lastInsertId();
 
-        // Update vehicle stock (reduce by delivered units)
-        $updateStockSql = "UPDATE vehicles SET stock_quantity = stock_quantity - ? WHERE id = ?";
+        // Inbound: increase vehicle stock by delivered units
+        $updateStockSql = "UPDATE vehicles SET stock_quantity = stock_quantity + ? WHERE id = ?";
         $updateStockStmt = $pdo->prepare($updateStockSql);
-        $stockUpdateSuccess = $updateStockStmt->execute([$input['units_delivered'], $input['vehicle_id']]);
+        $stockUpdateSuccess = $updateStockStmt->execute([(int)$input['units_delivered'], $input['vehicle_id']]);
 
         if (!$stockUpdateSuccess) {
             throw new Exception('Failed to update vehicle stock');
@@ -308,55 +302,34 @@ function updateDelivery($pdo) {
             return;
         }
 
-        // Check vehicle stock if vehicle changed or units increased
-        $vehicleChanged = $originalDelivery['vehicle_id'] != $input['vehicle_id'];
-        $unitsChanged = $originalDelivery['units_delivered'] != $input['units_delivered'];
-        
-        if ($vehicleChanged || $unitsChanged) {
-            // Check new vehicle stock
-            $vehicleStmt = $pdo->prepare("SELECT stock_quantity, model_name, variant FROM vehicles WHERE id = ?");
-            $vehicleStmt->execute([$input['vehicle_id']]);
-            $vehicle = $vehicleStmt->fetch(PDO::FETCH_ASSOC);
-            
-            if (!$vehicle) {
-                http_response_code(400);
-                echo json_encode(['success' => false, 'message' => 'Vehicle not found']);
-                return;
-            }
+        $oldVehicleId = (int)$originalDelivery['vehicle_id'];
+        $oldUnits = (int)$originalDelivery['units_delivered'];
+        $newVehicleId = (int)$input['vehicle_id'];
+        $newUnits = (int)$input['units_delivered'];
 
-            // Calculate required stock (considering we'll return original units)
-            $currentAvailable = $vehicle['stock_quantity'];
-            if ($originalDelivery['vehicle_id'] == $input['vehicle_id']) {
-                // Same vehicle, add back original units
-                $currentAvailable += $originalDelivery['units_delivered'];
-            }
-            
-            if ($currentAvailable < (int)$input['units_delivered']) {
-                http_response_code(400);
-                echo json_encode(['success' => false, 'message' => "Insufficient stock. Available: {$currentAvailable} units"]);
-                return;
-            }
+        // Inbound adjustment: previous record increased stock. Updating should reverse old effect then apply new effect.
+        if ($newVehicleId !== $oldVehicleId) {
+            // Revert from old vehicle
+            $revertOldSql = "UPDATE vehicles SET stock_quantity = stock_quantity - ? WHERE id = ?";
+            $revertOldStmt = $pdo->prepare($revertOldSql);
+            $revertOldStmt->execute([$oldUnits, $oldVehicleId]);
 
-            // Restore stock to original vehicle if it changed
-            if ($vehicleChanged) {
-                $restoreStockSql = "UPDATE vehicles SET stock_quantity = stock_quantity + ? WHERE id = ?";
-                $restoreStockStmt = $pdo->prepare($restoreStockSql);
-                $restoreStockStmt->execute([$originalDelivery['units_delivered'], $originalDelivery['vehicle_id']]);
-            } else {
-                // Same vehicle, just restore original units
-                $restoreStockSql = "UPDATE vehicles SET stock_quantity = stock_quantity + ? WHERE id = ?";
-                $restoreStockStmt = $pdo->prepare($restoreStockSql);
-                $restoreStockStmt->execute([$originalDelivery['units_delivered'], $originalDelivery['vehicle_id']]);
+            // Apply to new vehicle
+            $applyNewSql = "UPDATE vehicles SET stock_quantity = stock_quantity + ? WHERE id = ?";
+            $applyNewStmt = $pdo->prepare($applyNewSql);
+            $applyNewStmt->execute([$newUnits, $newVehicleId]);
+        } else {
+            // Same vehicle: adjust by delta
+            $delta = $newUnits - $oldUnits;
+            if ($delta !== 0) {
+                $adjustSql = "UPDATE vehicles SET stock_quantity = stock_quantity + ? WHERE id = ?";
+                $adjustStmt = $pdo->prepare($adjustSql);
+                $adjustStmt->execute([$delta, $newVehicleId]);
             }
-
-            // Deduct new units from target vehicle
-            $deductStockSql = "UPDATE vehicles SET stock_quantity = stock_quantity - ? WHERE id = ?";
-            $deductStockStmt = $pdo->prepare($deductStockSql);
-            $deductStockStmt->execute([$input['units_delivered'], $input['vehicle_id']]);
         }
 
         // Calculate total value
-        $totalValue = (float)$input['units_delivered'] * (float)$input['unit_price'];
+        $totalValue = (float)$newUnits * (float)$input['unit_price'];
 
         // Only update fields that exist in the actual table schema
         $sql = "UPDATE deliveries SET delivery_date = ?, vehicle_id = ?, model_name = ?, variant = ?, 
@@ -366,10 +339,10 @@ function updateDelivery($pdo) {
         $stmt = $pdo->prepare($sql);
         $success = $stmt->execute([
             $input['delivery_date'],
-            $input['vehicle_id'],
+            $newVehicleId,
             $input['model_name'],
             $input['variant'],
-            $input['units_delivered'],
+            $newUnits,
             $input['unit_price'],
             $totalValue,
             $input['id']
@@ -421,14 +394,14 @@ function deleteDelivery($pdo) {
             throw new Exception('Failed to delete delivery record');
         }
 
-        // Restore stock to vehicle (add back the delivered units)
+        // Inbound: reverse the previous stock increase by subtracting the units
         if ($delivery['vehicle_id']) {
-            $restoreStockSql = "UPDATE vehicles SET stock_quantity = stock_quantity + ? WHERE id = ?";
-            $restoreStockStmt = $pdo->prepare($restoreStockSql);
-            $stockRestoreSuccess = $restoreStockStmt->execute([$delivery['units_delivered'], $delivery['vehicle_id']]);
+            $reverseStockSql = "UPDATE vehicles SET stock_quantity = stock_quantity - ? WHERE id = ?";
+            $reverseStockStmt = $pdo->prepare($reverseStockSql);
+            $stockReverseSuccess = $reverseStockStmt->execute([(int)$delivery['units_delivered'], (int)$delivery['vehicle_id']]);
             
-            if (!$stockRestoreSuccess) {
-                throw new Exception('Failed to restore vehicle stock');
+            if (!$stockReverseSuccess) {
+                throw new Exception('Failed to update vehicle stock');
             }
         }
 

@@ -246,6 +246,18 @@ $interest_rates = [
 			transition: all 0.3s ease;
 		}
 
+		.form-select option {
+			background: #ffffff;
+			color: #1a1a1a;
+			padding: 8px 12px;
+			font-size: 1rem;
+		}
+
+		.form-select option:hover {
+			background: #f0f0f0;
+			color: #000000;
+		}
+
 		.form-input:focus, .form-select:focus, .form-textarea:focus {
 			outline: none;
 			border-color: #ffd700;
@@ -466,7 +478,7 @@ $interest_rates = [
 <body>
 	<header class="header">
 		<div class="logo-section">
-			<img src="../includes/images/Mitsubishi_logo.png" alt="Mitsubishi Logo" class="logo">
+			<img src="../includes/images/mitsubishi_logo.png" alt="Mitsubishi Logo" class="logo">
 			<div class="brand-text">MITSUBISHI MOTORS</div>
 		</div>
 		<div class="user-section">
@@ -743,7 +755,7 @@ $interest_rates = [
 				<!-- Always Required Documents -->
 				<div class="form-group">
 					<label class="form-label">Valid ID <span class="required">*</span></label>
-					<input type="file" name="valid_id" class="form-file" accept=".pdf,.jpg,.jpeg,.png" required>
+					<input type="file" name="valid_id" class="form-file" accept=".pdf,.jpg,.jpeg,.png">
 					<small class="form-help">Upload a clear copy of your valid government-issued ID</small>
 				</div>
 
@@ -751,19 +763,19 @@ $interest_rates = [
 				<!-- Employed Required Documents -->
 				<div class="form-group">
 					<label class="form-label">Certificate of Employment with Compensation (COEC) / Latest Payslip <span class="required">*</span></label>
-					<input type="file" name="coec_payslip" class="form-file" accept=".pdf,.jpg,.jpeg,.png" required>
+					<input type="file" name="coec_payslip" class="form-file" accept=".pdf,.jpg,.jpeg,.png">
 					<small class="form-help">Certificate of Employment with Compensation or latest payslip</small>
 				</div>
 
 				<div class="form-group">
 					<label class="form-label">ITR / BIR Form 2316 <span class="required">*</span></label>
-					<input type="file" name="itr_2316" class="form-file" accept=".pdf,.jpg,.jpeg,.png" required>
+					<input type="file" name="itr_2316" class="form-file" accept=".pdf,.jpg,.jpeg,.png">
 					<small class="form-help">Income Tax Return or BIR Form 2316</small>
 				</div>
 
 				<div class="form-group">
 					<label class="form-label">Proof of Billing <span class="required">*</span></label>
-					<input type="file" name="proof_billing" class="form-file" accept=".pdf,.jpg,.jpeg,.png" required>
+					<input type="file" name="proof_billing" class="form-file" accept=".pdf,.jpg,.jpeg,.png">
 					<small class="form-help">Recent utility bill or billing statement</small>
 				</div>
 
@@ -796,25 +808,25 @@ $interest_rates = [
 				<!-- Business Required Documents -->
 				<div class="form-group">
 					<label class="form-label">Bank Statement <span class="required">*</span></label>
-					<input type="file" name="bank_statement" class="form-file" accept=".pdf,.jpg,.jpeg,.png" required>
+					<input type="file" name="bank_statement" class="form-file" accept=".pdf,.jpg,.jpeg,.png">
 					<small class="form-help">Latest 3-6 months bank statement</small>
 				</div>
 
 				<div class="form-group">
 					<label class="form-label">ITR / BIR Form 1701 <span class="required">*</span></label>
-					<input type="file" name="itr_1701" class="form-file" accept=".pdf,.jpg,.jpeg,.png" required>
+					<input type="file" name="itr_1701" class="form-file" accept=".pdf,.jpg,.jpeg,.png">
 					<small class="form-help">Income Tax Return or BIR Form 1701</small>
 				</div>
 
 				<div class="form-group">
 					<label class="form-label">DTI Permit / Business Registration <span class="required">*</span></label>
-					<input type="file" name="dti_permit" class="form-file" accept=".pdf,.jpg,.jpeg,.png" required>
+					<input type="file" name="dti_permit" class="form-file" accept=".pdf,.jpg,.jpeg,.png">
 					<small class="form-help">DTI permit or business registration documents</small>
 				</div>
 
 				<div class="form-group">
 					<label class="form-label">Proof of Billing <span class="required">*</span></label>
-					<input type="file" name="proof_billing" class="form-file" accept=".pdf,.jpg,.jpeg,.png" required>
+					<input type="file" name="proof_billing" class="form-file" accept=".pdf,.jpg,.jpeg,.png">
 					<small class="form-help">Recent utility bill or billing statement</small>
 				</div>
 
@@ -829,25 +841,25 @@ $interest_rates = [
 				<!-- OFW Required Documents -->
 				<div class="form-group">
 					<label class="form-label">Proof of Remittance <span class="required">*</span></label>
-					<input type="file" name="proof_remittance" class="form-file" accept=".pdf,.jpg,.jpeg,.png" required>
+					<input type="file" name="proof_remittance" class="form-file" accept=".pdf,.jpg,.jpeg,.png">
 					<small class="form-help">Bank remittance records or money transfer receipts</small>
 				</div>
 
 				<div class="form-group">
 					<label class="form-label">Latest Employment Contract <span class="required">*</span></label>
-					<input type="file" name="latest_contract" class="form-file" accept=".pdf,.jpg,.jpeg,.png" required>
+					<input type="file" name="latest_contract" class="form-file" accept=".pdf,.jpg,.jpeg,.png">
 					<small class="form-help">Current overseas employment contract</small>
 				</div>
 
 				<div class="form-group">
 					<label class="form-label">Special Power of Attorney (SPA) <span class="required">*</span></label>
-					<input type="file" name="spa" class="form-file" accept=".pdf,.jpg,.jpeg,.png" required>
+					<input type="file" name="spa" class="form-file" accept=".pdf,.jpg,.jpeg,.png">
 					<small class="form-help">Notarized Special Power of Attorney</small>
 				</div>
 
 				<div class="form-group">
 					<label class="form-label">Proof of Billing <span class="required">*</span></label>
-					<input type="file" name="proof_billing" class="form-file" accept=".pdf,.jpg,.jpeg,.png" required>
+					<input type="file" name="proof_billing" class="form-file" accept=".pdf,.jpg,.jpeg,.png">
 					<small class="form-help">Recent utility bill or billing statement</small>
 				</div>
 
@@ -1049,34 +1061,8 @@ $interest_rates = [
 				return;
 			}
 
-			// Validate required file uploads
-			const requiredFiles = this.querySelectorAll('input[type="file"][required]');
-			let missingFiles = [];
-			
-			console.log('📁 File upload validation started, required files count:', requiredFiles.length);
-			
-			requiredFiles.forEach((fileInput, index) => {
-				const hasFiles = fileInput.files && fileInput.files.length > 0;
-				const label = fileInput.closest('.form-group').querySelector('label').textContent.replace(' *', '');
-				
-				console.log(`📄 File ${index + 1} (${label}):`, {
-					hasFiles: hasFiles,
-					fileCount: fileInput.files ? fileInput.files.length : 0,
-					fileName: hasFiles ? fileInput.files[0].name : 'No file'
-				});
-				
-				if (!hasFiles) {
-					missingFiles.push(label);
-				}
-			});
-			
-			if (missingFiles.length > 0) {
-				console.error('❌ File validation failed, missing files:', missingFiles);
-				alert('Please upload the following required documents:\n\n' + missingFiles.join('\n'));
-				return;
-			}
-			
-			console.log('✅ All validations passed');
+			// Skipping client-side document requirement validation to allow submission without all documents
+			console.log('📁 Skipping document upload requirement validation by design.');
 
 			// Collect form data
 			const formData = new FormData(this);
@@ -1208,9 +1194,27 @@ $interest_rates = [
 				
 				if (data.success) {
 					console.log('🎉 Application submitted successfully:', data.application_id);
-					alert('Loan application submitted successfully! Application ID: ' + data.application_id);
-					// Redirect to applications page or dashboard
-					window.location.href = '../pages/main/loan-applications.php';
+					// Show success toast instead of alert, then redirect shortly
+					(function() {
+						const toast = document.createElement('div');
+						toast.textContent = 'Loan application submitted successfully! Application ID: ' + data.application_id;
+						toast.style.position = 'fixed';
+						toast.style.top = '20px';
+						toast.style.right = '20px';
+						toast.style.backgroundColor = '#28a745';
+						toast.style.color = 'white';
+						toast.style.padding = '10px 15px';
+						toast.style.borderRadius = '4px';
+						toast.style.zIndex = '10000';
+						toast.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+						document.body.appendChild(toast);
+						const redirectUrl = 'my_inquiries.php#loans';
+						console.log('🔔 Showing toast and redirecting shortly to:', redirectUrl);
+						setTimeout(() => {
+							if (toast.parentNode) toast.parentNode.removeChild(toast);
+							window.location.href = redirectUrl;
+						}, 5000);
+					})();
 				} else {
 					console.error('❌ Application submission failed:', data.message);
 					alert('Error submitting application: ' + (data.message || 'Unknown error'));

@@ -44,7 +44,7 @@ if (!in_array($_SESSION['user_role'], ['Customer', 'SalesAgent', 'Admin'])) {
     }
     
     body {
-      zoom: 75%;
+      zoom: 80%;
     }
     .page-header {
       display: flex;

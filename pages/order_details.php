@@ -693,7 +693,7 @@ if (!$customerProfile) {
 <body>
     <header class="header">
         <div class="logo-section">
-            <img src="../includes/images/Mitsubishi_logo.png" alt="Mitsubishi Logo" class="logo">
+            <img src="../includes/images/mitsubishi_logo.png" alt="Mitsubishi Logo" class="logo">
             <div class="brand-text">MITSUBISHI MOTORS</div>
         </div>
         <div class="user-section">

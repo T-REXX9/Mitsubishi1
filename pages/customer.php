@@ -34,6 +34,36 @@ try {
     error_log("Database error (unread inquiries): " . $e->getMessage());
     $unread_count = 0;
 }
+
+// Fetch latest approved test drive with a gate pass number for this customer
+$latest_gatepass = null;
+try {
+    $stmt_gp = $connect->prepare(
+        "SELECT tdr.id, tdr.gate_pass_number, tdr.selected_date, tdr.selected_time_slot, tdr.status, v.model_name, v.variant
+         FROM test_drive_requests tdr
+         LEFT JOIN vehicles v ON v.id = tdr.vehicle_id
+         WHERE tdr.account_id = ?
+           AND tdr.status = 'Approved'
+           AND tdr.gate_pass_number IS NOT NULL AND tdr.gate_pass_number <> ''
+         ORDER BY tdr.approved_at DESC, tdr.requested_at DESC
+         LIMIT 1"
+    );
+    $stmt_gp->execute([$_SESSION['user_id']]);
+    $gatepass_result = $stmt_gp->fetch(PDO::FETCH_ASSOC);
+    
+    // Check if the gatepass is not expired (scheduled date is today or in the future)
+    if ($gatepass_result && !empty($gatepass_result['selected_date'])) {
+        $scheduled_date = $gatepass_result['selected_date'];
+        $today = date('Y-m-d');
+        
+        // Only show gatepass if the scheduled date is today or in the future
+        if ($scheduled_date >= $today) {
+            $latest_gatepass = $gatepass_result;
+        }
+    }
+} catch (PDOException $e) {
+    error_log("Gatepass fetch error: " . $e->getMessage());
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -42,58 +72,99 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Customer Dashboard - Mitsubishi Motors</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/customer-admin-styles.css" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
+        /* Override specific styles for dashboard cards while maintaining admin consistency */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
             padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', 'Segoe UI', sans-serif;
+            box-shadow: var(--shadow-light);
+            border: 2px solid transparent;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
         }
 
-        body {
-            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 25%, #2d1b1b 50%, #8b0000 75%, #b80000 100%);
-            min-height: 100vh;
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-medium);
+            border-color: var(--primary-red);
+        }
+
+        .card-header {
+            background: #808080;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            margin: 0;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .card-icon {
+            font-size: 2rem;
             color: white;
-            overflow-x: hidden;
+            margin: 0;
         }
 
-        /* Animated background particles */
-        .bg-particles {
-            position: fixed;
-            top: 0;
-            left: 0;
+        .card-content {
+            padding: 20px;
+        }
+
+        .card h3 {
+            color: var(--text-dark);
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .card p {
+            line-height: 1.8;
+            margin-bottom: 25px;
+            color: var(--text-light);
+            font-weight: 400;
+        }
+
+        .card-btn {
+            background: var(--primary-red);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
             width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 0;
+            transition: var(--transition);
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
 
-        .particle {
-            position: absolute;
-            background: rgba(255, 215, 0, 0.1);
-            border-radius: 50%;
-            animation: float 6s ease-in-out infinite;
+        .card-btn:hover {
+            background: #CC0000;
+            transform: translateY(-2px);
         }
 
-        .particle:nth-child(1) { width: 20px; height: 20px; top: 20%; left: 20%; animation-delay: 0s; }
-        .particle:nth-child(2) { width: 15px; height: 15px; top: 60%; left: 80%; animation-delay: 2s; }
-        .particle:nth-child(3) { width: 25px; height: 25px; top: 80%; left: 30%; animation-delay: 4s; }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.1; }
-            50% { transform: translateY(-20px) rotate(180deg); opacity: 0.3; }
-        }
-
+        /* Header styling to match admin */
         .header {
-            background: rgba(0, 0, 0, 0.4);
-            padding: 20px 30px;
+            background: white;
+            padding: 0 30px;
+            height: 80px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
-            position: relative;
-            z-index: 10;
+            box-shadow: var(--shadow-light);
+            border-bottom: 3px solid var(--primary-red);
         }
 
         .logo-section {
@@ -105,179 +176,94 @@ try {
         .logo {
             width: 60px;
             height: auto;
-            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));
         }
 
         .brand-text {
             font-size: 1.4rem;
             font-weight: 700;
-            background: linear-gradient(45deg, #ffd700, #ffed4e);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--primary-red);
         }
 
         .user-section {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
         }
 
         .user-avatar {
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            background: var(--primary-red);
             display: flex;
             align-items: center;
             justify-content: center;
+            color: white;
             font-weight: bold;
-            color: #b80000;
             font-size: 1.2rem;
         }
 
         .welcome-text {
             font-size: 1rem;
             font-weight: 500;
+            color: var(--text-dark);
         }
 
         .logout-btn {
-            background: linear-gradient(45deg, #d60000, #b30000);
+            background: var(--primary-red);
             color: white;
             border: none;
             padding: 12px 24px;
-            border-radius: 25px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 0.9rem;
             font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(214, 0, 0, 0.3);
+            transition: var(--transition);
         }
 
         .logout-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(214, 0, 0, 0.5);
+            background: #CC0000;
+            transform: translateY(-1px);
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 50px 30px;
-            position: relative;
-            z-index: 5;
+            padding: 40px 30px;
         }
 
         .hero-section {
             text-align: center;
             margin-bottom: 50px;
-            position: relative;
         }
 
         .hero-section h1 {
-            font-size: 3.5rem;
+            font-size: 2.5rem;
             margin-bottom: 20px;
-            background: linear-gradient(45deg, #ffd700, #ffed4e, #fff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-weight: 800;
-            text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+            color: var(--text-dark);
+            font-weight: 700;
         }
 
         .hero-section p {
-            font-size: 1.3rem;
-            opacity: 0.9;
-            font-weight: 300;
-            letter-spacing: 0.5px;
+            font-size: 1.1rem;
+            color: var(--text-light);
+            font-weight: 400;
         }
 
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 30px;
-            margin-top: 40px;
+        /* Remove old background and particle animations */
+        body {
+            background: var(--primary-light);
+            color: var(--text-dark);
         }
 
-        .card {
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 20px;
-            padding: 35px;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 215, 0, 0.1);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.1), transparent);
-            transition: all 0.6s;
-        }
-
-        .card:hover::before {
-            left: 100%;
-        }
-
-        .card:hover {
-            transform: translateY(-10px) scale(1.02);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-            border-color: rgba(255, 215, 0, 0.3);
-        }
-
-        .card-icon {
-            font-size: 3rem;
-            color: #ffd700;
-            margin-bottom: 20px;
-            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-        }
-
-        .card h3 {
-            color: #ffd700;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-
-        .card p {
-            line-height: 1.8;
-            margin-bottom: 25px;
-            opacity: 0.9;
-            font-weight: 300;
-        }
-
-        .card-btn {
-            background: linear-gradient(45deg, #ffd700, #ffed4e);
-            color: #1a1a1a;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 15px;
-            cursor: pointer;
-            font-weight: 700;
-            width: 100%;
-            transition: all 0.3s ease;
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
-        }
-
-        .card-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5);
-            background: linear-gradient(45deg, #ffed4e, #fff);
+        .bg-particles {
+            display: none;
         }
 
         /* Animation on page load */
         .card {
             opacity: 0;
-            transform: translateY(50px);
+            transform: translateY(30px);
             animation: slideUp 0.6s ease forwards;
         }
 
@@ -287,7 +273,6 @@ try {
         .card:nth-child(4) { animation-delay: 0.4s; }
         .card:nth-child(5) { animation-delay: 0.5s; }
         .card:nth-child(6) { animation-delay: 0.6s; }
-        .card:nth-child(7) { animation-delay: 0.7s; }
 
         @keyframes slideUp {
             to {
@@ -296,210 +281,49 @@ try {
             }
         }
 
-        /* Custom Scrollbar Styles */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255, 215, 0, 0.3);
-            border-radius: 4px;
-            transition: all 0.3s ease;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 215, 0, 0.5);
-        }
-        ::-webkit-scrollbar-corner {
-            background: rgba(255, 255, 255, 0.05);
+        /* Badge styling */
+        .badge {
+            background: var(--primary-red);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            position: absolute;
+            top: -5px;
+            right: -5px;
         }
 
-        /* Firefox Scrollbar */
-        * {
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255, 215, 0, 0.3) rgba(255, 255, 255, 0.05);
-        }
-
-        /* Extra Small Devices (max-width: 575px) */
-        @media (max-width: 575px) {
+        /* Responsive design */
+        @media (max-width: 768px) {
             .header {
-                padding: 15px 20px;
-                flex-direction: column;
-                gap: 12px;
+                padding: 0 15px;
+                height: 60px;
             }
-
-            .logo {
-                width: 45px;
-            }
-
-            .brand-text {
-                font-size: 1.1rem;
-            }
-
-            .user-section {
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
-            }
-
-            .user-avatar {
-                width: 35px;
-                height: 35px;
-                font-size: 1rem;
-            }
-
-            .welcome-text {
-                font-size: 0.85rem;
-            }
-
-            .logout-btn {
-                padding: 8px 16px;
-                font-size: 0.75rem;
-            }
-
+            
             .container {
-                padding: 25px 15px;
+                padding: 20px 15px;
             }
-
-            .hero-section h1 {
-                font-size: 2rem;
-            }
-
-            .hero-section p {
-                font-size: 0.9rem;
-            }
-
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-
-            .card {
-                padding: 20px;
-            }
-
-            .card-icon {
-                font-size: 2.2rem;
-            }
-
-            .card h3 {
-                font-size: 1.1rem;
-            }
-
-            .card p {
-                font-size: 0.85rem;
-            }
-
-            .card-btn {
-                padding: 12px 20px;
-                font-size: 0.85rem;
-            }
-        }
-
-        /* Small Devices (min-width: 576px) and (max-width: 767px) */
-        @media (min-width: 576px) and (max-width: 767px) {
-            .header {
-                padding: 18px 25px;
-            }
-
-            .logo {
-                width: 50px;
-            }
-
-            .brand-text {
-                font-size: 1.2rem;
-            }
-
-            .container {
-                padding: 35px 20px;
-            }
-
-            .hero-section h1 {
-                font-size: 2.5rem;
-            }
-
-            .hero-section p {
-                font-size: 1.1rem;
-            }
-
+            
             .dashboard-grid {
                 grid-template-columns: 1fr;
                 gap: 20px;
             }
-
-            .card {
-                padding: 25px;
-            }
-
-            .card-icon {
-                font-size: 2.5rem;
-            }
-
-            .card h3 {
-                font-size: 1.3rem;
-            }
-        }
-
-        /* Medium Devices (min-width: 768px) and (max-width: 991px) */
-        @media (min-width: 768px) and (max-width: 991px) {
-            .container {
-                padding: 40px 25px;
-            }
-
+            
             .hero-section h1 {
-                font-size: 3rem;
-            }
-
-            .hero-section p {
-                font-size: 1.2rem;
-            }
-
-            .dashboard-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 25px;
-            }
-
-            .card {
-                padding: 30px;
-            }
-
-            .card-icon {
-                font-size: 2.8rem;
-            }
-
-            .card h3 {
-                font-size: 1.4rem;
-            }
-        }
-
-        /* Large Devices (min-width: 992px) and (max-width: 1199px) */
-        @media (min-width: 992px) and (max-width: 1199px) {
-            .dashboard-grid {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 25px;
-            }
-        }
-
-        /* Extra Large Devices (min-width: 1200px) */
-        @media (min-width: 1200px) {
-            .dashboard-grid {
-                grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-                gap: 30px;
+                font-size: 2rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="bg-particles">
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-    </div>
-
-    <header class="header">
+    <!-- Remove bg-particles div -->
+    
+    <div class="header">
         <div class="logo-section">
             <img src="../includes/images/mitsubishi_logo.png" alt="Mitsubishi Logo" class="logo">
             <div class="brand-text">MITSUBISHI MOTORS</div>
@@ -513,7 +337,7 @@ try {
                 <i class="fas fa-sign-out-alt"></i> Logout
             </button>
         </div>
-    </header>
+    </div>
 
     <div class="container">
         <div class="hero-section">
@@ -522,115 +346,195 @@ try {
         </div>
 
         <div class="dashboard-grid">
+            <?php if (!empty($latest_gatepass)): ?>
             <div class="card">
-                <div class="card-icon">
-                    <i class="fas fa-car"></i>
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-id-badge"></i>
+                    </div>
                 </div>
-                <h3>Car Menu</h3>
-                <p>Browse car categories and view available models like Xpander, Mirage, and Triton. Select your preferred vehicle for a quote, test drive, or inquiry.</p>
-                <button class="card-btn" onclick="window.location.href='car_menu.php'">
-                    <i class="fas fa-search"></i> Explore Cars
-                </button>
+                <div class="card-content">
+                    <h3>Test Drive Gatepass</h3>
+                    <p>
+                        <?php
+                        $vehicleLabel = '';
+                        if (!empty($latest_gatepass['model_name'])) {
+                            $vehicleLabel = $latest_gatepass['model_name'] . (!empty($latest_gatepass['variant']) ? ' (' . $latest_gatepass['variant'] . ')' : '');
+                            echo 'Vehicle: ' . htmlspecialchars($vehicleLabel) . '<br />';
+                        }
+                        $dateText = !empty($latest_gatepass['selected_date']) ? date('F j, Y', strtotime($latest_gatepass['selected_date'])) : 'Date not set';
+                        $timeRaw = $latest_gatepass['selected_time_slot'] ?? '';
+                        if (!empty($timeRaw)) {
+                            if (strpos($timeRaw, '-') === false) {
+                                $t = strtotime($timeRaw);
+                                $timeText = $t ? date('g:i A', $t) : $timeRaw;
+                            } else {
+                                $timeText = $timeRaw;
+                            }
+                        } else {
+                            $timeText = 'Time not set';
+                        }
+                        echo 'Scheduled for ' . htmlspecialchars($dateText) . ' at ' . htmlspecialchars($timeText);
+                        ?>
+                    </p>
+                    <p><strong style="color: black;">Gatepass Number:</strong> <?php echo htmlspecialchars($latest_gatepass['gate_pass_number']); ?></p>
+                    <div style="display:flex; gap:10px;">
+                        <button class="card-btn" onclick="window.open('test_drive_pdf.php?request_id=<?php echo $latest_gatepass['id']; ?>','_blank')">
+                            <i class="fas fa-print"></i> Print Gatepass
+                        </button>
+                        <button class="card-btn" style="background:linear-gradient(45deg,#ccc,#eee); color: black;" onclick="window.location.href='test_drive_success.php?request_id=<?php echo $latest_gatepass['id']; ?>'">
+                            <i class="fas fa-eye"></i> View Details
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-car"></i>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <h3>Car Menu</h3>
+                    <p>Browse car categories and view available models like Xpander, Mirage, and Triton. Select your preferred vehicle for a quote, test drive, or inquiry.</p>
+                    <button class="card-btn" onclick="window.location.href='car_menu.php'">
+                        <i class="fas fa-search"></i> Explore Cars
+                    </button>
+                </div>
             </div>
 
             <div class="card">
-                <div class="card-icon">
-                    <i class="fas fa-edit"></i>
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-edit"></i>
+                    </div>
                 </div>
-                <h3>Submit Inquiry</h3>
-                <p>Have questions about a specific vehicle? Submit an inquiry and our sales team will get back to you with detailed information.</p>
-                <button class="card-btn" onclick="window.location.href='inquiry.php'">
-                    <i class="fas fa-paper-plane"></i> Submit Inquiry
-                </button>
+                <div class="card-content">
+                    <h3>Submit Inquiry</h3>
+                    <p>Have questions about a specific vehicle? Submit an inquiry and our sales team will get back to you with detailed information.</p>
+                    <button class="card-btn" onclick="window.location.href='inquiry.php'">
+                        <i class="fas fa-paper-plane"></i> Submit Inquiry
+                    </button>
+                </div>
             </div>
 
             <div class="card">
-                <div class="card-icon">
-                    <i class="fas fa-headset"></i>
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-headset"></i>
+                    </div>
                 </div>
-                <h3>Chat Support</h3>
-                <p>Ask questions about cars and talk directly with agents. If an agent is not available, a chatbot is there to assist you.</p>
-                <button class="card-btn" onclick="window.location.href='chat_support.php'">
-                    <i class="fas fa-comments"></i> Open Chat
-                </button>
+                <div class="card-content">
+                    <h3>Chat Support</h3>
+                    <p>Ask questions about cars and talk directly with agents. If an agent is not available, a chatbot is there to assist you.</p>
+                    <button class="card-btn" onclick="window.location.href='chat_support.php'">
+                        <i class="fas fa-comments"></i> Open Chat
+                    </button>
+                </div>
             </div>
 
             <div class="card">
-                <div class="card-icon">
-                    <i class="fas fa-question-circle"></i>
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
                 </div>
-                <h3>My Inquiries
-                    <?php if (!empty($unread_count) && (int)$unread_count > 0): ?>
-                        <span style="background: #ffd700; color: #1a1a1a; font-size: 0.8rem; padding: 2px 8px; border-radius: 12px; margin-left: 8px;">
-                            <?php echo (int)$unread_count; ?>
-                        </span>
-                    <?php endif; ?>
-                </h3>
-                <p>Track your vehicle inquiries and view responses from our sales team.
-                    <?php if (!empty($unread_count) && (int)$unread_count > 0): ?>
-                        <strong style="color: #ffc107;"><?php echo (int)$unread_count; ?> unread inquiry(ies).</strong>
-                    <?php else: ?>
-                        <strong style="color: #28a745;">You're all caught up. No unread inquiries.</strong>
-                    <?php endif; ?>
-                </p>
-                <button class="card-btn" onclick="window.location.href='my_inquiries.php'">
-                    <i class="fas fa-search"></i> View My Inquiries
-                </button>
+                <div class="card-content">
+                    <h3>My Inquiries
+                        <?php if (!empty($unread_count) && (int)$unread_count > 0): ?>
+                            <span style="background: #ffd700; color: #1a1a1a; font-size: 0.8rem; padding: 2px 8px; border-radius: 12px; margin-left: 8px;">
+                                <?php echo (int)$unread_count; ?>
+                            </span>
+                        <?php endif; ?>
+                    </h3>
+                    <p>Track your vehicle inquiries and view responses from our sales team.
+                        <?php if (!empty($unread_count) && (int)$unread_count > 0): ?>
+                            <strong style="color: #ffc107;">&nbsp;<?php echo (int)$unread_count; ?> unread inquiry(ies).</strong>
+                        <?php else: ?>
+                            <strong style="color: #28a745;">You're all caught up. No unread inquiries.</strong>
+                        <?php endif; ?>
+                    </p>
+                    <button class="card-btn" onclick="window.location.href='my_inquiries.php'">
+                        <i class="fas fa-search"></i> View My Inquiries
+                    </button>
+                </div>
             </div>
 
             <div class="card">
-                <div class="card-icon">
-                    <i class="fas fa-life-ring"></i>
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-life-ring"></i>
+                    </div>
                 </div>
-                <h3>Help Center</h3>
-                <p>Find answers to common questions like "How do I use the web system?", "Where can I see my reservation?", and more.</p>
-                <button class="card-btn" onclick="window.location.href='help_center.php'">
-                    <i class="fas fa-info-circle"></i> Find Answers
-                </button>
+                <div class="card-content">
+                    <h3>Help Center</h3>
+                    <p>Find answers to common questions like "How do I use the web system?", "Where can I see my reservation?", and more.</p>
+                    <button class="card-btn" onclick="window.location.href='help_center.php'">
+                        <i class="fas fa-info-circle"></i> Find Answers
+                    </button>
+                </div>
             </div>
 
             <div class="card">
-                <div class="card-icon">
-                    <i class="fas fa-bell"></i>
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
                 </div>
-                <h3>Notifications</h3>
-                <p>See all system updates such as account verification, application approval, upcoming payment reminders, and other important alerts.</p>
-                <button class="card-btn" onclick="window.location.href='notifications.php'">
-                    <i class="fas fa-eye"></i> View Notifications
-                </button>
+                <div class="card-content">
+                    <h3>Notifications</h3>
+                    <p>See all system updates such as account verification, application approval, upcoming payment reminders, and other important alerts.</p>
+                    <button class="card-btn" onclick="window.location.href='notifications.php'">
+                        <i class="fas fa-eye"></i> View Notifications
+                    </button>
+                </div>
             </div>
 
             <div class="card">
-                <div class="card-icon">
-                    <i class="fas fa-file-invoice-dollar"></i>
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
                 </div>
-                <h3>Order Details</h3>
-                <p>View your balance, see your payment history, check the dates of your payments, and how much you have paid so far.</p>
-                <button class="card-btn" onclick="window.location.href='order_details.php'">
-                    <i class="fas fa-receipt"></i> View My Orders
-                </button>
+                <div class="card-content">
+                    <h3>Order Details</h3>
+                    <p>View your balance, see your payment history, check the dates of your payments, and how much you have paid so far.</p>
+                    <button class="card-btn" onclick="window.location.href='order_details.php'">
+                        <i class="fas fa-receipt"></i> View My Orders
+                    </button>
+                </div>
             </div>
 
             <div class="card">
-                <div class="card-icon">
-                    <i class="fas fa-file-alt"></i>
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
                 </div>
-                <h3>Requirements Guide</h3>
-                <p>See the needed documents if you want to apply through walk-in. Be prepared with all necessary paperwork.</p>
-                <button class="card-btn" onclick="window.location.href='requirements_guide.php'">
-                    <i class="fas fa-book-open"></i> View Guide
-                </button>
+                <div class="card-content">
+                    <h3>Requirements Guide</h3>
+                    <p>See the needed documents if you want to apply through walk-in. Be prepared with all necessary paperwork.</p>
+                    <button class="card-btn" onclick="window.location.href='requirements_guide.php'">
+                        <i class="fas fa-book-open"></i> View Guide
+                    </button>
+                </div>
             </div>
             
             <div class="card">
-                <div class="card-icon">
-                    <i class="fas fa-user-cog"></i>
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-user-cog"></i>
+                    </div>
                 </div>
-                <h3>Settings</h3>
-                <p>Update your personal information, preferences, and account settings to keep your profile current.</p>
-                <button class="card-btn" onclick="window.location.href='my_profile.php'">
-                    <i class="fas fa-edit"></i> Manage Settings
-                </button>
+                <div class="card-content">
+                    <h3>Settings</h3>
+                    <p>Update your personal information, preferences, and account settings to keep your profile current.</p>
+                    <button class="card-btn" onclick="window.location.href='my_profile.php'">
+                        <i class="fas fa-edit"></i> Manage Settings
+                    </button>
+                </div>
             </div>
         </div>
     </div>

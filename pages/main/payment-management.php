@@ -1,8 +1,8 @@
 <?php
 include_once(dirname(dirname(__DIR__)) . '/includes/init.php');
 
-// Check if user is Sales Agent
-if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'SalesAgent') {
+// Check if user is Sales Agent or Admin
+if (!isset($_SESSION['user_role']) || !in_array($_SESSION['user_role'], ['SalesAgent', 'Admin'])) {
     header("Location: ../../pages/login.php");
     exit();
 }
@@ -57,7 +57,7 @@ $agent_id = $_SESSION['user_id'] ?? null;
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
         }
 
-        .payment-stat-card.rejected {
+        .payment-stat-card.failed {
             background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
         }
 
@@ -224,7 +224,7 @@ $agent_id = $_SESSION['user_id'] ?? null;
             color: #0c5460;
         }
 
-        .status-rejected {
+        .status-failed {
             background: #f8d7da;
             color: #721c24;
         }
@@ -445,12 +445,12 @@ $agent_id = $_SESSION['user_id'] ?? null;
                     <div class="stat-value" id="confirmedCount">-</div>
                     <div class="stat-label">Confirmed Payments</div>
                 </div>
-                <div class="payment-stat-card rejected">
+                <div class="payment-stat-card failed">
                     <div class="stat-header">
                         <i class="fas fa-times-circle stat-icon"></i>
                     </div>
-                    <div class="stat-value" id="rejectedCount">-</div>
-                    <div class="stat-label">Rejected Payments</div>
+                    <div class="stat-value" id="failedCount">-</div>
+                    <div class="stat-label">Failed Payments</div>
                 </div>
                 <div class="payment-stat-card total">
                     <div class="stat-header">
@@ -470,16 +470,16 @@ $agent_id = $_SESSION['user_id'] ?? null;
                             <option value="">All Statuses</option>
                             <option value="Pending">Pending</option>
                             <option value="Confirmed">Confirmed</option>
-                            <option value="Rejected">Rejected</option>
+                            <option value="Failed">Failed</option>
                         </select>
                     </div>
                     <div class="filter-group">
                         <label for="paymentTypeFilter">Payment Type</label>
                         <select id="paymentTypeFilter">
                             <option value="">All Types</option>
-                            <option value="Full">Full Payment</option>
-                            <option value="Monthly">Monthly Payment</option>
-                            <option value="Partial">Partial Payment</option>
+                            <option value="Full Payment">Full Payment</option>
+                            <option value="Monthly Payment">Monthly Payment</option>
+                            <option value="Partial Payment">Partial Payment</option>
                             <option value="Down Payment">Down Payment</option>
                         </select>
                     </div>
@@ -594,7 +594,7 @@ $agent_id = $_SESSION['user_id'] ?? null;
                         const stats = response.data;
                         $('#pendingCount').text(stats.pending || 0);
                         $('#confirmedCount').text(stats.confirmed || 0);
-                        $('#rejectedCount').text(stats.rejected || 0);
+                        $('#failedCount').text(stats.rejected || 0);
                         $('#totalAmount').text('₱' + (stats.total_amount || 0).toLocaleString());
                     }
                 },
@@ -649,9 +649,9 @@ $agent_id = $_SESSION['user_id'] ?? null;
                 const row = `
                     <tr>
                         <td><strong>${payment.payment_number}</strong></td>
-                        <td>${payment.order_number}</td>
-                        <td>${payment.customer_name}</td>
-                        <td>${payment.vehicle_model} ${payment.vehicle_variant}</td>
+                        <td>Order #${payment.order_id}</td>
+                        <td>Customer #${payment.customer_id}</td>
+                        <td>N/A</td>
                         <td><strong>₱${parseFloat(payment.amount).toLocaleString()}</strong></td>
                         <td>${payment.payment_type}</td>
                         <td>${payment.payment_method}</td>
@@ -742,10 +742,10 @@ $agent_id = $_SESSION['user_id'] ?? null;
         function displayPaymentDetails(payment) {
             const content = $('#paymentDetailContent');
             
-            const receiptHtml = payment.payment_receipt ? 
+            const receiptHtml = payment.receipt_image ? 
                 `<div class="receipt-preview">
                     <h4>Payment Receipt</h4>
-                    <img src="data:image/jpeg;base64,${payment.payment_receipt}" alt="Payment Receipt">
+                    <img src="data:image/jpeg;base64,${payment.receipt_image}" alt="Payment Receipt">
                 </div>` : 
                 '<p><em>No receipt uploaded</em></p>';
 
@@ -904,6 +904,7 @@ $agent_id = $_SESSION['user_id'] ?? null;
             currentPage = 1;
             loadPayments(1);
         }
+
 
         function refreshPayments() {
             loadPaymentStats();

@@ -46,192 +46,288 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D View - <?php echo htmlspecialchars($vehicle['model_name']); ?> - Mitsubishi Motors</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Google Model Viewer -->
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
     <style>
+        :root {
+            --primary-color: #e60012;
+            --primary-dark: #c5000f;
+            --primary-light: #ffccd1;
+            --text-primary: #1a1a1a;
+            --text-secondary: #6c757d;
+            --text-light: #8a8a8a;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #f1f3f5;
+            --border-color: #e9ecef;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+            --shadow-xl: 0 12px 32px rgba(0,0,0,0.15);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Inter', 'Segoe UI', sans-serif;
         }
 
         body {
-            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 25%, #2d1b1b 50%, #8b0000 75%, #b80000 100%);
-            min-height: 100vh;
-            color: white;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            line-height: 1.6;
             overflow-x: hidden;
+            font-size: 16px;
         }
 
+        /* Modern Header Design */
         .header {
-            background: rgba(0, 0, 0, 0.4);
-            padding: 20px 30px;
+            background: var(--bg-primary);
+            padding: 1.5rem 2rem;
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid var(--border-color);
+            width: 100%;
+            left: 0;
+            right: 0;
+        }
+
+        .header-container {
+            width: 100%;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
-            position: relative;
-            z-index: 100;
         }
 
         .logo-section {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 1.5rem;
         }
 
         .logo {
-            width: 60px;
+            width: 48px;
             height: auto;
-            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));
+            transition: var(--transition);
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
         }
 
         .brand-text {
-            font-size: 1.4rem;
+            font-size: 1.5rem;
             font-weight: 700;
-            background: linear-gradient(45deg, #ffd700, #ffed4e);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--primary-color);
+            letter-spacing: -0.02em;
         }
 
         .user-section {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 1.5rem;
         }
 
         .user-avatar {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
-            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            color: #b80000;
-            font-size: 1.2rem;
+            font-weight: 600;
+            color: white;
+            font-size: 1.1rem;
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
         }
 
-        .welcome-text {
+        .user-avatar:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .welcome-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .user-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .logout-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .logout-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Main Container */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Navigation Section */
+        .nav-section {
+            margin-bottom: 2rem;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .back-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            transform: translateX(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Main Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        /* Viewer Card */
+        .viewer-card {
+            background: var(--bg-primary);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+        }
+
+        /* Card Header */
+        .card-header {
+            background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary));
+            padding: 2rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+
+        .vehicle-info {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .vehicle-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+        }
+
+        .vehicle-subtitle {
+            color: var(--text-secondary);
             font-size: 1rem;
             font-weight: 500;
         }
 
-        .logout-btn {
-            background: linear-gradient(45deg, #d60000, #b30000);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(214, 0, 0, 0.3);
-        }
-
-        .logout-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(214, 0, 0, 0.5);
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-            position: relative;
-            z-index: 5;
-        }
-
-        .back-btn {
-            display: inline-block;
-            margin-bottom: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            color: #ffd700;
-            padding: 8px 16px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
-        }
-
-        .back-btn:hover {
-            background: #ffd700;
-            color: #1a1a1a;
-        }
-
-        .viewer-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            overflow: hidden;
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            position: relative;
-        }
-
-        .card-header {
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
-            padding: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .vehicle-info h1 {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: #ffd700;
-            margin-bottom: 5px;
-        }
-
-        .vehicle-info p {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 0.9rem;
-        }
-
+        /* View Toggle */
         .view-toggle {
             display: flex;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 25px;
-            padding: 4px;
-            gap: 4px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            padding: 0.25rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
         }
 
         .toggle-btn {
             background: transparent;
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--text-secondary);
             border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
+            transition: var(--transition);
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toggle-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
         }
 
         .toggle-btn.active {
-            background: linear-gradient(45deg, #ffd700, #ffed4e);
-            color: #1a1a1a;
-            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+            background: var(--primary-color);
+            color: white;
+            box-shadow: var(--shadow-md);
         }
 
+        /* Viewer Container */
         .viewer-container {
             position: relative;
             height: 70vh;
-            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            background: var(--bg-secondary);
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            border-radius: 12px;
         }
 
         model-viewer {
@@ -241,6 +337,7 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
             --poster-color: transparent;
         }
 
+        /* Fallback Viewer */
         .fallback-360-viewer {
             width: 100%;
             height: 100%;
@@ -248,15 +345,6 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
             align-items: center;
             justify-content: center;
             position: relative;
-        }
-
-        .fallback-image {
-            max-width: 80%;
-            max-height: 80%;
-            object-fit: contain;
-            filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.5));
-            transition: all 0.3s ease;
-            background: transparent;
         }
 
         .image-carousel {
@@ -269,116 +357,144 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
         }
 
         .carousel-image {
-            max-width: 80%;
-            max-height: 80%;
+            max-width: 85%;
+            max-height: 85%;
             object-fit: contain;
-            filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.5));
-            transition: all 0.3s ease;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-xl);
         }
 
         .carousel-controls {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            color: #ffd700;
-            border: none;
-            padding: 15px;
+            background: var(--bg-primary);
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
             cursor: pointer;
             font-size: 1.2rem;
-            transition: all 0.3s ease;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-lg);
         }
 
         .carousel-controls:hover {
-            background: #ffd700;
-            color: #1a1a1a;
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-50%) scale(1.1);
         }
 
         .carousel-prev {
-            left: 20px;
+            left: 2rem;
         }
 
         .carousel-next {
-            right: 20px;
+            right: 2rem;
         }
 
+        /* Modern Control Panel */
         .controls-panel {
             position: absolute;
-            bottom: 20px;
+            bottom: 2rem;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
+            background: var(--bg-primary);
             backdrop-filter: blur(20px);
-            border-radius: 50px;
-            padding: 15px 25px;
+            border-radius: var(--radius-xl);
+            padding: 1.5rem;
             display: flex;
-            gap: 15px;
+            gap: 2rem;
             align-items: center;
-            border: 1px solid rgba(255, 215, 0, 0.2);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-xl);
             z-index: 20;
         }
 
         .control-group {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 0.75rem;
+        }
+
+        .control-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            white-space: nowrap;
         }
 
         .control-btn,
         .rotation-btn {
-            background: rgba(255, 255, 255, 0.1);
-            color: #ffd700;
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            padding: 8px 12px;
-            border-radius: 20px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
             cursor: pointer;
-            font-size: 0.8rem;
-            transition: all 0.3s ease;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: var(--transition);
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 0.5rem;
+            box-shadow: var(--shadow-sm);
         }
 
         .control-btn:hover,
         .rotation-btn:hover {
-            background: #ffd700;
-            color: #1a1a1a;
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
 
         .rotation-btn {
-            padding: 10px;
+            padding: 0.75rem;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
+        .rotation-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Info Panel */
         .info-panel {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.8);
+            top: 2rem;
+            right: 2rem;
+            background: var(--bg-primary);
             backdrop-filter: blur(20px);
-            border-radius: 15px;
-            padding: 20px;
-            max-width: 300px;
-            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            max-width: 320px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-lg);
         }
 
         .info-panel h3 {
-            color: #ffd700;
-            margin-bottom: 10px;
-            font-size: 1.1rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+            font-weight: 700;
         }
 
         .info-panel p {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 0.85rem;
-            line-height: 1.5;
-            margin-bottom: 15px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
         }
 
         .feature-list {
@@ -387,21 +503,38 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
         }
 
         .feature-list li {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 0.8rem;
-            padding: 3px 0;
-            border-left: 2px solid #ffd700;
-            padding-left: 10px;
-            margin-bottom: 5px;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: var(--transition);
         }
 
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-list li:hover {
+            color: var(--primary-color);
+            padding-left: 0.5rem;
+        }
+
+        .feature-list li i {
+            color: var(--primary-color);
+            width: 16px;
+        }
+
+        /* Loading Screen */
         .loading-screen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.9);
+            background: var(--bg-primary);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -410,50 +543,79 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
         }
 
         .spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid rgba(255, 215, 0, 0.3);
-            border-top: 3px solid #ffd700;
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary-color);
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin-bottom: 20px;
+            margin-bottom: 1.5rem;
+        }
+
+        .loading-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
         }
 
         @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
-            100% {
-                transform: rotate(360deg);
-            }
+        /* Fallback Message */
+        .fallback-message {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 2rem;
+        }
+
+        .fallback-message i {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+            opacity: 0.5;
+        }
+
+        .fallback-message p {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
         }
 
         /* Responsive Design */
-        @media (max-width: 575px) {
+        @media (max-width: 768px) {
             .header {
-                padding: 15px 20px;
+                padding: 1rem;
+                width: 100%;
+            }
+
+            .header-container {
                 flex-direction: column;
-                gap: 15px;
+                gap: 1rem;
+                width: 100%;
             }
 
             .user-section {
-                flex-direction: column;
-                gap: 10px;
+                width: 100%;
+                justify-content: space-between;
             }
 
-            .container {
-                padding: 15px;
+            .main-container {
+                padding: 1rem;
             }
 
             .card-header {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 15px;
+                padding: 1.5rem;
             }
 
-            .vehicle-info h1 {
-                font-size: 1.3rem;
+            .header-content {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .vehicle-title {
+                font-size: 1.5rem;
             }
 
             .viewer-container {
@@ -462,164 +624,227 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
 
             .controls-panel {
                 flex-direction: column;
-                gap: 10px;
-                padding: 15px;
-                border-radius: 20px;
+                gap: 1rem;
+                padding: 1rem;
+                border-radius: var(--radius-lg);
+                bottom: 1rem;
+                left: 1rem;
+                right: 1rem;
+                transform: none;
             }
 
             .control-group {
                 justify-content: center;
+                width: 100%;
             }
 
             .info-panel {
                 position: static;
-                margin-top: 20px;
+                margin-top: 1rem;
                 max-width: none;
+            }
+
+            .carousel-controls {
+                width: 48px;
+                height: 48px;
+            }
+
+            .carousel-prev {
+                left: 1rem;
+            }
+
+            .carousel-next {
+                right: 1rem;
             }
         }
 
-        @media (min-width: 576px) and (max-width: 767px) {
-            .card-header {
-                flex-direction: column;
-                align-items: center;
-            }
-
+        @media (min-width: 769px) and (max-width: 1024px) {
             .viewer-container {
                 height: 60vh;
             }
 
             .info-panel {
-                top: 15px;
-                right: 15px;
-                max-width: 250px;
+                max-width: 280px;
+            }
+
+            .controls-panel {
+                gap: 1.5rem;
+                padding: 1.25rem;
             }
         }
 
-        @media (min-width: 768px) and (max-width: 991px) {
-            .viewer-container {
-                height: 65vh;
-            }
+        /* Smooth Transitions */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Focus States for Accessibility */
+        button:focus,
+        a:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
         }
     </style>
 </head>
 
 <body>
     <header class="header">
-        <div class="logo-section">
-            <img src="../includes/images/Mitsubishi_logo.png" alt="Mitsubishi Logo" class="logo">
-            <div class="brand-text">MITSUBISHI MOTORS</div>
-        </div>
-        <div class="user-section">
-            <div class="user-avatar"><?php echo strtoupper(substr($displayName, 0, 1)); ?></div>
-            <span class="welcome-text">Welcome, <?php echo htmlspecialchars($displayName); ?>!</span>
-            <button class="logout-btn" onclick="window.location.href='logout.php'"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        <div class="header-container">
+            <div class="logo-section">
+                <img src="../includes/images/mitsubishi_logo.png" alt="Mitsubishi Logo" class="logo">
+                <div class="brand-text">MITSUBISHI MOTORS</div>
+            </div>
+            <div class="user-section">
+                <div class="user-avatar"><?php echo strtoupper(substr($displayName, 0, 1)); ?></div>
+                <div class="user-info">
+                    <span class="welcome-label">Welcome</span>
+                    <span class="user-name"><?php echo htmlspecialchars($displayName); ?></span>
+                </div>
+                <button class="logout-btn" onclick="window.location.href='logout.php'">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
         </div>
     </header>
 
-    <div class="container">
-        <a href="car_details.php?id=<?php echo $vehicle_id; ?>" class="back-btn">
-            <i class="fas fa-arrow-left"></i> Back to Details
-        </a>
+    <main class="main-container">
+        <nav class="nav-section">
+            <a href="car_details.php?id=<?php echo $vehicle_id; ?>" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                <span>Back to Details</span>
+            </a>
+        </nav>
 
-        <div class="viewer-card">
-            <div class="card-header">
-                <div class="vehicle-info">
-                    <h1><?php echo htmlspecialchars($vehicle['model_name']); ?> 3D View</h1>
-                    <p>Interactive 360° Vehicle Viewing Experience</p>
-                </div>
-                <div class="view-toggle">
-                    <button class="toggle-btn active" data-view="exterior">
-                        <i class="fas fa-car"></i> Exterior
-                    </button>
-                    <button class="toggle-btn" data-view="interior">
-                        <i class="fas fa-chair"></i> Interior
-                    </button>
-                </div>
-            </div>
-
-            <div class="viewer-container">
-                <div class="loading-screen" id="loadingScreen">
-                    <div class="spinner"></div>
-                    <p>Loading 3D Model...</p>
-                </div>
-
-                <!-- Google Model Viewer for 3D models -->
-                <model-viewer id="model-viewer" 
-                    alt="<?php echo htmlspecialchars($vehicle['model_name']); ?> 3D Model"
-                    src="" 
-                    camera-controls 
-                    touch-action="pan-y"
-                    auto-rotate
-                    shadow-intensity="1"
-                    camera-orbit="0deg 75deg 3.75m"
-                    style="display: none;">
-                </model-viewer>
-
-                <!-- Fallback 360 Image Carousel -->
-                <div class="fallback-360-viewer" id="fallback-viewer">
-                    <div class="image-carousel" id="image-carousel">
-                        <img class="carousel-image" id="carousel-image" src="" alt="360° View" style="display: none;">
-                        <button class="carousel-controls carousel-prev" id="prev-btn" onclick="previousImage()">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <button class="carousel-controls carousel-next" id="next-btn" onclick="nextImage()">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
-                    <div class="fallback-message" id="fallback-message" style="text-align: center; color: rgba(255,255,255,0.7);">
-                        <i class="fas fa-cube" style="font-size: 3rem; margin-bottom: 20px; color: #ffd700;"></i>
-                        <p>3D model not available for this vehicle.</p>
-                        <p>Showing 360° images instead.</p>
-                    </div>
-                </div>
-
-                <div class="controls-panel">
-                    <div class="control-group">
-                        <span style="color: #ffd700; font-size: 0.8rem;">Auto Rotate:</span>
-                        <button class="control-btn" id="autoRotateBtn">
-                            <i class="fas fa-sync"></i> <span>Start</span>
-                        </button>
-                    </div>
-
-                    <div class="control-group">
-                        <span style="color: #ffd700; font-size: 0.8rem;">Manual:</span>
-                        <div class="rotation-controls">
-                            <button class="rotation-btn" id="rotateLeft">
-                                <i class="fas fa-undo"></i>
+        <div class="content-grid">
+            <div class="viewer-card fade-in">
+                <div class="card-header">
+                    <div class="header-content">
+                        <div class="vehicle-info">
+                            <h1 class="vehicle-title"><?php echo htmlspecialchars($vehicle['model_name']); ?> 3D View</h1>
+                            <p class="vehicle-subtitle">Interactive 360° Vehicle Viewing Experience</p>
+                        </div>
+                        <div class="view-toggle">
+                            <button class="toggle-btn active" data-view="exterior">
+                                <i class="fas fa-car"></i>
+                                <span>Exterior</span>
                             </button>
-                            <button class="rotation-btn" id="rotateRight">
-                                <i class="fas fa-redo"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="viewer-container">
+                    <div class="loading-screen" id="loadingScreen">
+                        <div class="spinner"></div>
+                        <p class="loading-text">Loading 3D Model...</p>
+                    </div>
+
+                    <!-- Google Model Viewer for 3D models -->
+                    <model-viewer id="model-viewer"
+                        alt="<?php echo htmlspecialchars($vehicle['model_name']); ?> 3D Model"
+                        src=""
+                        camera-controls
+                        touch-action="pan-y"
+                        auto-rotate
+                        shadow-intensity="1"
+                        camera-orbit="0deg 75deg 3.75m"
+                        min-camera-orbit="auto auto 0.01m"
+                        max-camera-orbit="auto auto 1000m"
+                        style="display: none;">
+                    </model-viewer>
+
+                    <!-- Fallback 360 Image Carousel -->
+                    <div class="fallback-360-viewer" id="fallback-viewer">
+                        <div class="image-carousel" id="image-carousel">
+                            <img class="carousel-image" id="carousel-image" src="" alt="360° View" style="display: none;">
+                            <button class="carousel-controls carousel-prev" id="prev-btn" onclick="previousImage()">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button class="carousel-controls carousel-next" id="next-btn" onclick="nextImage()">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                        <div class="fallback-message" id="fallback-message" style="display: none;">
+                            <i class="fas fa-cube"></i>
+                            <p>3D model not available for this vehicle.</p>
+                            <p>Showing 360° images instead.</p>
+                        </div>
+                    </div>
+
+                    <div class="controls-panel">
+                        <div class="control-group">
+                            <span class="control-label">Auto Rotate:</span>
+                            <button class="control-btn" id="autoRotateBtn">
+                                <i class="fas fa-sync"></i>
+                                <span>Start</span>
+                            </button>
+                        </div>
+
+                        <div class="control-group">
+                            <span class="control-label">Manual:</span>
+                            <div class="rotation-controls">
+                                <button class="rotation-btn" id="rotateLeft">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <button class="rotation-btn" id="rotateRight">
+                                    <i class="fas fa-redo"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <button class="control-btn" id="zoomIn">
+                                <i class="fas fa-search-plus"></i>
+                                <span>Zoom In</span>
+                            </button>
+                            <button class="control-btn" id="zoomOut">
+                                <i class="fas fa-search-minus"></i>
+                                <span>Zoom Out</span>
+                            </button>
+                            <button class="control-btn" id="resetView">
+                                <i class="fas fa-sync"></i>
+                                <span>Reset</span>
                             </button>
                         </div>
                     </div>
 
-                    <div class="control-group">
-                        <button class="control-btn" id="zoomIn">
-                            <i class="fas fa-search-plus"></i> Zoom In
-                        </button>
-                        <button class="control-btn" id="zoomOut">
-                            <i class="fas fa-search-minus"></i> Zoom Out
-                        </button>
-                        <button class="control-btn" id="resetView">
-                            <i class="fas fa-sync"></i> Reset
-                        </button>
+                    <div class="info-panel">
+                        <h3 id="viewTitle">Exterior View</h3>
+                        <p id="viewDescription">Explore the exterior design and features of the <?php echo htmlspecialchars($vehicle['model_name']); ?>.</p>
+                        <ul class="feature-list" id="featureList">
+                            <li><i class="fas fa-car"></i> Aerodynamic Design</li>
+                            <li><i class="fas fa-lightbulb"></i> LED Headlights</li>
+                            <li><i class="fas fa-shield-alt"></i> Safety Features</li>
+                            <li><i class="fas fa-cog"></i> Alloy Wheels</li>
+                        </ul>
                     </div>
-                </div>
-
-                <div class="info-panel">
-                    <h3 id="viewTitle">Exterior View</h3>
-                    <p id="viewDescription">Explore the exterior design and features of the <?php echo htmlspecialchars($vehicle['model_name']); ?>.</p>
-                    <ul class="feature-list" id="featureList">
-                        <li>LED Headlights</li>
-                        <li>Alloy Wheels</li>
-                        <li>Chrome Accents</li>
-                        <li>Panoramic Sunroof</li>
-                        <li>Rear Spoiler</li>
-                    </ul>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 
     <script>
         // Global variables
@@ -628,6 +853,29 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
         let autoRotateInterval = null;
         let isAutoRotating = false;
         const vehicleId = <?php echo $vehicle_id; ?>;
+        // Project base (e.g., /Mitsubishi) and origin for robust, cross-env URLs
+        const PROJECT_BASE = "<?php echo rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'])), '/'); ?>";
+        const ORIGIN = window.location.origin;
+
+        // Normalize any filesystem or partial web path to a full web URL under the project base
+        function toProjectWebUrl(pathInput) {
+            try {
+                if (!pathInput) return null;
+                if (/^https?:\/\//i.test(pathInput)) return pathInput; // already absolute URL
+                let p = String(pathInput).replace(/\\/g, '/');
+                // If string already contains '/uploads/', extract from there
+                const idx = p.toLowerCase().indexOf('/uploads/');
+                let sub = idx !== -1 ? p.slice(idx) : (p.startsWith('/') ? p : '/' + p);
+                // Ensure it is scoped to the project base (handles subfolder deployments)
+                if (!sub.startsWith(PROJECT_BASE + '/')) {
+                    sub = PROJECT_BASE + sub;
+                }
+                return ORIGIN + sub;
+            } catch (e) {
+                console.error('toProjectWebUrl error:', e, pathInput);
+                return null;
+            }
+        }
 
         // Initialize the viewer on page load
         document.addEventListener('DOMContentLoaded', function() {
@@ -657,7 +905,7 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
                     
                     // Check if we have any 3D model files (GLB/GLTF)
                     const modelFiles = view360Files.filter(filePath => 
-                        filePath && filePath.toLowerCase().endsWith('.glb') || filePath.toLowerCase().endsWith('.gltf')
+                        filePath && (filePath.toLowerCase().endsWith('.glb') || filePath.toLowerCase().endsWith('.gltf'))
                     );
                     
                     if (modelFiles.length > 0) {
@@ -673,12 +921,13 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
                         if (imageFiles.length > 0) {
                             await setup360ImageCarouselFromPaths(imageFiles);
                         } else {
-                            showFallbackMessage();
+                            // Fallback to legacy loader that reads BLOBs from server if DB stores images as LOBs/serialized
+                            await setup360ImageCarousel();
                         }
                     }
                 } else {
-                    // No 360 data available, show fallback message
-                    showFallbackMessage();
+                    // No 360 data available, attempt legacy fetch then fallback message
+                    await setup360ImageCarousel();
                 }
             } catch (error) {
                 console.error('Error initializing viewer:', error);
@@ -688,32 +937,34 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
 
         async function loadModelFromPath(modelPath) {
             try {
-                // Convert absolute path to web path
-                let webPath = modelPath.replace(/\\/g, '/').replace(/^.*\/htdocs\/Mitsubishi/, '');
-                
-                // Ensure the web path starts with a forward slash
-                if (!webPath.startsWith('/')) {
-                    webPath = '/' + webPath;
-                }
-                
-                // Create full URL with correct port
-                const baseUrl = window.location.protocol + '//' + window.location.hostname + ':8000';
-                const fullUrl = baseUrl + webPath;
-                
+                const fullUrl = toProjectWebUrl(modelPath);
+                if (!fullUrl) throw new Error('Invalid model URL generated from path: ' + modelPath);
+
                 console.log('Loading 3D model from path:', fullUrl);
                 
                 const modelViewer = document.getElementById('model-viewer');
                 const fallbackViewer = document.getElementById('fallback-viewer');
-                
+                const loading = document.getElementById('loadingScreen');
+
+                // Attach one-time listeners for robust error handling and loading state
+                const onLoad = () => {
+                    loading.style.display = 'none';
+                    modelViewer.removeEventListener('load', onLoad);
+                };
+                const onError = (e) => {
+                    console.error('Model viewer error:', e);
+                    modelViewer.removeEventListener('error', onError);
+                    showFallbackMessage();
+                };
+                modelViewer.addEventListener('load', onLoad, { once: true });
+                modelViewer.addEventListener('error', onError, { once: true });
+
                 // Set the model source to the full URL
                 modelViewer.src = fullUrl;
                 modelViewer.style.display = 'block';
                 fallbackViewer.style.display = 'none';
-                
-                // Hide loading screen
-                document.getElementById('loadingScreen').style.display = 'none';
-                
-                // Setup model viewer controls
+
+                // Initialize controls for model-viewer
                 setupModelViewerControls(modelViewer);
             } catch (error) {
                 console.error('Error loading 3D model:', error);
@@ -747,15 +998,8 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
 
         async function setup360ImageCarouselFromPaths(imagePaths) {
             try {
-                // Convert absolute paths to web paths with correct base URL
-                const baseUrl = window.location.protocol + '//' + window.location.hostname + ':8000';
-                images360 = imagePaths.map(path => {
-                    let webPath = path.replace(/\\/g, '/').replace(/^.*\/htdocs\/Mitsubishi/, '');
-                    if (!webPath.startsWith('/')) {
-                        webPath = '/' + webPath;
-                    }
-                    return baseUrl + webPath;
-                });
+                const urls = (imagePaths || []).map(p => toProjectWebUrl(p)).filter(Boolean);
+                images360 = urls;
                 
                 if (images360.length > 0) {
                     showImageCarouselFromPaths();
@@ -801,8 +1045,8 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
                 carouselImage.style.display = 'block';
                 
                 // Show/hide navigation buttons
-                document.getElementById('prev-btn').style.display = images360.length > 1 ? 'block' : 'none';
-                document.getElementById('next-btn').style.display = images360.length > 1 ? 'block' : 'none';
+                document.getElementById('prev-btn').style.display = images360.length > 1 ? 'flex' : 'none';
+                document.getElementById('next-btn').style.display = images360.length > 1 ? 'flex' : 'none';
             }
             
             // Hide loading screen
@@ -827,8 +1071,8 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
                 carouselImage.style.display = 'block';
                 
                 // Show/hide navigation buttons
-                document.getElementById('prev-btn').style.display = images360.length > 1 ? 'block' : 'none';
-                document.getElementById('next-btn').style.display = images360.length > 1 ? 'block' : 'none';
+                document.getElementById('prev-btn').style.display = images360.length > 1 ? 'flex' : 'none';
+                document.getElementById('next-btn').style.display = images360.length > 1 ? 'flex' : 'none';
             }
             
             // Hide loading screen
@@ -885,7 +1129,7 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
             // Zoom controls (handled by model-viewer's camera-controls)
             document.getElementById('zoomIn').addEventListener('click', function() {
                 const currentOrbit = modelViewer.getCameraOrbit();
-                modelViewer.cameraOrbit = `${currentOrbit.theta}rad ${currentOrbit.phi}rad ${Math.max(currentOrbit.radius * 0.8, 2.5)}m`;
+                modelViewer.cameraOrbit = `${currentOrbit.theta}rad ${currentOrbit.phi}rad ${currentOrbit.radius * 0.8}m`;
             });
 
             document.getElementById('zoomOut').addEventListener('click', function() {
@@ -946,7 +1190,9 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
         function updateCarouselImage() {
             const carouselImage = document.getElementById('carousel-image');
             if (images360.length > 0) {
-                carouselImage.src = `data:image/jpeg;base64,${images360[currentImageIndex]}`;
+                const src = images360[currentImageIndex] || '';
+                const isAbsoluteUrl = /^https?:\/\//i.test(src) || src.startsWith('data:') || src.startsWith(PROJECT_BASE + '/');
+                carouselImage.src = isAbsoluteUrl ? src : `data:image/jpeg;base64,${src}`;
             }
         }
 
@@ -991,29 +1237,10 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
                     if (modelViewer && modelViewer.style.display !== 'none') {
                         modelViewer.cameraOrbit = '0deg 75deg 3.75m';
                     }
-                } else if (view === 'interior') {
-                    viewTitle.textContent = 'Interior View';
-                    viewDescription.textContent = 'Discover the comfort and technology inside the vehicle.';
-                    featureList.innerHTML = `
-                        <li><i class="fas fa-chair"></i> Premium Seating</li>
-                        <li><i class="fas fa-tv"></i> Infotainment System</li>
-                        <li><i class="fas fa-snowflake"></i> Climate Control</li>
-                        <li><i class="fas fa-volume-up"></i> Premium Audio</li>
-                    `;
-                    
-                    // Set interior camera view for model viewer
-                    const modelViewer = document.getElementById('model-viewer');
-                    if (modelViewer && modelViewer.style.display !== 'none') {
-                        modelViewer.cameraOrbit = '0deg 90deg 0.3m';
-                    }
                 }
             });
         });
 
     </script>
-
-
-    </script>
 </body>
-
 </html>

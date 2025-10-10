@@ -135,8 +135,16 @@ function handlePutRequest($action, $pdo)
 
 function getStatistics($pdo)
 {
-	$sql = "SELECT status, COUNT(*) as count FROM loan_applications GROUP BY status";
+	$agentId = $_SESSION['user_id'];
+	
+	// Get statistics filtered by agent's assigned customers
+	$sql = "SELECT la.status, COUNT(*) as count
+			FROM loan_applications la
+			INNER JOIN customer_information ci ON la.customer_id = ci.account_id
+			WHERE ci.agent_id = :agent_id
+			GROUP BY la.status";
 	$stmt = $pdo->prepare($sql);
+	$stmt->bindParam(':agent_id', $agentId, PDO::PARAM_INT);
 	$stmt->execute();
 	$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -161,67 +169,74 @@ function getApplications($pdo)
 	$search = $_GET['search'] ?? '';
 	$status = $_GET['status'] ?? 'all';
 	$date_range = $_GET['date_range'] ?? 'all';
+	$agentId = $_SESSION['user_id'];
 
-	// Get loan application data
-	$sql = "SELECT * FROM loan_applications WHERE 1=1";
-	$params = [];
+
+	// Get loan application data filtered by agent's assigned customers
+	$sql = "SELECT la.* FROM loan_applications la
+			INNER JOIN customer_information ci ON la.customer_id = ci.account_id
+			WHERE ci.agent_id = ?";
+	$params = [$agentId];
 
 	// Enhanced search functionality including mobile numbers
 	if (!empty($search)) {
-		// Search in customer information by account_id, names, and mobile numbers
+		// Search in customer information by account_id, names, and mobile numbers (filtered by agent)
 		$customerSearchSql = "
 			SELECT DISTINCT ci.account_id as id FROM customer_information ci
 			LEFT JOIN accounts acc ON ci.account_id = acc.Id
-			WHERE ci.firstname LIKE ? OR ci.lastname LIKE ? 
-			OR CONCAT(ci.firstname, ' ', ci.lastname) LIKE ?
-			OR ci.mobile_number LIKE ?
-			OR acc.FirstName LIKE ? OR acc.LastName LIKE ?
-			OR CONCAT(acc.FirstName, ' ', acc.LastName) LIKE ?
-			OR acc.Username LIKE ? OR acc.Email LIKE ?
+			WHERE ci.agent_id = ? AND (
+				LOWER(ci.firstname) LIKE LOWER(?) OR LOWER(ci.lastname) LIKE LOWER(?)
+				OR LOWER(CONCAT(ci.firstname, ' ', ci.lastname)) LIKE LOWER(?)
+				OR ci.mobile_number LIKE ?
+				OR LOWER(acc.FirstName) LIKE LOWER(?) OR LOWER(acc.LastName) LIKE LOWER(?)
+				OR LOWER(CONCAT(acc.FirstName, ' ', acc.LastName)) LIKE LOWER(?)
+				OR LOWER(acc.Username) LIKE LOWER(?) OR LOWER(acc.Email) LIKE LOWER(?)
+			)
 			UNION
 			SELECT DISTINCT ci.cusID as id FROM customer_information ci
 			LEFT JOIN accounts acc ON ci.account_id = acc.Id
-			WHERE ci.firstname LIKE ? OR ci.lastname LIKE ? 
-			OR CONCAT(ci.firstname, ' ', ci.lastname) LIKE ?
-			OR ci.mobile_number LIKE ?
-			OR acc.FirstName LIKE ? OR acc.LastName LIKE ?
-			OR CONCAT(acc.FirstName, ' ', acc.LastName) LIKE ?
-			OR acc.Username LIKE ? OR acc.Email LIKE ?
+			WHERE ci.agent_id = ? AND (
+				LOWER(ci.firstname) LIKE LOWER(?) OR LOWER(ci.lastname) LIKE LOWER(?)
+				OR LOWER(CONCAT(ci.firstname, ' ', ci.lastname)) LIKE LOWER(?)
+				OR ci.mobile_number LIKE ?
+				OR LOWER(acc.FirstName) LIKE LOWER(?) OR LOWER(acc.LastName) LIKE LOWER(?)
+				OR LOWER(CONCAT(acc.FirstName, ' ', acc.LastName)) LIKE LOWER(?)
+				OR LOWER(acc.Username) LIKE LOWER(?) OR LOWER(acc.Email) LIKE LOWER(?)
+			)
 		";
 
 		$searchTerm = "%{$search}%";
 		$customerStmt = $pdo->prepare($customerSearchSql);
 		$customerStmt->execute([
-			$searchTerm,
-			$searchTerm,
-			$searchTerm,
-			$searchTerm,
-			$searchTerm,
-			$searchTerm,
-			$searchTerm,
-			$searchTerm,
-			$searchTerm,
-			$searchTerm,
-			$searchTerm,
-			$searchTerm,
-			$searchTerm,
-			$searchTerm,
-			$searchTerm,
-			$searchTerm,
-			$searchTerm,
-			$searchTerm,
-			$searchTerm,
-			$searchTerm,
-			$searchTerm
+			$agentId,        // 1st ? - ci.agent_id (first UNION)
+			$searchTerm,     // 2nd ? - ci.firstname
+			$searchTerm,     // 3rd ? - ci.lastname  
+			$searchTerm,     // 4th ? - CONCAT(ci.firstname, ' ', ci.lastname)
+			$searchTerm,     // 5th ? - ci.mobile_number
+			$searchTerm,     // 6th ? - acc.FirstName
+			$searchTerm,     // 7th ? - acc.LastName
+			$searchTerm,     // 8th ? - CONCAT(acc.FirstName, ' ', acc.LastName)
+			$searchTerm,     // 9th ? - acc.Username
+			$searchTerm,     // 10th ? - acc.Email
+			$agentId,        // 11th ? - ci.agent_id (second UNION)
+			$searchTerm,     // 12th ? - ci.firstname
+			$searchTerm,     // 13th ? - ci.lastname
+			$searchTerm,     // 14th ? - CONCAT(ci.firstname, ' ', ci.lastname)
+			$searchTerm,     // 15th ? - ci.mobile_number
+			$searchTerm,     // 16th ? - acc.FirstName
+			$searchTerm,     // 17th ? - acc.LastName
+			$searchTerm,     // 18th ? - CONCAT(acc.FirstName, ' ', acc.LastName)
+			$searchTerm,     // 19th ? - acc.Username
+			$searchTerm      // 20th ? - acc.Email
 		]);
 		$customerIds = $customerStmt->fetchAll(PDO::FETCH_COLUMN);
 
 		// Also search in vehicle names
 		$vehicleSearchSql = "
 			SELECT DISTINCT id FROM vehicles 
-			WHERE model_name LIKE ? OR variant LIKE ? 
-			OR CONCAT(model_name, ' ', variant) LIKE ?
-			OR CONCAT(model_name, ' ', variant, ' (', year_model, ')') LIKE ?
+			WHERE LOWER(model_name) LIKE LOWER(?) OR LOWER(variant) LIKE LOWER(?) 
+			OR LOWER(CONCAT(model_name, ' ', variant)) LIKE LOWER(?)
+			OR LOWER(CONCAT(model_name, ' ', variant, ' (', year_model, ')')) LIKE LOWER(?)
 		";
 		$vehicleStmt = $pdo->prepare($vehicleSearchSql);
 		$vehicleStmt->execute([$searchTerm, $searchTerm, $searchTerm, $searchTerm]);
@@ -232,7 +247,7 @@ function getApplications($pdo)
 		$searchParams = [];
 
 		// Search by application ID
-		$searchConditions[] = "id LIKE ?";
+		$searchConditions[] = "LOWER(id) LIKE LOWER(?)";
 		$searchParams[] = $searchTerm;
 
 		// Search by customer IDs
@@ -257,7 +272,7 @@ function getApplications($pdo)
 
 	// Add status filter
 	if ($status !== 'all') {
-		$sql .= " AND status = ?";
+		$sql .= " AND la.status = ?";
 		$params[] = $status;
 	}
 
@@ -265,18 +280,18 @@ function getApplications($pdo)
 	if ($date_range !== 'all') {
 		switch ($date_range) {
 			case 'today':
-				$sql .= " AND DATE(application_date) = CURDATE()";
+				$sql .= " AND DATE(la.application_date) = CURDATE()";
 				break;
 			case 'week':
-				$sql .= " AND application_date >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+				$sql .= " AND la.application_date >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
 				break;
 			case 'month':
-				$sql .= " AND application_date >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+				$sql .= " AND la.application_date >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
 				break;
 		}
 	}
 
-	$sql .= " ORDER BY application_date DESC";
+	$sql .= " ORDER BY la.application_date DESC";
 
 	$stmt = $pdo->prepare($sql);
 	$stmt->execute($params);
@@ -486,6 +501,7 @@ function enhanceApplicationData($application, $pdo)
 function getApplicationDetails($pdo)
 {
 	$applicationId = $_GET['id'] ?? 0;
+	$agentId = $_SESSION['user_id'];
 
 	if (!$applicationId) {
 		ob_end_clean();
@@ -494,14 +510,17 @@ function getApplicationDetails($pdo)
 		return;
 	}
 
-	$stmt = $pdo->prepare("SELECT * FROM loan_applications WHERE id = ?");
-	$stmt->execute([$applicationId]);
+	// Get application details filtered by agent's assigned customers
+	$stmt = $pdo->prepare("SELECT la.* FROM loan_applications la
+			INNER JOIN customer_information ci ON la.customer_id = ci.account_id
+			WHERE la.id = ? AND ci.agent_id = ?");
+	$stmt->execute([$applicationId, $agentId]);
 	$application = $stmt->fetch(PDO::FETCH_ASSOC);
 
 	if (!$application) {
 		ob_end_clean();
 		http_response_code(404);
-		echo json_encode(['error' => 'Application not found']);
+		echo json_encode(['error' => 'Application not found or access denied']);
 		return;
 	}
 
@@ -823,17 +842,17 @@ function approveApplication($pdo)
 		// Start transaction
 		$pdo->beginTransaction();
 
-		// Get loan application details with stored vehicle prices
-		$loanStmt = $pdo->prepare("SELECT la.*, ci.cusID, ci.account_id, v.model_name, v.variant, v.stock_quantity, v.popular_color 
-									 FROM loan_applications la 
-									 JOIN customer_information ci ON la.customer_id = ci.account_id 
-									 JOIN vehicles v ON la.vehicle_id = v.id 
-									 WHERE la.id = ?");
-		$loanStmt->execute([$applicationId]);
+		// Get loan application details with stored vehicle prices (filtered by agent)
+		$loanStmt = $pdo->prepare("SELECT la.*, ci.cusID, ci.account_id, v.model_name, v.variant, v.stock_quantity, v.popular_color
+									 FROM loan_applications la
+									 JOIN customer_information ci ON la.customer_id = ci.account_id
+									 JOIN vehicles v ON la.vehicle_id = v.id
+									 WHERE la.id = ? AND ci.agent_id = ?");
+		$loanStmt->execute([$applicationId, $agentId]);
 		$loanData = $loanStmt->fetch(PDO::FETCH_ASSOC);
 
 		if (!$loanData) {
-			throw new Exception('Loan application not found');
+			throw new Exception('Loan application not found or access denied');
 		}
 
 		// Check if vehicle has sufficient stock
@@ -972,17 +991,17 @@ function approveApplicationEnhanced($pdo)
 		// Start transaction
 		$pdo->beginTransaction();
 
-		// Get loan application details with stored vehicle prices
-		$loanStmt = $pdo->prepare("SELECT la.*, ci.cusID, ci.account_id, v.model_name, v.variant, v.stock_quantity, v.popular_color 
-									 FROM loan_applications la 
-									 JOIN customer_information ci ON la.customer_id = ci.account_id 
-									 JOIN vehicles v ON la.vehicle_id = v.id 
-									 WHERE la.id = ?");
-		$loanStmt->execute([$applicationId]);
+		// Get loan application details with stored vehicle prices (filtered by agent)
+		$loanStmt = $pdo->prepare("SELECT la.*, ci.cusID, ci.account_id, v.model_name, v.variant, v.stock_quantity, v.popular_color
+									 FROM loan_applications la
+									 JOIN customer_information ci ON la.customer_id = ci.account_id
+									 JOIN vehicles v ON la.vehicle_id = v.id
+									 WHERE la.id = ? AND ci.agent_id = ?");
+		$loanStmt->execute([$applicationId, $agentId]);
 		$loanData = $loanStmt->fetch(PDO::FETCH_ASSOC);
 
 		if (!$loanData) {
-			throw new Exception('Loan application not found');
+			throw new Exception('Loan application not found or access denied');
 		}
 
 		// Check if vehicle has sufficient stock
@@ -1180,8 +1199,10 @@ function rejectApplication($pdo)
 	if ($success) {
 		// Notify customer and admins
 		require_once dirname(__DIR__) . '/includes/api/notification_api.php';
-		$stmt = $pdo->prepare("SELECT customer_id FROM loan_applications WHERE id = ?");
-		$stmt->execute([$applicationId]);
+		$stmt = $pdo->prepare("SELECT la.customer_id FROM loan_applications la
+			INNER JOIN customer_information ci ON la.customer_id = ci.account_id
+			WHERE la.id = ? AND ci.agent_id = ?");
+		$stmt->execute([$applicationId, $agentId]);
 		$customerId = $stmt->fetchColumn();
 		createNotification($customerId, null, 'Loan Application Rejected', 'Your loan application #' . $applicationId . ' has been rejected.', 'loan', $applicationId);
 		createNotification(null, 'Admin', 'Loan Application Rejected', 'Loan application #' . $applicationId . ' has been rejected.', 'loan', $applicationId);

@@ -3,7 +3,7 @@ include_once(dirname(dirname(__DIR__)) . '/includes/init.php');
 
 // Check if user is Admin
 if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'Admin') {
-    header("Location: ../../auth/login.php");
+    header("Location: ../../pages/login.php");
     exit();
 }
 ?>
@@ -28,7 +28,7 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'Admin') {
     }
     
     body {
-      zoom: 75%;
+      zoom: 80%;
     }
     
     /* Custom scrollbar styling */

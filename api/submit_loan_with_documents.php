@@ -1,5 +1,23 @@
 <?php
+ini_set('session.gc_maxlifetime', 10800);
+ini_set('session.cookie_lifetime', 10800);
+$secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+if (defined('PHP_VERSION_ID') && PHP_VERSION_ID >= 70300) {
+    session_set_cookie_params([
+        'lifetime' => 10800,
+        'path' => '/',
+        'secure' => $secure,
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+} else {
+    // Fallback for PHP < 7.3: avoid injecting samesite via path to prevent malformed cookies
+    session_set_cookie_params(10800, '/');
+    ini_set('session.cookie_secure', $secure ? '1' : '0');
+    ini_set('session.cookie_httponly', '1');
+}
 session_start();
+// Removed session_regenerate_id(true) to avoid unintended logout during submission; regenerate on login instead for security
 require_once '../includes/database/db_conn.php';
 
 // Always return JSON from this endpoint
@@ -7,8 +25,7 @@ header('Content-Type: application/json');
 
 // Enable error logging
 error_log("🚀 Loan application API started - " . date('Y-m-d H:i:s'));
-error_log("📊 Session data: " . json_encode(['user_id' => $_SESSION['user_id'] ?? 'not set']))
-;
+error_log("📊 Session data: " . json_encode(['user_id' => $_SESSION['user_id'] ?? 'not set']));
 error_log("📝 POST data keys: " . json_encode(array_keys($_POST)));
 error_log("📁 FILES data keys: " . json_encode(array_keys($_FILES)));
 
@@ -338,7 +355,6 @@ try {
         error_log("❌ No rows affected during insertion");
         throw new Exception('Failed to insert loan application');
     }
-    
 } catch (Exception $e) {
     error_log("💥 Exception caught: " . $e->getMessage());
     error_log("💥 Exception trace: " . $e->getTraceAsString());
@@ -358,7 +374,7 @@ try {
     http_response_code(500);
     $errorResponse = [
         'success' => false,
-        'message' => $e->getMessage()
+        'message' => 'An error occurred during submission. Please try again or contact support if the problem persists.'
     ];
     
     error_log("📤 Sending error response: " . json_encode($errorResponse));

@@ -176,6 +176,10 @@ $user_role = isset($_SESSION['user_role']) ? $_SESSION['user_role'] : 'SalesAgen
           <i class="fas fa-comment-dots"></i>
           <span>SMS</span>
         </a>
+        <a href="email-management.php" class="menu-item <?php echo $current_page == 'email-management' ? 'active' : ''; ?>">
+          <i class="fas fa-envelope"></i>
+          <span>Email Management</span>
+        </a>
       </div>
 
       <div class="menu-group">
@@ -257,6 +261,18 @@ $user_role = isset($_SESSION['user_role']) ? $_SESSION['user_role'] : 'SalesAgen
         <a href="sms.php" class="menu-item <?php echo $current_page == 'sms' ? 'active' : ''; ?>" aria-current="<?php echo $current_page == 'sms' ? 'page' : 'false'; ?>">
           <i class="fas fa-comment-dots"></i>
           <span>SMS</span>
+        </a>
+        <a href="email-management.php" class="menu-item <?php echo $current_page == 'email-management' ? 'active' : ''; ?>">
+          <i class="fas fa-envelope"></i>
+          <span>Email Management</span>
+        </a>
+      </div>
+
+      <div class="menu-group">
+        <div class="menu-group-label">Customer Inquiries</div>
+        <a href="inquiries.php" class="menu-item <?php echo $current_page == 'inquiries' ? 'active' : ''; ?>">
+          <i class="fas fa-question-circle"></i>
+          <span>Vehicle Inquiries</span>
         </a>
       </div>
 

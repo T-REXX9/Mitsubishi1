@@ -4,7 +4,7 @@ include_once(dirname(dirname(__DIR__)) . '/includes/init.php');
 
 // Redirect if not logged in
 if (!isset($_SESSION['user_id'])) {
-    header("Location: ../../auth/login.php");
+    header("Location: ../../pages/login.php");
     exit();
 }
 
@@ -276,7 +276,7 @@ if (!empty($user_data['ProfileImage'])) {
     }
     
     body {
-      zoom: 75%;
+      zoom: 80%;
     }
     .profile-container {
       display: grid;

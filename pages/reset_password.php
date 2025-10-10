@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     body {
       background: linear-gradient(to bottom, #1c1c1c, #b80000);
       color: white;
-      zoom: 90%;
+      zoom: 80%;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -176,7 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
   <div class="container">
     <div class="login-box">
-      <img src="../includes/images/Mitsubishi_logo.png" alt="Mitsubishi Logo" class="logo"/>
+      <img src="../includes/images/mitsubishi_logo.png" alt="Mitsubishi Logo" class="logo"/>
       <h2>Reset Password</h2>
       <?php if (!empty($reset_error)): ?>
         <div style="color:#ffd700;margin-bottom:10px;"><?php echo htmlspecialchars($reset_error); ?></div>

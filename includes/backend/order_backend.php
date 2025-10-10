@@ -767,10 +767,25 @@ function submitPayment()
 		}
 		
 		// Create uploads directory if it doesn't exist
-		$upload_dir = '../uploads/receipts/';
-		if (!file_exists($upload_dir)) {
-			mkdir($upload_dir, 0755, true);
+		$upload_dir = realpath(__DIR__ . '/../../uploads/receipts/');
+		if (!$upload_dir) {
+			// Directory doesn't exist, create it
+			$upload_dir = __DIR__ . '/../../uploads/receipts/';
+			if (!file_exists($upload_dir)) {
+				mkdir($upload_dir, 0755, true);
+				// Set proper permissions for Linux/Unix systems
+				chmod($upload_dir, 0755);
+			}
+			$upload_dir = realpath($upload_dir);
 		}
+		
+		// Ensure directory is writable
+		if (!is_writable($upload_dir)) {
+			chmod($upload_dir, 0755);
+		}
+		
+		// Add trailing slash for consistency
+		$upload_dir = rtrim($upload_dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
 		
 		// Generate unique filename
 		$file_extension = pathinfo($upload_file['name'], PATHINFO_EXTENSION);
@@ -779,8 +794,15 @@ function submitPayment()
 		
 		// Move uploaded file
 		if (!move_uploaded_file($upload_file['tmp_name'], $upload_path)) {
-			throw new Exception('Failed to upload receipt file');
+			// Try to set file permissions if move fails
+			if (file_exists($upload_path)) {
+				chmod($upload_path, 0644);
+			}
+			throw new Exception('Failed to upload receipt file. Please check server permissions.');
 		}
+		
+		// Set proper file permissions after successful upload
+		chmod($upload_path, 0644);
 
 		// Generate payment number
 		$payment_number = 'PAY-' . date('Y') . '-' . str_pad($order_id, 3, '0', STR_PAD_LEFT) . '-' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT);
@@ -836,6 +858,10 @@ function submitPayment()
 			'message' => 'Payment submitted successfully. It will be reviewed by our team.',
 			'payment_number' => $payment_number
 		]);
+		
+		// Mark that we've sent a response to prevent shutdown function from adding fallback
+		$GLOBALS['__ORDER_BACKEND_RESP_SENT__'] = true;
+		exit; // Ensure no further output
 	} catch (Exception $e) {
 		$connect->rollBack();
 		
@@ -848,6 +874,10 @@ function submitPayment()
 			'success' => false,
 			'error' => 'Failed to submit payment: ' . $e->getMessage()
 		]);
+		
+		// Mark that we've sent a response to prevent shutdown function from adding fallback
+		$GLOBALS['__ORDER_BACKEND_RESP_SENT__'] = true;
+		exit; // Ensure no further output
 	}
 }
 

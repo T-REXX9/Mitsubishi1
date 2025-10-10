@@ -119,6 +119,95 @@ exit;
                 echo json_encode(['success' => false, 'message' => 'Failed to reassign customer. Ensure the agent is active.']);
             }
             exit;
+
+        case 'filter_accounts':
+            $role = $_POST['role'] ?? 'all';
+            $search = $_POST['search'] ?? '';
+            $sortBy = $_POST['sort'] ?? 'CreatedAt';
+            $sortOrder = $_POST['order'] ?? 'DESC';
+            $list = $accountsOp->getAccounts($role !== 'all' ? $role : null, $search, $sortBy, $sortOrder);
+            ob_start();
+            foreach ($list as $account):
+            ?>
+            <tr>
+              <td><?php echo htmlspecialchars($account['Id']); ?></td>
+              <td><?php echo htmlspecialchars(($account['FirstName'] ?? '') . ' ' . ($account['LastName'] ?? '')); ?></td>
+              <td><?php echo htmlspecialchars($account['Username']); ?></td>
+              <td><?php echo htmlspecialchars($account['Email']); ?></td>
+              <td><span class="status <?php echo strtolower($account['Role']); ?>"><?php echo htmlspecialchars($account['Role']); ?></span></td>
+              <td><?php echo date('M d, Y', strtotime($account['CreatedAt'])); ?></td>
+              <td><?php echo $account['LastLoginAt'] ? date('M d, Y', strtotime($account['LastLoginAt'])) : 'Never'; ?></td>
+              <td>
+                <?php $isDisabled = intval($account['IsDisabled'] ?? 0) === 1; ?>
+                <span class="status <?php echo $isDisabled ? 'error' : 'success'; ?>">
+                  <?php echo $isDisabled ? 'Disabled' : 'Active'; ?>
+                </span>
+              </td>
+              <td class="table-actions">
+                <button class="btn btn-small btn-view" onclick="viewAccountInfo('<?php echo $account['Role']; ?>', <?php echo $account['Id']; ?>)" title="View Details">
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-small btn-outline" onclick="editAccount(<?php echo $account['Id']; ?>)">Edit</button>
+                <?php if ($isDisabled): ?>
+                  <button class="btn btn-small btn-primary" onclick="toggleDisable(<?php echo $account['Id']; ?>, false)">Enable</button>
+                <?php else: ?>
+                  <button class="btn btn-small btn-danger" onclick="toggleDisable(<?php echo $account['Id']; ?>, true)">Disable</button>
+                <?php endif; ?>
+              </td>
+            </tr>
+            <?php
+            endforeach;
+            $rowsHtml = ob_get_clean();
+            echo json_encode(['success' => true, 'rowsHtml' => $rowsHtml]);
+            exit;
+
+        case 'filter_customer_accounts':
+            $search = $_POST['search'] ?? '';
+            $sortBy = $_POST['sort'] ?? 'CreatedAt';
+            $sortOrder = $_POST['order'] ?? 'DESC';
+            $list = $customerOp->listCustomerAccountsWithAgent($search, $sortBy, $sortOrder);
+            ob_start();
+            foreach ($list as $row):
+            ?>
+            <tr>
+              <td><?php echo htmlspecialchars($row['AccountId']); ?></td>
+              <td><?php echo htmlspecialchars(trim(($row['FirstName'] ?? '') . ' ' . ($row['LastName'] ?? ''))); ?></td>
+              <td><?php echo htmlspecialchars($row['Username']); ?></td>
+              <td><?php echo htmlspecialchars($row['Email']); ?></td>
+              <td>
+                <?php if (!empty($row['agent_id'])): ?>
+                  <span id="agentLabel-<?php echo (int)$row['AccountId']; ?>" title="<?php echo htmlspecialchars($row['AgentUsername'] ?? ''); ?>"><?php echo htmlspecialchars($row['AgentName'] ?? ''); ?></span>
+                <?php else: ?>
+                  <span id="agentLabel-<?php echo (int)$row['AccountId']; ?>" class="status warning">Unassigned</span>
+                <?php endif; ?>
+              </td>
+              <td><?php echo $row['CreatedAt'] ? date('M d, Y', strtotime($row['CreatedAt'])) : '—'; ?></td>
+              <td><?php echo !empty($row['LastLoginAt']) ? date('M d, Y', strtotime($row['LastLoginAt'])) : 'Never'; ?></td>
+              <td>
+                <?php $isDisabled = intval($row['IsDisabled'] ?? 0) === 1; ?>
+                <span class="status <?php echo $isDisabled ? 'error' : 'success'; ?>">
+                  <?php echo $isDisabled ? 'Disabled' : 'Active'; ?>
+                </span>
+              </td>
+              <td class="table-actions">
+                <button class="btn btn-small btn-view" onclick="viewCustomerInfo(<?php echo (int)$row['AccountId']; ?>)" title="View Customer Details">
+                  <i class="fas fa-eye"></i>
+                </button>
+                <?php if (!empty($row['agent_id'])): ?>
+                <button class="btn btn-small btn-outline" onclick="viewSalesAgentInfo(<?php echo (int)$row['agent_id']; ?>)" title="View Assigned Agent">
+                  Agent
+                </button>
+                <?php endif; ?>
+                <button class="btn btn-small btn-primary" onclick="openReassignModal(<?php echo (int)$row['AccountId']; ?>, <?php echo !empty($row['agent_id']) ? (int)$row['agent_id'] : 'null'; ?>)" title="Reassign to Sales Agent">
+                  Reassign
+                </button>
+              </td>
+            </tr>
+            <?php
+            endforeach;
+            $rowsHtml = ob_get_clean();
+            echo json_encode(['success' => true, 'rowsHtml' => $rowsHtml]);
+            exit;
     }
 }
 
@@ -164,6 +253,115 @@ $activeAgents = $customerOp->getActiveSalesAgents();
     .modal.modal--sm .modal-body { padding: 14px 16px; }
     .modal.modal--sm .modal-footer { padding: 12px 16px; }
     .modal.modal--sm .btn { padding: 8px 14px; font-size: 0.9rem; }
+
+    /* Real-time filter enhancements */
+    .filter-bar {
+      transition: opacity 0.3s ease, pointer-events 0.3s ease;
+    }
+
+    .filter-bar.filtering {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    /* Consistent styling for all filter elements - override existing styles */
+    .filter-bar .search-input input {
+      background: white !important;
+      border: 1px solid var(--border-light) !important;
+      color: var(--text-dark) !important;
+      transition: all 0.3s ease !important;
+      border-radius: 8px !important;
+      font-size: 14px !important;
+      padding: 10px 15px 10px 40px !important; /* Extra left padding for icon */
+      width: 100% !important;
+    }
+
+    .filter-bar .filter-select {
+      background: white !important;
+      border: 1px solid var(--border-light) !important;
+      color: var(--text-dark) !important;
+      transition: all 0.3s ease;
+      border-radius: 8px;
+      font-size: 14px;
+      padding: 10px 15px;
+    }
+
+    .filter-bar .search-input input:focus,
+    .filter-bar .filter-select:focus {
+      border-color: var(--primary-red) !important;
+      box-shadow: 0 0 0 2px rgba(214, 0, 0, 0.1) !important;
+      outline: none;
+    }
+
+    /* Clear button styling - make it secondary/outline style */
+    .filter-bar .btn-outline {
+      background: white !important;
+      border: 1px solid var(--border-light) !important;
+      color: var(--text-dark) !important;
+      transition: all 0.3s ease;
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .filter-bar .btn-outline:hover {
+      background: var(--primary-light) !important;
+      border-color: var(--primary-red) !important;
+      color: var(--primary-red) !important;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Active filter indicator */
+    .filter-bar.has-active-filters {
+      background: rgba(214, 0, 0, 0.05);
+      border-left: 3px solid var(--primary-red);
+    }
+
+    /* Info text styling */
+    .filter-bar small {
+      color: var(--text-light);
+      font-size: 12px;
+      margin-left: 10px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Remove pink separators and ensure consistent spacing */
+    .filter-bar {
+      gap: 15px !important;
+      align-items: center;
+      padding: 15px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--border-light);
+    }
+
+    /* Ensure all filter elements have consistent height */
+    .filter-bar .search-input input,
+    .filter-bar .filter-select,
+    .filter-bar .btn-outline {
+      height: 44px;
+      box-sizing: border-box;
+    }
+
+    /* Improve search input icon positioning */
+    .filter-bar .search-input {
+      position: relative !important;
+    }
+
+    .filter-bar .search-input i {
+      position: absolute !important;
+      left: 15px !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      color: var(--text-light) !important;
+      z-index: 2 !important;
+      pointer-events: none !important; /* Prevent icon from interfering with input clicks */
+    }
   </style>
 </head>
 <body>
@@ -237,12 +435,12 @@ $activeAgents = $customerOp->getActiveSalesAgents();
             <option value="AgentName_ASC" <?php echo ($cust_sort === 'AgentName' && strtoupper($cust_order) === 'ASC') ? 'selected' : ''; ?>>Agent Name A-Z</option>
             <option value="AgentName_DESC" <?php echo ($cust_sort === 'AgentName' && strtoupper($cust_order) === 'DESC') ? 'selected' : ''; ?>>Agent Name Z-A</option>
           </select>
-          <button class="btn btn-primary" onclick="applyCustomerFilters()">
-            <i class="fas fa-filter"></i> Apply Filters
-          </button>
           <button class="btn btn-outline" onclick="clearCustomerFilters()">
-            <i class="fas fa-times"></i> Clear
+            <i class="fas fa-times"></i> Clear Filters
           </button>
+          <small style="color: var(--text-light); font-size: 12px; margin-left: 10px;">
+            <i class="fas fa-info-circle"></i> Filters apply automatically
+          </small>
         </div>
 
         <table class="data-table">
@@ -339,12 +537,12 @@ $activeAgents = $customerOp->getActiveSalesAgents();
             <option value="Username_DESC" <?php echo ($sort_by === 'Username' && $sort_order === 'DESC') ? 'selected' : ''; ?>>Username Z-A</option>
             <option value="Role_ASC" <?php echo ($sort_by === 'Role' && $sort_order === 'ASC') ? 'selected' : ''; ?>>Role A-Z</option>
           </select>
-          <button class="btn btn-primary" onclick="applyFilters()">
-            <i class="fas fa-filter"></i> Apply Filters
-          </button>
           <button class="btn btn-outline" onclick="clearFilters()">
-            <i class="fas fa-times"></i> Clear
+            <i class="fas fa-times"></i> Clear Filters
           </button>
+          <small style="color: var(--text-light); font-size: 12px; margin-left: 10px;">
+            <i class="fas fa-info-circle"></i> Filters apply automatically
+          </small>
         </div>
 
         <table class="data-table">
@@ -643,56 +841,85 @@ $activeAgents = $customerOp->getActiveSalesAgents();
       });
     });
 
-    // Apply filters function
+    // Apply filters function (AJAX, no reload)
     function applyFilters() {
       const role = document.getElementById('roleFilter').value;
       const search = document.getElementById('searchInput').value;
       const sort = document.getElementById('sortFilter').value;
-      
-      const params = new URLSearchParams();
-      if (role !== 'all') params.append('role', role);
-      if (search) params.append('search', search);
-      
-      if (sort) {
-        const [sortBy, sortOrder] = sort.split('_');
-        params.append('sort', sortBy);
-        params.append('order', sortOrder);
-      }
-      
-      window.location.href = '?' + params.toString();
+      const [sortBy, sortOrder] = (sort || 'CreatedAt_DESC').split('_');
+
+      const fd = new FormData();
+      fd.append('action', 'filter_accounts');
+      fd.append('role', role);
+      fd.append('search', search);
+      fd.append('sort', sortBy);
+      fd.append('order', sortOrder);
+
+      const tbody = document.querySelector('#account-all table.data-table tbody');
+      if (!tbody) return;
+      showFilterLoading();
+      fetch('', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(d => {
+          if (d.success) {
+            const input = document.getElementById('searchInput');
+            const selStart = input.selectionStart;
+            const selEnd = input.selectionEnd;
+            tbody.innerHTML = d.rowsHtml || '';
+            input.focus();
+            if (typeof selStart === 'number' && typeof selEnd === 'number') {
+              input.setSelectionRange(selStart, selEnd);
+            }
+          }
+        })
+        .finally(() => hideFilterLoading());
     }
 
-    // Clear filters function
+    // Clear filters function (AJAX reset)
     function clearFilters() {
-      window.location.href = window.location.pathname;
+      document.getElementById('searchInput').value = '';
+      document.getElementById('roleFilter').value = 'all';
+      document.getElementById('sortFilter').value = 'CreatedAt_DESC';
+      applyFilters();
     }
 
-    // Apply filters for Customer Accounts tab
+    // Apply filters for Customer Accounts tab (AJAX, no reload)
     function applyCustomerFilters() {
       const search = document.getElementById('custSearchInput').value;
       const sort = document.getElementById('custSortFilter').value;
+      const [sortBy, sortOrder] = (sort || 'CreatedAt_DESC').split('_');
 
-      const params = new URLSearchParams(window.location.search);
-      // Set customer-specific params
-      if (search) { params.set('cust_search', search); } else { params.delete('cust_search'); }
-      if (sort) {
-        const [sortBy, sortOrder] = sort.split('_');
-        params.set('cust_sort', sortBy);
-        params.set('cust_order', sortOrder);
-      }
-      // Ensure the Customer Accounts tab is visible after reload
-      params.set('active_tab', 'customer-accounts');
-      window.location.href = '?' + params.toString();
+      const fd = new FormData();
+      fd.append('action', 'filter_customer_accounts');
+      fd.append('search', search);
+      fd.append('sort', sortBy);
+      fd.append('order', sortOrder);
+
+      const tbody = document.querySelector('#customer-accounts table.data-table tbody');
+      if (!tbody) return;
+      showFilterLoading();
+      fetch('', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(d => {
+          if (d.success) {
+            const input = document.getElementById('custSearchInput');
+            const selStart = input.selectionStart;
+            const selEnd = input.selectionEnd;
+            tbody.innerHTML = d.rowsHtml || '';
+            input.focus();
+            if (typeof selStart === 'number' && typeof selEnd === 'number') {
+              input.setSelectionRange(selStart, selEnd);
+            }
+          }
+        })
+        .finally(() => hideFilterLoading());
     }
 
-    // Clear Customer Accounts filters
+    // Clear Customer Accounts filters (AJAX reset)
     function clearCustomerFilters() {
-      const params = new URLSearchParams(window.location.search);
-      params.delete('cust_search');
-      params.delete('cust_sort');
-      params.delete('cust_order');
-      params.set('active_tab', 'customer-accounts');
-      window.location.href = '?' + params.toString();
+      document.getElementById('custSearchInput').value = '';
+      document.getElementById('custSortFilter').value = 'CreatedAt_DESC';
+      applyCustomerFilters();
     }
 
     // Modal functions - Updated to match topbar.php
@@ -1226,22 +1453,110 @@ $activeAgents = $customerOp->getActiveSalesAgents();
       document.getElementById('createAccountForm').reset();
     }
 
-    // Enhanced search functionality - search on Enter key and real-time filtering
+    // Real-time filtering implementation
+    let searchTimeout;
+    let customerSearchTimeout;
+    let isApplyingFilters = false;
+
+    // Show loading indicator
+    function showFilterLoading() {
+      if (!isApplyingFilters) {
+        isApplyingFilters = true;
+        // Add a subtle loading indicator to the filter bar
+        const filterBars = document.querySelectorAll('.filter-bar');
+        filterBars.forEach(bar => {
+          bar.style.opacity = '0.7';
+          bar.style.pointerEvents = 'none';
+        });
+      }
+    }
+
+    // Hide loading indicator
+    function hideFilterLoading() {
+      if (isApplyingFilters) {
+        isApplyingFilters = false;
+        const filterBars = document.querySelectorAll('.filter-bar');
+        filterBars.forEach(bar => {
+          bar.style.opacity = '1';
+          bar.style.pointerEvents = 'auto';
+        });
+      }
+    }
+
+    // Debounced search function for All Accounts
+    function debouncedSearch() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        applyFilters();
+      }, 250);
+    }
+
+    // Debounced search function for Customer Accounts
+    function debouncedCustomerSearch() {
+      clearTimeout(customerSearchTimeout);
+      customerSearchTimeout = setTimeout(() => {
+        applyCustomerFilters();
+      }, 250);
+    }
+
+    // Real-time search for All Accounts tab
+    document.getElementById('searchInput').addEventListener('input', debouncedSearch);
     document.getElementById('searchInput').addEventListener('keypress', function(e) {
       if (e.key === 'Enter') {
+        e.preventDefault();
+        clearTimeout(searchTimeout);
         applyFilters();
       }
     });
 
-    // Auto-apply filters when sort changes
-    document.getElementById('sortFilter').addEventListener('change', function() {
-      applyFilters();
+    // Real-time filters for All Accounts tab
+    document.getElementById('roleFilter').addEventListener('change', applyFilters);
+    document.getElementById('sortFilter').addEventListener('change', applyFilters);
+
+    // Real-time search for Customer Accounts tab
+    document.getElementById('custSearchInput').addEventListener('input', debouncedCustomerSearch);
+    document.getElementById('custSearchInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        clearTimeout(customerSearchTimeout);
+        applyCustomerFilters();
+      }
     });
 
-    // Auto-apply filters when role changes
-    document.getElementById('roleFilter').addEventListener('change', function() {
-      applyFilters();
-    });
+    // Real-time filter for Customer Accounts tab
+    document.getElementById('custSortFilter').addEventListener('change', applyCustomerFilters);
+
+    // Check for active filters and apply visual indicators
+    function checkActiveFilters() {
+      // Check All Accounts filters
+      const allAccountsBar = document.querySelector('#account-all .filter-bar');
+      const searchInput = document.getElementById('searchInput').value;
+      const roleFilter = document.getElementById('roleFilter').value;
+      
+      if (searchInput || roleFilter !== 'all') {
+        allAccountsBar.classList.add('has-active-filters');
+      } else {
+        allAccountsBar.classList.remove('has-active-filters');
+      }
+
+      // Check Customer Accounts filters
+      const customerAccountsBar = document.querySelector('#customer-accounts .filter-bar');
+      const custSearchInput = document.getElementById('custSearchInput').value;
+      
+      if (custSearchInput) {
+        customerAccountsBar.classList.add('has-active-filters');
+      } else {
+        customerAccountsBar.classList.remove('has-active-filters');
+      }
+    }
+
+    // Run check on page load
+    checkActiveFilters();
+
+    // Add event listeners to update visual indicators
+    document.getElementById('searchInput').addEventListener('input', checkActiveFilters);
+    document.getElementById('roleFilter').addEventListener('change', checkActiveFilters);
+    document.getElementById('custSearchInput').addEventListener('input', checkActiveFilters);
   </script>
 </body>
 </html>

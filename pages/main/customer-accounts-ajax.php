@@ -276,10 +276,11 @@ function getCustomers() {
     
     $search = $_GET['search'] ?? '';
     $status = $_GET['status'] ?? 'all';
+    $sales_agent_id = $_SESSION['user_id'];
     
     try {
         $query = "
-            SELECT 
+            SELECT
                 ci.*,
                 a.Username,
                 a.Email,
@@ -288,18 +289,18 @@ function getCustomers() {
                 CONCAT(ci.firstname, ' ', ci.lastname) as full_name
             FROM customer_information ci
             INNER JOIN accounts a ON ci.account_id = a.Id
-            WHERE a.Role = 'Customer'
+            WHERE a.Role = 'Customer' AND ci.agent_id = :agent_id
         ";
         
-        $params = [];
+        $params = [':agent_id' => $sales_agent_id];
         
         // Add search filter
         if (!empty($search)) {
             $query .= " AND (
-                ci.firstname LIKE :search OR 
-                ci.lastname LIKE :search OR 
-                a.Email LIKE :search OR 
-                ci.mobile_number LIKE :search OR 
+                ci.firstname LIKE :search OR
+                ci.lastname LIKE :search OR
+                a.Email LIKE :search OR
+                ci.mobile_number LIKE :search OR
                 ci.complete_address LIKE :search
             )";
             $params[':search'] = "%{$search}%";

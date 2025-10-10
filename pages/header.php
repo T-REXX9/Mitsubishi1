@@ -7,6 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title><?php echo isset($pageTitle) ? $pageTitle : 'Mitsubishi Motors San Pablo City'; ?></title>
   <link rel="icon" type="image/png" href="../includes/images/mitsubishi_logo.png">
+  <link rel="icon" type="image/x-icon" href="../includes/images/mitsubishi_logo.png">
   
   <!-- Mobile Fix CSS -->
   <link rel="stylesheet" href="../css/mobile-fix.css">

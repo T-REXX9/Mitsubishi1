@@ -357,12 +357,13 @@ try {
             <h3>Vehicle Information</h3>
             <div class="form-row">
               <div class="form-group">
-                <label for="vehicle_model">Vehicle Model</label>
-                <div class="vehicle-selection-wrapper">
-                  <input type="text" id="vehicle_model_display" class="form-control" placeholder="Click to select vehicle" readonly onclick="openVehicleSelectionModal()">
+                <label for="vehicle_search">Search Vehicle</label>
+                <div class="vehicle-dropdown-wrapper" style="position: relative;">
+                  <input type="text" id="vehicle_search" class="form-control" placeholder="Type to search vehicle..." autocomplete="off">
                   <input type="hidden" id="vehicle_model" name="vehicle_model">
                   <input type="hidden" id="vehicle_variant" name="vehicle_variant">
                   <input type="hidden" id="selected_vehicle_id" name="selected_vehicle_id">
+                  <div id="vehicleDropdownResults" class="vehicle-dropdown-results" style="display: none;"></div>
                 </div>
               </div>
               <div class="form-group">
@@ -524,130 +525,97 @@ try {
     </div>
   </div>
 
-  <!-- Vehicle Selection Modal -->
-  <div class="modal-overlay" id="vehicleSelectionModal">
-    <div class="modal vehicle-selection-modal">
-      <div class="modal-header">
-        <h3>Select Vehicle</h3>
-        <button class="modal-close" onclick="closeVehicleSelectionModal()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      <div class="modal-body" style="max-height: 100%; padding: 0; overflow: hidden; display: flex; flex-direction: column; flex: 1;">
-        <div class="vehicle-search-section" style="padding: 20px 25px; margin-bottom: 15px;">
-          <div class="search-wrapper">
-            <i class="fas fa-search search-icon"></i>
-            <input type="text" id="vehicleSearchInput" class="vehicle-search-input" placeholder="Search by model name...">
-          </div>
-        </div>
-        <div>
-          <?php if (empty($vehicles)): ?>
-            <div class="no-vehicles">
-              <p>No vehicles found. Please add some vehicles to the database.</p>
-            </div>
-          <?php else: ?>
-            <div class="cards-grid <?php echo (count($vehicles) <= 2) ? 'limited-width' : ''; ?>">
-              <?php foreach ($vehicles as $vehicle): ?>
-                <div class="vehicle-card" onclick="toggleCard(this, '<?php echo htmlspecialchars($vehicle['model_name']); ?>')">
-                  <div class="checkmark"></div>
-                  <div class="card-image">
-                    <?php if (!empty($vehicle['main_image'])): ?>
-                      <?php 
-                      // Check if it's a file path or base64 data
-                      if (strpos($vehicle['main_image'], 'uploads') !== false || strpos($vehicle['main_image'], '.png') !== false || strpos($vehicle['main_image'], '.jpg') !== false || strpos($vehicle['main_image'], '.jpeg') !== false) {
-                          // It's a file path - convert to web path
-                          $webPath = str_replace('\\', '/', $vehicle['main_image']);
-                          $webPath = preg_replace('/^.*\/htdocs\//', '/', $webPath);
-                          echo '<img src="' . htmlspecialchars($webPath) . '" alt="' . htmlspecialchars($vehicle['model_name']) . '">';
-                      } else if (preg_match('/^[A-Za-z0-9+\/=]+$/', $vehicle['main_image']) && strlen($vehicle['main_image']) > 100) {
-                          // It's base64 data
-                          echo '<img src="data:image/jpeg;base64,' . $vehicle['main_image'] . '" alt="' . htmlspecialchars($vehicle['model_name']) . '">';
-                      } else {
-                          // Try base64_encode for backward compatibility
-                          echo '<img src="data:image/jpeg;base64,' . base64_encode($vehicle['main_image']) . '" alt="' . htmlspecialchars($vehicle['model_name']) . '">';
-                      }
-                      ?>
-                    <?php else: ?>
-                      <span>📱 No Image Available</span>
-                    <?php endif; ?>
-                  </div>
+  <style>
+    .vehicle-dropdown-results {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      max-height: 400px;
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-top: 4px;
+    }
 
-                  <div class="card-content">
-                    <div class="card-header">
-                      <div class="model-name"><?php echo htmlspecialchars($vehicle['model_name'] ?? 'Unknown Model'); ?></div>
-                      <div class="variant"><?php echo htmlspecialchars($vehicle['variant'] ?? 'Standard'); ?></div>
-                    </div>
+    .vehicle-dropdown-item {
+      padding: 12px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background-color 0.2s;
+    }
 
-                    <div class="year-category" style="padding-bottom:10px;">
-                      <span class="year"><?php echo htmlspecialchars($vehicle['year_model'] ?? 'N/A'); ?></span>
-                      <span class="category"><?php echo htmlspecialchars($vehicle['category'] ?? 'Vehicle'); ?></span>
-                    </div>
+    .vehicle-dropdown-item:hover {
+      background-color: #f8f9fa;
+    }
 
-                    <?php if ($vehicle['promotional_price'] || $vehicle['base_price']): ?>
-                      <div class="price-section">
-                        <?php if ($vehicle['base_price']): ?>
-                          <div class="base-price">Base Price: ₱<?php echo number_format($vehicle['base_price'], 2); ?></div>
-                        <?php endif; ?>
-                        <?php if ($vehicle['promotional_price']): ?>
-                          <div class="promotional-price">₱<?php echo number_format($vehicle['promotional_price'], 2); ?></div>
-                        <?php endif; ?>
-                      </div>
-                    <?php endif; ?>
+    .vehicle-dropdown-item:last-child {
+      border-bottom: none;
+    }
 
-                    <div class="specs-grid">
-                      <div class="spec-item">
-                        <div class="spec-label">Engine</div>
-                        <div class="spec-value"><?php echo htmlspecialchars($vehicle['engine_type'] ?? 'N/A'); ?></div>
-                      </div>
-                      <div class="spec-item">
-                        <div class="spec-label">Transmission</div>
-                        <div class="spec-value"><?php echo htmlspecialchars($vehicle['transmission'] ?? 'N/A'); ?></div>
-                      </div>
-                      <div class="spec-item">
-                        <div class="spec-label">Fuel Type</div>
-                        <div class="spec-value"><?php echo htmlspecialchars($vehicle['fuel_type'] ?? 'N/A'); ?></div>
-                      </div>
-                      <div class="spec-item">
-                        <div class="spec-label">Seating</div>
-                        <div class="spec-value"><?php echo htmlspecialchars($vehicle['seating_capacity'] ?? 'N/A'); ?> seats</div>
-                      </div>
-                    </div>
+    .vehicle-dropdown-item.selected {
+      background-color: #e8f4f8;
+      border-left: 3px solid #d60000;
+    }
 
-                    <?php if (!empty($vehicle['key_features'])): ?>
-                      <div class="features">
-                        <h4>Key Features</h4>
-                        <div class="features-list">
-                          <?php echo htmlspecialchars(substr($vehicle['key_features'], 0, 120)) . (strlen($vehicle['key_features']) > 120 ? '...' : ''); ?>
-                        </div>
-                      </div>
-                    <?php endif; ?>
+    .vehicle-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
 
-                    <div class="card-footer">
-                      <div class="stock-status">
-                        <?php
-                        $stockClass = 'available';
-                        $stockText = 'In Stock';
-                        if ($vehicle['stock_quantity'] == 0) {
-                          $stockClass = 'out-of-stock';
-                          $stockText = 'Out of Stock';
-                        } elseif ($vehicle['stock_quantity'] <= ($vehicle['min_stock_alert'] ?? 5)) {
-                          $stockClass = 'low-stock';
-                          $stockText = 'Low Stock';
-                        }
-                        ?>
-                        <span class="status-indicator <?php echo $stockClass; ?>"></span>
-                        <span><?php echo $stockText; ?> (<?php echo $vehicle['stock_quantity']; ?>)</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              <?php endforeach; ?>
-            </div>
-          <?php endif; ?>
-        </div>
-      </div>
-    </div>
-  </div>
+    .vehicle-item-name {
+      font-weight: 600;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .vehicle-item-price {
+      color: #d60000;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .vehicle-item-details {
+      font-size: 12px;
+      color: #666;
+      margin-top: 2px;
+    }
+
+    .vehicle-item-specs {
+      display: flex;
+      gap: 12px;
+      margin-top: 4px;
+      font-size: 11px;
+      color: #888;
+    }
+
+    .vehicle-item-spec {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .vehicle-dropdown-empty {
+      padding: 20px;
+      text-align: center;
+      color: #999;
+      font-size: 14px;
+    }
+
+    .vehicle-dropdown-wrapper {
+      position: relative;
+    }
+
+    #vehicle_search.has-selection {
+      border-color: #28a745;
+      background-color: #f0fff4;
+    }
+  </style>
 
   <!-- Add SweetAlert CDN -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -682,11 +650,13 @@ try {
       document.getElementById('customerInfoDisplay').style.display = 'none';
       document.getElementById('customerSearchResults').style.display = 'none';
       document.getElementById('financingDetails').style.display = 'none';
+      document.getElementById('vehicleDropdownResults').style.display = 'none';
 
       // Clear hidden fields
       document.getElementById('customer_id').value = '';
       document.getElementById('selected_vehicle_id').value = '';
-      document.getElementById('vehicle_model_display').classList.remove('selected-vehicle-display');
+      document.getElementById('vehicle_search').value = '';
+      document.getElementById('vehicle_search').classList.remove('has-selection');
       clearManualCustomerFields();
     }
 
@@ -701,22 +671,73 @@ try {
       document.getElementById('order_number').value = orderNumber;
     }
 
-    // Vehicle selection modal functions
-    function openVehicleSelectionModal() {
-      document.getElementById('vehicleSelectionModal').classList.add('active');
-      document.body.style.overflow = 'hidden';
-      populateVehicleCards();
+    // Load vehicles from database
+    function loadVehicles() {
+      fetch('../../includes/api/get_vehicles.php')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            vehiclesData = data.data;
+            console.log('Vehicles loaded:', vehiclesData.length);
+          } else {
+            console.error('Failed to load vehicles:', data.error);
+          }
+        })
+        .catch(error => {
+          console.error('Error loading vehicles:', error);
+        });
     }
 
-    function closeVehicleSelectionModal() {
-      document.getElementById('vehicleSelectionModal').classList.remove('active');
-      document.getElementById('vehicleSearchInput').value = '';
-      document.body.style.overflow = '';
+    // Filter and display vehicles in dropdown
+    function filterVehicles(searchTerm) {
+      const dropdown = document.getElementById('vehicleDropdownResults');
+      
+      if (searchTerm.length < 1) {
+        dropdown.style.display = 'none';
+        return;
+      }
+
+      const filtered = vehiclesData.filter(vehicle => {
+        const searchLower = searchTerm.toLowerCase();
+        return (
+          vehicle.model_name.toLowerCase().includes(searchLower) ||
+          vehicle.variant.toLowerCase().includes(searchLower) ||
+          vehicle.category?.toLowerCase().includes(searchLower) ||
+          vehicle.year_model?.toString().includes(searchLower)
+        );
+      });
+
+      if (filtered.length === 0) {
+        dropdown.innerHTML = '<div class="vehicle-dropdown-empty">No vehicles found</div>';
+        dropdown.style.display = 'block';
+        return;
+      }
+
+      dropdown.innerHTML = filtered.map(vehicle => {
+        const effectivePrice = (vehicle.promotional_price && vehicle.promotional_price > 0 && vehicle.promotional_price < vehicle.base_price) ?
+          vehicle.promotional_price : vehicle.base_price;
+        
+        return `
+          <div class="vehicle-dropdown-item" onclick="selectVehicle(${vehicle.id})">
+            <div class="vehicle-item-header">
+              <span class="vehicle-item-name">${vehicle.model_name} - ${vehicle.variant}</span>
+              <span class="vehicle-item-price">₱${parseFloat(effectivePrice).toLocaleString()}</span>
+            </div>
+            <div class="vehicle-item-details">${vehicle.year_model} | ${vehicle.category || 'Vehicle'}</div>
+            <div class="vehicle-item-specs">
+              <span class="vehicle-item-spec"><i class="fas fa-cog"></i> ${vehicle.engine_type || 'N/A'}</span>
+              <span class="vehicle-item-spec"><i class="fas fa-gas-pump"></i> ${vehicle.fuel_type || 'N/A'}</span>
+              <span class="vehicle-item-spec"><i class="fas fa-users"></i> ${vehicle.seating_capacity || 'N/A'} seats</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      dropdown.style.display = 'block';
     }
 
-
-    // Select vehicle from card
-    function selectVehicleFromCard(vehicleId) {
+    // Select vehicle from dropdown
+    function selectVehicle(vehicleId) {
       const vehicle = vehiclesData.find(v => v.id === vehicleId);
       if (!vehicle) {
         console.error('Vehicle not found:', vehicleId);
@@ -725,23 +746,15 @@ try {
 
       console.log('Selecting vehicle:', vehicle);
 
-      // Remove previous selection
-      document.querySelectorAll('.vehicle-card').forEach(card => {
-        card.classList.remove('selected');
-      });
+      // Update the search input to show selected vehicle
+      const searchInput = document.getElementById('vehicle_search');
+      searchInput.value = `${vehicle.model_name} - ${vehicle.variant} (${vehicle.year_model})`;
+      searchInput.classList.add('has-selection');
 
-      // Add selection to clicked card
-      const selectedCard = document.getElementById(`vehicle-card-${vehicleId}`);
-      if (selectedCard) {
-        selectedCard.classList.add('selected');
-      }
-
-      // Update the main form fields
+      // Update hidden fields
       document.getElementById('vehicle_model').value = vehicle.model_name;
       document.getElementById('vehicle_variant').value = vehicle.variant;
       document.getElementById('selected_vehicle_id').value = vehicle.id;
-      document.getElementById('vehicle_model_display').value = `${vehicle.model_name} - ${vehicle.variant} (${vehicle.year_model})`;
-      document.getElementById('vehicle_model_display').classList.add('selected-vehicle-display');
 
       // Populate vehicle details
       document.getElementById('model_year').value = vehicle.year_model;
@@ -752,8 +765,7 @@ try {
 
       // Use promotional price if available and lower than base price, otherwise use base price
       const effectivePrice = (vehicle.promotional_price && vehicle.promotional_price > 0 && vehicle.promotional_price < vehicle.base_price) ?
-        vehicle.promotional_price :
-        vehicle.base_price;
+        vehicle.promotional_price : vehicle.base_price;
 
       // Update both base price fields (vehicle info and order details)
       document.getElementById('base_price').value = effectivePrice;
@@ -775,6 +787,9 @@ try {
       // Calculate total price
       calculateTotalPrice();
 
+      // Hide dropdown
+      document.getElementById('vehicleDropdownResults').style.display = 'none';
+
       // Show success feedback
       Swal.fire({
         title: 'Vehicle Selected!',
@@ -794,21 +809,6 @@ try {
           popup: 'colored-toast'
         }
       });
-
-      // Auto-close modal after selection
-      setTimeout(() => {
-        closeVehicleSelectionModal();
-      }, 1500);
-    }
-
-    function toggleCard(card, modelName) {
-      card.classList.toggle('selected');
-
-      if (card.classList.contains('selected')) {
-        console.log('Selected: ' + modelName);
-      } else {
-        console.log('Deselected: ' + modelName);
-      }
     }
 
 
@@ -1166,21 +1166,81 @@ try {
     }
 
     // Load orders from backend
-    function loadOrders() {
-      fetch('../../includes/backend/sales_orders_backend.php?action=get_all_orders')
+    function loadOrders(filters = {}) {
+      const params = new URLSearchParams({
+        action: 'get_all_orders',
+        search: filters.search || '',
+        status: filters.status || 'all',
+        client_type: filters.client_type || 'all',
+        date_range: filters.date_range || 'all'
+      });
+      
+      fetch(`../../includes/backend/sales_orders_backend.php?${params}`)
         .then(response => response.json())
         .then(data => {
           if (data.success) {
             displayOrders(data.data);
+            updateSectionTitle(data.data.length, filters);
           } else {
             console.error('Failed to load orders:', data.error);
-            document.getElementById('ordersTableBody').innerHTML = '<tr><td colspan="6" class="text-center">Failed to load orders</td></tr>';
+            document.getElementById('ordersTableBody').innerHTML = '<tr><td colspan="7" class="text-center">Failed to load orders</td></tr>';
           }
         })
         .catch(error => {
           console.error('Error loading orders:', error);
-          document.getElementById('ordersTableBody').innerHTML = '<tr><td colspan="6" class="text-center">Error loading orders</td></tr>';
+          document.getElementById('ordersTableBody').innerHTML = '<tr><td colspan="7" class="text-center">Error loading orders</td></tr>';
         });
+    }
+
+    // Update section title based on filters
+    function updateSectionTitle(count, filters) {
+      const sectionTitle = document.getElementById('sectionTitle');
+      if (!sectionTitle) return;
+      
+      let title = 'All Orders';
+      const activeFilters = [];
+      
+      if (filters.search) {
+        activeFilters.push(`matching "${filters.search}"`);
+      }
+      
+      if (filters.status && filters.status !== 'all') {
+        activeFilters.push(`with ${filters.status} status`);
+      }
+      
+      if (filters.client_type && filters.client_type !== 'all') {
+        const clientTypeText = filters.client_type === 'walkin' ? 'Walk-in' : 'Handled';
+        activeFilters.push(`for ${clientTypeText} clients`);
+      }
+      
+      if (filters.date_range && filters.date_range !== 'all') {
+        const dateRangeText = {
+          'today': 'from today',
+          'week': 'from this week',
+          'month': 'from this month'
+        };
+        activeFilters.push(dateRangeText[filters.date_range]);
+      }
+      
+      if (activeFilters.length > 0) {
+        title = `Orders ${activeFilters.join(' ')} (${count})`;
+      } else {
+        title = `All Orders (${count})`;
+      }
+      
+      sectionTitle.textContent = title;
+    }
+
+    // Apply filters function
+    function applyFilters() {
+      const filters = {
+        search: document.getElementById('order-search').value.trim(),
+        status: document.getElementById('order-status').value,
+        client_type: document.getElementById('client-type').value,
+        date_range: document.getElementById('order-date').value
+      };
+      
+      loadOrders(filters);
     }
 
     // Display orders in table
@@ -1293,12 +1353,32 @@ try {
     document.addEventListener('DOMContentLoaded', function() {
       // Initialize vehicles data
       initializeDropdowns();
+      loadVehicles();
       
       // Load orders and statistics
       loadOrders();
       loadOrderStatistics();
 
+      // Vehicle search functionality
+      let vehicleSearchTimeout;
+      document.getElementById('vehicle_search').addEventListener('input', function() {
+        clearTimeout(vehicleSearchTimeout);
+        const searchTerm = this.value.trim();
+        
+        // If user clears the input, reset selection
+        if (searchTerm === '') {
+          document.getElementById('vehicle_search').classList.remove('has-selection');
+          document.getElementById('selected_vehicle_id').value = '';
+          document.getElementById('vehicle_model').value = '';
+          document.getElementById('vehicle_variant').value = '';
+          document.getElementById('vehicleDropdownResults').style.display = 'none';
+          return;
+        }
 
+        vehicleSearchTimeout = setTimeout(() => {
+          filterVehicles(searchTerm);
+        }, 300);
+      });
 
       // Add New Order button
       document.getElementById('addNewOrderBtn')?.addEventListener('click', function() {
@@ -1415,10 +1495,30 @@ try {
         handleOrderSubmit();
       });
 
+      // Apply Filters button event listener
+      document.querySelector('.filter-btn').addEventListener('click', applyFilters);
+
+      // Real-time filtering on input changes
+      let filterTimeout;
+      
+      // Search input real-time filtering
+      document.getElementById('order-search').addEventListener('input', function() {
+        clearTimeout(filterTimeout);
+        filterTimeout = setTimeout(applyFilters, 300); // Debounce for 300ms
+      });
+      
+      // Dropdown filters real-time filtering
+      document.getElementById('order-status').addEventListener('change', applyFilters);
+      document.getElementById('client-type').addEventListener('change', applyFilters);
+      document.getElementById('order-date').addEventListener('change', applyFilters);
+
       // Click outside to close search results
       document.addEventListener('click', function(e) {
         if (!e.target.closest('.search-account-wrapper')) {
           document.getElementById('customerSearchResults').style.display = 'none';
+        }
+        if (!e.target.closest('.vehicle-dropdown-wrapper')) {
+          document.getElementById('vehicleDropdownResults').style.display = 'none';
         }
       });
     });

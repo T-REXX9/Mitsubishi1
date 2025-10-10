@@ -1,3 +1,4 @@
+
 <?php
 // Start session first
 if (session_status() == PHP_SESSION_NONE) {
@@ -110,6 +111,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         echo json_encode(['success' => true]);
       } else {
         echo json_encode(['success' => false, 'error' => 'Conversation already taken']);
+      }
+      exit;
+    }
+
+    if ($_POST['action'] === 'transfer_to_ai') {
+      $conversation_id = $_POST['conversation_id'];
+
+      // Check if this agent owns this conversation
+      $checkOwnership = $connect->prepare("
+                SELECT agent_id FROM conversations WHERE conversation_id = ?
+            ");
+      $checkOwnership->execute([$conversation_id]);
+      $conv = $checkOwnership->fetch();
+
+      if ($conv && $conv['agent_id'] == $agent_id) {
+        // Transfer conversation back to AI by setting agent_id to NULL
+        $transferConv = $connect->prepare("
+                    UPDATE conversations 
+                    SET agent_id = NULL, status = 'Pending', updated_at = NOW() 
+                    WHERE conversation_id = ? AND agent_id = ?
+                ");
+        $result = $transferConv->execute([$conversation_id, $agent_id]);
+
+        if ($result && $transferConv->rowCount() > 0) {
+          // Add a system message to indicate the transfer
+          $insertMessage = $connect->prepare("
+                        INSERT INTO messages (conversation_id, sender_id, sender_type, message_text) 
+                        VALUES (?, 0, 'SalesAgent', ?)
+                    ");
+          $transferMessage = "🤖 This conversation has been transferred back to the AI chatbot. The AI will continue assisting the customer.";
+          $insertMessage->execute([$conversation_id, $transferMessage]);
+
+          // Update conversation last message time
+          $updateConv = $connect->prepare("UPDATE conversations SET last_message_at = NOW() WHERE conversation_id = ?");
+          $updateConv->execute([$conversation_id]);
+
+          echo json_encode(['success' => true]);
+        } else {
+          echo json_encode(['success' => false, 'error' => 'Failed to transfer conversation']);
+        }
+      } else {
+        echo json_encode(['success' => false, 'error' => 'Not authorized for this conversation']);
       }
       exit;
     }
@@ -267,6 +310,39 @@ if (isset($_GET['conversation_id'])) {
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link href="../../includes/css/common-styles.css" rel="stylesheet">
   <style>
+    /* ==========================================================================
+       CSS Custom Properties (Variables)
+       ========================================================================== */
+
+    :root {
+      --primary-red: #dc2626;
+      --primary-dark: #b91c1c;
+      --primary-light: #fef2f2;
+      --accent-blue: #2563eb;
+      --text-dark: #1f2937;
+      --text-light: #6b7280;
+      --border-light: #e5e7eb;
+      --shadow-light: 0 1px 3px rgba(0, 0, 0, 0.1);
+      --shadow-medium: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --shadow-large: 0 10px 15px rgba(0, 0, 0, 0.1);
+      --transition: all 0.3s ease;
+      --border-radius: 8px;
+      --border-radius-large: 15px;
+    }
+
+    /* ==========================================================================
+       Sidebar Override - Remove Gradient Background
+       ========================================================================== */
+    
+    /* Override the gradient background from common-styles.css */
+    .sidebar {
+      background: #1a1a1a !important; /* Solid dark background instead of gradient */
+    }
+
+    /* ==========================================================================
+       Base Styles & Layout
+       ========================================================================== */
+
     html,
     body {
       height: 100%;
@@ -276,25 +352,25 @@ if (isset($_GET['conversation_id'])) {
       overflow: hidden;
     }
 
-    body {
-      zoom: 75%;
-    }
-
     .main {
       height: 100vh;
-      min-height: 133.33vh;
-      /* Compensate for 75% zoom (100/0.75) */
       width: 100%;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
     .chat-container {
       display: grid;
       grid-template-columns: 350px 1fr;
-      height: calc(133.33vh - 80px);
-      /* Adjusted to compensate for zoom */
+      height: calc(100vh - 80px);
       gap: 0;
+      overflow: hidden;
     }
+
+    /* ==========================================================================
+       Chat Sidebar Components
+       ========================================================================== */
 
     .chat-sidebar {
       background: white;
@@ -325,6 +401,13 @@ if (isset($_GET['conversation_id'])) {
       border: 1px solid var(--border-light);
       border-radius: 20px;
       font-size: 14px;
+      transition: var(--transition);
+    }
+
+    .chat-search input:focus {
+      outline: none;
+      border-color: var(--primary-red);
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
     }
 
     .chat-search i {
@@ -340,6 +423,10 @@ if (isset($_GET['conversation_id'])) {
       overflow-y: auto;
     }
 
+    /* ==========================================================================
+       Chat Item Components
+       ========================================================================== */
+
     .chat-item {
       padding: 15px 20px;
       border-bottom: 1px solid var(--border-light);
@@ -349,7 +436,7 @@ if (isset($_GET['conversation_id'])) {
     }
 
     .chat-item:hover {
-      background: #f8f9fa;
+      background: var(--primary-light);
     }
 
     .chat-item.active {
@@ -444,10 +531,21 @@ if (isset($_GET['conversation_id'])) {
       color: var(--primary-red);
     }
 
+    .bot-conversation {
+      border-left: 3px solid #fbbf24;
+    }
+
+    /* ==========================================================================
+       Chat Main Area
+       ========================================================================== */
+
     .chat-main {
       display: flex;
       flex-direction: column;
       background: #f8f9fa;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
     }
 
     .chat-topbar {
@@ -457,6 +555,7 @@ if (isset($_GET['conversation_id'])) {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-shrink: 0;
     }
 
     .active-chat-info {
@@ -504,7 +603,17 @@ if (isset($_GET['conversation_id'])) {
 
     .chat-action-btn:hover {
       background: var(--primary-light);
+      border-color: var(--primary-red);
     }
+
+    .chat-action-btn:focus {
+      outline: 2px solid var(--primary-red);
+      outline-offset: 2px;
+    }
+
+    /* ==========================================================================
+       Message Components
+       ========================================================================== */
 
     .chat-messages {
       flex: 1;
@@ -513,6 +622,7 @@ if (isset($_GET['conversation_id'])) {
       display: flex;
       flex-direction: column;
       gap: 15px;
+      min-height: 0;
     }
 
     .message {
@@ -573,10 +683,15 @@ if (isset($_GET['conversation_id'])) {
       text-align: right;
     }
 
+    /* ==========================================================================
+       Chat Input Components
+       ========================================================================== */
+
     .chat-input-container {
       background: white;
       padding: 20px;
       border-top: 1px solid var(--border-light);
+      flex-shrink: 0;
     }
 
     .chat-input-wrapper {
@@ -594,6 +709,13 @@ if (isset($_GET['conversation_id'])) {
       max-height: 100px;
       font-family: inherit;
       font-size: 14px;
+      transition: var(--transition);
+    }
+
+    .chat-input:focus {
+      outline: none;
+      border-color: var(--primary-red);
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
     }
 
     .chat-send-btn {
@@ -611,9 +733,25 @@ if (isset($_GET['conversation_id'])) {
     }
 
     .chat-send-btn:hover {
-      background: #b91c3c;
+      background: var(--primary-dark);
       transform: scale(1.05);
     }
+
+    .chat-send-btn:focus {
+      outline: 2px solid var(--primary-red);
+      outline-offset: 2px;
+    }
+
+    /* State styles */
+    .chat-input:disabled,
+    .chat-send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ==========================================================================
+       Empty State
+       ========================================================================== */
 
     .empty-chat {
       flex: 1;
@@ -637,11 +775,231 @@ if (isset($_GET['conversation_id'])) {
       margin-bottom: 10px;
     }
 
-    /* Responsive Design */
+    /* ==========================================================================
+       Mobile Toggle
+       ========================================================================== */
+
+    .mobile-chat-toggle {
+      display: none;
+    }
+
+    /* ==========================================================================
+       Customer Info Modal Styles
+       ========================================================================== */
+
+    /* Modal Scrollbar */
+    #customerInfoContent::-webkit-scrollbar {
+      width: 12px;
+    }
+
+    #customerInfoContent::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: var(--border-radius);
+    }
+
+    #customerInfoContent::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, var(--primary-red), var(--primary-dark));
+      border-radius: var(--border-radius);
+    }
+
+    #customerInfoContent::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(135deg, var(--primary-dark), #991b1b);
+    }
+
+    /* Chat List Scrollbar */
+    .chat-list::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .chat-list::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    .chat-list::-webkit-scrollbar-thumb {
+      background: var(--primary-red);
+      border-radius: 4px;
+    }
+
+    .chat-list::-webkit-scrollbar-thumb:hover {
+      background: var(--primary-dark);
+    }
+
+    /* Chat Messages Scrollbar */
+    .chat-messages::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .chat-messages::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb {
+      background: var(--primary-red);
+      border-radius: 4px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb:hover {
+      background: var(--primary-dark);
+    }
+
+    /* Info Grid Layout */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    .info-card {
+      background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+      padding: 30px;
+      border-radius: var(--border-radius-large);
+      border: 1px solid #e2e8f0;
+      box-shadow: var(--shadow-medium);
+      min-height: 350px;
+    }
+
+    .info-card h3 {
+      color: var(--primary-red);
+      margin-bottom: 25px;
+      font-size: 1.4rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      border-bottom: 3px solid var(--primary-red);
+      padding-bottom: 15px;
+    }
+
+    .info-card h3 i {
+      margin-right: 12px;
+      background: linear-gradient(135deg, var(--primary-red), var(--primary-dark));
+      color: white;
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 1.1rem;
+    }
+
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .info-item:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      font-weight: 600;
+      color: #374151;
+      min-width: 160px;
+      font-size: 1rem;
+    }
+
+    .info-value {
+      color: #6b7280;
+      text-align: right;
+      flex: 1;
+      font-size: 1rem;
+    }
+
+    /* Statistics Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 25px;
+      margin: 30px 0;
+    }
+
+    .stat-card {
+      text-align: center;
+      padding: 25px;
+      background: white;
+      border-radius: var(--border-radius);
+      border-left: 6px solid;
+      box-shadow: var(--shadow-medium);
+      transition: var(--transition);
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-large);
+    }
+
+    .stat-number {
+      font-size: 2.2rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 1.1rem;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    /* Status Badge */
+    .status-badge {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 25px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Close Button */
+    .close-button {
+      background: linear-gradient(135deg, var(--primary-red), var(--primary-dark));
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1.1rem;
+      transition: var(--transition);
+      box-shadow: 0 6px 12px rgba(220, 38, 38, 0.3);
+    }
+
+    .close-button:focus {
+      outline: 2px solid var(--primary-red);
+      outline-offset: 2px;
+    }
+
+    .close-button:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-large);
+    }
+
+    /* Full Width Card */
+    .full-width-card {
+      grid-column: 1 / -1;
+      min-height: 400px;
+    }
+
+    /* ==========================================================================
+       Responsive Design
+       ========================================================================== */
+
+    /* Mobile Devices */
     @media (max-width: 575px) {
+      .main {
+        height: 100dvh;
+      }
+      
       .chat-container {
         grid-template-columns: 1fr;
         position: relative;
+        height: calc(100dvh - 60px);
       }
 
       .chat-sidebar {
@@ -669,8 +1027,18 @@ if (isset($_GET['conversation_id'])) {
         color: white;
         border: none;
         padding: 10px;
-        border-radius: 6px;
+        border-radius: var(--border-radius);
         cursor: pointer;
+        transition: var(--transition);
+      }
+      
+      .mobile-chat-toggle:hover {
+        background: var(--primary-dark);
+      }
+      
+      .mobile-chat-toggle:focus {
+        outline: 2px solid white;
+        outline-offset: 2px;
       }
 
       .chat-main {
@@ -680,36 +1048,167 @@ if (isset($_GET['conversation_id'])) {
       .message {
         max-width: 85%;
       }
+      
+      .chat-topbar {
+        padding: 15px;
+      }
+      
+      .active-chat-details h3 {
+        font-size: 1rem;
+      }
+      
+      .active-chat-details p {
+        font-size: 12px;
+      }
+      
+      .chat-action-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+      
+      .chat-messages {
+        padding: 15px;
+      }
+      
+      .chat-input-container {
+        padding: 15px;
+      }
     }
 
+    /* Tablet Devices */
     @media (min-width: 576px) and (max-width: 767px) {
+      .main {
+        height: 100vh;
+      }
+      
       .chat-container {
         grid-template-columns: 300px 1fr;
+        height: calc(100vh - 65px);
       }
 
       .message {
         max-width: 80%;
       }
-    }
-
-    @media (min-width: 768px) and (max-width: 991px) {
-      .chat-container {
-        grid-template-columns: 320px 1fr;
+      
+      .chat-header {
+        padding: 15px;
+      }
+      
+      .chat-topbar {
+        padding: 18px 20px;
       }
     }
 
-    .mobile-chat-toggle {
-      display: none;
+    /* Small Desktop */
+    @media (min-width: 768px) and (max-width: 991px) {
+      .main {
+        height: 100vh;
+      }
+      
+      .chat-container {
+        grid-template-columns: 320px 1fr;
+        height: calc(100vh - 70px);
+      }
     }
 
-    .bot-conversation {
-      border-left: 3px solid #ffd700;
+    /* Modal Responsive */
+    @media (max-width: 1024px) {
+      #modalContainer {
+        width: 95vw;
+        height: 95vh;
+        max-height: 95vh;
+      }
+      
+      .info-grid {
+        grid-template-columns: 1fr;
+        gap: 25px;
+      }
+      
+      .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px;
+      }
+      
+      .info-card {
+        padding: 25px;
+        min-height: 300px;
+      }
+      
+      .info-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 12px 0;
+      }
+      
+      .info-value {
+        text-align: left;
+      }
     }
 
-    .chat-input:disabled,
-    .chat-send-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
+    @media (max-width: 768px) {
+      #modalContainer {
+        width: 98vw;
+        height: 98vh;
+        max-height: 98vh;
+      }
+      
+      #customerInfoContent {
+        padding: 20px;
+      }
+      
+      .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 15px;
+      }
+      
+      .stat-card {
+        padding: 20px;
+        min-height: 100px;
+      }
+      
+      .stat-number {
+        font-size: 1.8rem;
+      }
+      
+      .stat-label {
+        font-size: 1rem;
+      }
+      
+      .info-card {
+        padding: 20px;
+        min-height: 250px;
+      }
+      
+      .info-card h3 {
+        font-size: 1.2rem;
+        margin-bottom: 20px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      #modalContainer {
+        width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+      }
+      
+      .info-card h3 {
+        font-size: 1.1rem;
+      }
+      
+      .info-label, .info-value {
+        font-size: 0.9rem;
+      }
+      
+      .stat-number {
+        font-size: 1.5rem;
+      }
+      
+      .stat-label {
+        font-size: 0.9rem;
+      }
     }
   </style>
 </head>
@@ -750,7 +1249,7 @@ if (isset($_GET['conversation_id'])) {
                     <?php echo htmlspecialchars(!empty($conv['customer_firstname']) ?
                       $conv['customer_firstname'] . ' ' . $conv['customer_lastname'] : $conv['Username']); ?>
                     <?php if ($conv['conversation_status'] == 'Bot Conversation'): ?>
-                      <span style="font-size: 10px; color: #ffd700;">🤖 Needs Agent</span>
+                      <span style="font-size: 10px; color: #fbbf24;">🤖 Needs Agent</span>
                     <?php endif; ?>
                   </div>
                   <div class="chat-preview">
@@ -786,13 +1285,27 @@ if (isset($_GET['conversation_id'])) {
                 <h3><?php echo htmlspecialchars(!empty($current_conversation['customer_firstname']) ?
                       $current_conversation['customer_firstname'] . ' ' . $current_conversation['customer_lastname'] :
                       $current_conversation['Username']); ?></h3>
-                <p><?php echo $current_conversation['conversation_status']; ?></p>
+                <p><?php echo $current_conversation['conversation_status']; ?>
+                  <?php if ($current_conversation['conversation_status'] == 'Your Customer'): ?>
+                    <span style="color: #10b981; font-size: 11px; margin-left: 8px;">
+                      <i class="fas fa-user-tie"></i> Agent Handling
+                    </span>
+                  <?php elseif ($current_conversation['conversation_status'] == 'Bot Conversation'): ?>
+                    <span style="color: #fbbf24; font-size: 11px; margin-left: 8px;">
+                      <i class="fas fa-robot"></i> AI Chatbot
+                    </span>
+                  <?php endif; ?>
+                </p>
               </div>
             </div>
             <div class="chat-actions">
               <?php if ($current_conversation['conversation_status'] == 'Bot Conversation'): ?>
-                <button class="chat-action-btn" id="takeConversationBtn" style="background: #ffd700; color: #000;">
+                <button class="chat-action-btn" id="takeConversationBtn" style="background: #fbbf24; color: #000;">
                   <i class="fas fa-hand-paper"></i> Take Over
+                </button>
+              <?php elseif ($current_conversation['conversation_status'] == 'Your Customer'): ?>
+                <button class="chat-action-btn" id="transferToAiBtn" style="background: #10b981; color: white;">
+                  <i class="fas fa-robot"></i> Transfer to AI
                 </button>
               <?php endif; ?>
               <button class="chat-action-btn" id="customerInfoBtn">
@@ -836,14 +1349,14 @@ if (isset($_GET['conversation_id'])) {
 
   <!-- Customer Information Modal -->
   <div id="customerInfoModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; backdrop-filter: blur(5px);">
-    <div id="modalContainer" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 15px; padding: 0; max-width: 95vw; width: 1200px; height: 95vh; max-height: 95vh; overflow: hidden; box-shadow: 0 25px 50px rgba(0,0,0,0.3);">
+    <div id="modalContainer" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: var(--border-radius-large); padding: 0; max-width: 95vw; width: 1200px; height: 95vh; max-height: 95vh; overflow: hidden; box-shadow: var(--shadow-large);">
 
       <!-- Modal Header -->
-      <div style="background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: 25px 30px; border-radius: 15px 15px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+      <div style="background: linear-gradient(135deg, var(--primary-red), var(--primary-dark)); color: white; padding: 25px 30px; border-radius: var(--border-radius-large) var(--border-radius-large) 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
         <h2 style="margin: 0; font-size: 1.8rem; font-weight: 600;">
           <i class="fas fa-user-circle" style="margin-right: 12px;"></i>Customer Information
         </h2>
-        <button id="closeModal" style="background: rgba(255,255,255,0.2); border: none; font-size: 1.5rem; cursor: pointer; color: white; padding: 8px 12px; border-radius: 8px; transition: all 0.3s ease;">
+        <button id="closeModal" style="background: rgba(255,255,255,0.2); border: none; font-size: 1.5rem; cursor: pointer; color: white; padding: 8px 12px; border-radius: var(--border-radius); transition: var(--transition);">
           <i class="fas fa-times"></i>
         </button>
       </div>
@@ -878,6 +1391,29 @@ if (isset($_GET['conversation_id'])) {
             alert(data.error || 'Failed to take conversation');
           }
         });
+    });
+
+    // Transfer to AI functionality
+    document.getElementById('transferToAiBtn')?.addEventListener('click', function() {
+      if (!currentConversationId) return;
+
+      if (confirm('Are you sure you want to transfer this conversation back to the AI chatbot? The AI will continue assisting the customer.')) {
+        fetch('customer-chats.php', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `action=transfer_to_ai&conversation_id=${currentConversationId}`
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              location.reload(); // Refresh to update UI
+            } else {
+              alert(data.error || 'Failed to transfer conversation to AI');
+            }
+          });
+      }
     });
 
     function loadMessages(conversationId) {
@@ -1067,208 +1603,6 @@ if (isset($_GET['conversation_id'])) {
       };
 
       content.innerHTML = `
-        <style>
-          #customerInfoContent::-webkit-scrollbar {
-            width: 12px;
-          }
-          
-          #customerInfoContent::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 6px;
-          }
-          
-          #customerInfoContent::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #dc2626, #b91c1c);
-            border-radius: 6px;
-          }
-          
-          #customerInfoContent::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, #b91c1c, #991b1b);
-          }
-          
-          .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-            gap: 30px;
-            margin-bottom: 30px;
-          }
-          
-          .info-card {
-            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-            padding: 30px;
-            border-radius: 15px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.08);
-            min-height: 350px;
-          }
-          
-          .info-card h3 {
-            color: #dc2626;
-            margin-bottom: 25px;
-            font-size: 1.4rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            border-bottom: 3px solid #dc2626;
-            padding-bottom: 15px;
-          }
-          
-          .info-card h3 i {
-            margin-right: 12px;
-            background: linear-gradient(135deg, #dc2626, #b91c1c);
-            color: white;
-            padding: 10px;
-            border-radius: 10px;
-            font-size: 1.1rem;
-          }
-          
-          .info-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 0;
-            border-bottom: 1px solid #e2e8f0;
-          }
-          
-          .info-item:last-child {
-            border-bottom: none;
-          }
-          
-          .info-label {
-            font-weight: 600;
-            color: #374151;
-            min-width: 160px;
-            font-size: 1rem;
-          }
-          
-          .info-value {
-            color: #6b7280;
-            text-align: right;
-            flex: 1;
-            font-size: 1rem;
-          }
-          
-          .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
-            margin: 30px 0;
-          }
-          
-          .stat-card {
-            text-align: center;
-            padding: 25px;
-            background: white;
-            border-radius: 12px;
-            border-left: 6px solid;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
-            min-height: 120px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-          }
-          
-          .stat-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-          }
-          
-          .stat-number {
-            font-size: 2.2rem;
-            font-weight: bold;
-            margin-bottom: 10px;
-            line-height: 1;
-          }
-          
-          .stat-label {
-            font-size: 1.1rem;
-            color: #6b7280;
-            font-weight: 500;
-          }
-          
-          .status-badge {
-            display: inline-block;
-            padding: 8px 16px;
-            border-radius: 25px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-          }
-          
-          .close-button {
-            background: linear-gradient(135deg, #dc2626, #b91c1c);
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 6px 12px rgba(220, 38, 38, 0.3);
-          }
-          
-          .close-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(220, 38, 38, 0.4);
-          }
-          
-          .full-width-card {
-            grid-column: 1 / -1;
-            min-height: 400px;
-          }
-          
-          @media (max-width: 1024px) {
-            .info-grid {
-              grid-template-columns: 1fr;
-              gap: 25px;
-            }
-            
-            .stats-grid {
-              grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-              gap: 20px;
-            }
-            
-            .info-card {
-              padding: 25px;
-              min-height: 300px;
-            }
-            
-            .info-item {
-              flex-direction: column;
-              align-items: flex-start;
-              gap: 8px;
-              padding: 12px 0;
-            }
-            
-            .info-value {
-              text-align: left;
-            }
-          }
-          
-          @media (max-width: 768px) {
-            .stats-grid {
-              grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-              gap: 15px;
-            }
-            
-            .stat-card {
-              padding: 20px;
-              min-height: 100px;
-            }
-            
-            .stat-number {
-              font-size: 1.8rem;
-            }
-            
-            .stat-label {
-              font-size: 1rem;
-            }
-          }
-        </style>
-
         <div class="info-grid">
           <!-- Personal Information -->
           <div class="info-card">
@@ -1337,8 +1671,8 @@ if (isset($_GET['conversation_id'])) {
             <div class="info-item">
               <span class="info-label">Verification Status:</span>
               <span class="info-value">
-                <span class="status-badge" style="${info.verification_status === 'Approved' ? 'background: #dcfce7; color: #16a34a;' : 
-                  info.verification_status === 'Rejected' ? 'background: #fef2f2; color: #dc2626;' : 
+                <span class="status-badge" style="${info.verification_status === 'Approved' ? 'background: #dcfce7; color: #16a34a;' :
+                  info.verification_status === 'Rejected' ? 'background: var(--primary-light); color: var(--primary-red);' :
                   'background: #fef3c7; color: #d97706;'}">
                   ${info.verification_status || 'Pending'}
                 </span>
@@ -1382,16 +1716,16 @@ if (isset($_GET['conversation_id'])) {
         <div class="info-card full-width-card">
           <h3><i class="fas fa-chart-line"></i>Conversation & Communication Statistics</h3>
           <div class="stats-grid">
-            <div class="stat-card" style="border-left-color: #dc2626;">
-              <div class="stat-number" style="color: #dc2626;">${info.total_messages || 0}</div>
+            <div class="stat-card" style="border-left-color: var(--primary-red);">
+              <div class="stat-number" style="color: var(--primary-red);">${info.total_messages || 0}</div>
               <div class="stat-label">Customer Messages</div>
             </div>
             <div class="stat-card" style="border-left-color: #16a34a;">
               <div class="stat-number" style="color: #16a34a;">${info.agent_responses || 0}</div>
               <div class="stat-label">Agent Responses</div>
             </div>
-            <div class="stat-card" style="border-left-color: #2563eb;">
-              <div class="stat-number" style="color: #2563eb; font-size: 1.4rem;">${formatDate(info.first_message_time)}</div>
+            <div class="stat-card" style="border-left-color: var(--accent-blue);">
+              <div class="stat-number" style="color: var(--accent-blue); font-size: 1.4rem;">${formatDate(info.first_message_time)}</div>
               <div class="stat-label">First Contact</div>
             </div>
             <div class="stat-card" style="border-left-color: #7c3aed;">

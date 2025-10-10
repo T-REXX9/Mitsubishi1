@@ -209,7 +209,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		
 		$success_message = "Your loan application has been submitted successfully! Our sales team will review your application and contact you soon.";
 	} catch (Exception $e) {
-		$connect->rollBack();
+		
+
+
 		$error_message = "Submission failed: " . $e->getMessage();
 	}
 }
@@ -478,7 +480,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 	<header class="header">
 		<div class="logo-section">
-			<img src="../includes/images/Mitsubishi_logo.png" alt="Mitsubishi Logo" class="logo">
+			<img src="../includes/images/mitsubishi_logo.png" alt="Mitsubishi Logo" class="logo">
 			<div class="brand-text">MITSUBISHI MOTORS</div>
 		</div>
 		<div class="user-section">

@@ -13,7 +13,7 @@ if (file_exists($host_helper_path)) {
 }
 
 try {
-    global $connect;
+    global $connect; // db password: ChangeThisRootPassword
     // Ensure connection uses UTF-8 to prevent json_encode failures on non-ASCII data
     $connect = new PDO("mysql:host=localhost;dbname=mitsubishi;charset=utf8mb4", "root", "");
     $connect->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

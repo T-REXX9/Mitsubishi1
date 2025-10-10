@@ -87,7 +87,12 @@ if (!$pdo) {
         <div class="filter-row">
           <div class="filter-group">
             <label for="searchInput">Search Applications</label>
-            <input type="text" class="filter-input" placeholder="Customer name, phone number, or vehicle model" id="searchInput">
+            <div class="search-input-container">
+              <input type="text" class="filter-input" placeholder="Customer name, phone number, or vehicle model" id="searchInput">
+              <button type="button" class="clear-search-btn" onclick="clearSearch()" title="Clear search">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
             <div class="search-hint">Try searching "John", "+639123456789", or "Montero"</div>
           </div>
           <div class="filter-group">
@@ -254,6 +259,14 @@ if (!$pdo) {
         searchTimeout = setTimeout(() => {
           loadLoanStatuses();
         }, 300); // Wait 300ms after user stops typing
+        
+        // Show/hide clear button based on input
+        const clearBtn = document.querySelector('.clear-search-btn');
+        if (this.value.trim()) {
+          clearBtn.style.display = 'flex';
+        } else {
+          clearBtn.style.display = 'none';
+        }
       });
 
       // Immediate filter on dropdown change
@@ -488,6 +501,18 @@ if (!$pdo) {
     }
 
     function applyFilters() {
+      // Clear any existing timeout to ensure immediate execution
+      const searchInput = document.getElementById('searchInput');
+      const statusSelect = document.getElementById('statusFilter');
+      const dateSelect = document.getElementById('dateFilter');
+      
+      // Trigger immediate search
+      loadLoanStatuses();
+    }
+
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      document.querySelector('.clear-search-btn').style.display = 'none';
       loadLoanStatuses();
     }
 
@@ -496,6 +521,7 @@ if (!$pdo) {
       document.getElementById('searchInput').value = '';
       document.getElementById('statusFilter').value = 'all';
       document.getElementById('dateFilter').value = 'all';
+      document.querySelector('.clear-search-btn').style.display = 'none';
 
       // Reset section title
       document.getElementById('sectionTitle').textContent = 'Loan Status Management';
@@ -522,14 +548,16 @@ if (!$pdo) {
 
         const dbStatus = statusMap[newStatus] || newStatus;
 
-        fetch('../../api/loan-applications.php?action=update_status', {
+        fetch('../../api/loan-applications.php', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
+              action: 'update_status',
               id: currentLoanId,
-              status: dbStatus
+              status: dbStatus,
+              notes: notes
             })
           })
           .then(response => response.json())
@@ -554,6 +582,12 @@ if (!$pdo) {
           });
       }
     });
+
+    function closeStatusModal() {
+      document.getElementById('statusModal').classList.remove('active');
+      document.getElementById('statusForm').reset();
+      currentLoanId = null;
+    }
 
     // Helper functions
     function getStatusClass(status) {
@@ -606,6 +640,38 @@ if (!$pdo) {
       box-shadow: 0 0 0 2px rgba(184, 0, 0, 0.2);
     }
 
+    .search-input-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-input-container .filter-input {
+      padding-right: 40px;
+    }
+
+    .clear-search-btn {
+      position: absolute;
+      right: 8px;
+      background: none;
+      border: none;
+      color: #999;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .clear-search-btn:hover {
+      background: #f0f0f0;
+      color: #666;
+    }
+
     .search-hint {
       font-size: 0.8rem;
       color: #666;
@@ -622,6 +688,158 @@ if (!$pdo) {
     .vehicle-meta span {
       font-size: 0.8rem;
       color: #666;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      width: 90%;
+      max-width: 500px;
+      max-height: 80vh;
+      overflow: hidden;
+      animation: modalSlideIn 0.3s ease;
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .modal-header {
+      padding: 20px 25px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8f9fa;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      color: #333;
+      font-size: 1.2rem;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #666;
+      padding: 5px;
+      border-radius: 50%;
+      width: 35px;
+      height: 35px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .modal-close:hover {
+      background: #e0e0e0;
+      color: #333;
+    }
+
+    .modal-body {
+      padding: 25px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.2s ease;
+      box-sizing: border-box;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #b80000;
+      box-shadow: 0 0 0 3px rgba(184, 0, 0, 0.1);
+    }
+
+    .modal-footer {
+      padding: 20px 25px;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      background: #f8f9fa;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 80px;
+    }
+
+    .btn-primary {
+      background: #b80000;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #a00000;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #5a6268;
+      transform: translateY(-1px);
     }
   </style>
 </body>

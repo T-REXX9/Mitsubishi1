@@ -176,7 +176,7 @@ header('Content-Type: text/html');
     <div class="gate-pass">
         <div class="header">
             <div class="logo-section">
-                <img src="../includes/images/Mitsubishi_logo.png" alt="Mitsubishi Logo" class="logo-img">
+                <img src="../includes/images/mitsubishi_logo.png" alt="Mitsubishi Logo" class="logo-img">
                 <div class="company-name">Mitsubishi</div>
             </div>
             <div class="gate-pass-title">

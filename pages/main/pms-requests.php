@@ -7,6 +7,9 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'SalesAgent') {
   exit();
 }
 
+// Get sales agent ID
+$sales_agent_id = $_SESSION['user_id'];
+
 // Use the database connection from init.php
 $pdo = $GLOBALS['pdo'] ?? null;
 
@@ -22,16 +25,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         switch ($_POST['action']) {
             case 'approve':
                 $pms_id = (int)$_POST['pms_id'];
-                $stmt = $pdo->prepare("UPDATE car_pms_records SET request_status = 'Approved', approved_by = ?, approved_at = NOW() WHERE pms_id = ?");
-                $stmt->execute([$_SESSION['user_id'], $pms_id]);
+                $stmt = $pdo->prepare("
+                    UPDATE car_pms_records p
+                    INNER JOIN customer_information ci ON p.customer_id = ci.account_id
+                    SET p.request_status = 'Approved', p.approved_by = ?, p.approved_at = NOW() 
+                    WHERE p.pms_id = ? AND ci.agent_id = ?
+                ");
+                $stmt->execute([$_SESSION['user_id'], $pms_id, $sales_agent_id]);
                 echo json_encode(['success' => true, 'message' => 'PMS request approved successfully']);
                 break;
                 
             case 'reject':
                 $pms_id = (int)$_POST['pms_id'];
                 $reason = $_POST['rejection_reason'] ?? '';
-                $stmt = $pdo->prepare("UPDATE car_pms_records SET request_status = 'Rejected', approved_by = ?, approved_at = NOW(), rejection_reason = ? WHERE pms_id = ?");
-                $stmt->execute([$_SESSION['user_id'], $reason, $pms_id]);
+                $stmt = $pdo->prepare("
+                    UPDATE car_pms_records p
+                    INNER JOIN customer_information ci ON p.customer_id = ci.account_id
+                    SET p.request_status = 'Rejected', p.approved_by = ?, p.approved_at = NOW(), p.rejection_reason = ? 
+                    WHERE p.pms_id = ? AND ci.agent_id = ?
+                ");
+                $stmt->execute([$_SESSION['user_id'], $reason, $pms_id, $sales_agent_id]);
                 echo json_encode(['success' => true, 'message' => 'PMS request rejected']);
                 break;
                 
@@ -42,8 +55,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $reason = $_POST['reschedule_reason'] ?? '';
                 
                 $scheduled_datetime = $new_date . ' ' . $new_time . ':00';
-                $stmt = $pdo->prepare("UPDATE car_pms_records SET request_status = 'Scheduled', scheduled_date = ?, approved_by = ?, approved_at = NOW(), service_notes_findings = CONCAT(COALESCE(service_notes_findings, ''), '\nRescheduled: ', ?) WHERE pms_id = ?");
-                $stmt->execute([$scheduled_datetime, $_SESSION['user_id'], $reason, $pms_id]);
+                $stmt = $pdo->prepare("
+                    UPDATE car_pms_records p
+                    INNER JOIN customer_information ci ON p.customer_id = ci.account_id
+                    SET p.request_status = 'Scheduled', p.scheduled_date = ?, p.approved_by = ?, p.approved_at = NOW(), 
+                        p.service_notes_findings = CONCAT(COALESCE(p.service_notes_findings, ''), '\nRescheduled: ', ?) 
+                    WHERE p.pms_id = ? AND ci.agent_id = ?
+                ");
+                $stmt->execute([$scheduled_datetime, $_SESSION['user_id'], $reason, $pms_id, $sales_agent_id]);
                 echo json_encode(['success' => true, 'message' => 'PMS request rescheduled successfully']);
                 break;
                 
@@ -71,9 +90,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     FROM car_pms_records p
                     LEFT JOIN accounts a ON p.customer_id = a.Id
                     LEFT JOIN customer_information ci ON p.customer_id = ci.account_id
-                    WHERE p.pms_id = ?
+                    WHERE p.pms_id = ? AND ci.agent_id = ?
                 ");
-                $stmt->execute([$pms_id]);
+                $stmt->execute([$pms_id, $sales_agent_id]);
                 $details = $stmt->fetch(PDO::FETCH_ASSOC);
                 
                 if ($details) {
@@ -111,8 +130,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 // Handle receipt download
 if (isset($_GET['download_receipt']) && isset($_GET['pms_id'])) {
     $pms_id = (int)$_GET['pms_id'];
-    $stmt = $pdo->prepare("SELECT uploaded_receipt FROM car_pms_records WHERE pms_id = ?");
-    $stmt->execute([$pms_id]);
+    $stmt = $pdo->prepare("
+        SELECT p.uploaded_receipt 
+        FROM car_pms_records p
+        LEFT JOIN customer_information ci ON p.customer_id = ci.account_id
+        WHERE p.pms_id = ? AND ci.agent_id = ?
+    ");
+    $stmt->execute([$pms_id, $sales_agent_id]);
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($result && !empty($result['uploaded_receipt'])) {
@@ -133,13 +157,18 @@ if (isset($_GET['download_receipt']) && isset($_GET['pms_id'])) {
 // Fetch statistics
 $stats_query = "
     SELECT 
-        COUNT(CASE WHEN request_status = 'Pending' THEN 1 END) as pending,
-        COUNT(CASE WHEN request_status = 'Approved' AND DATE(approved_at) = CURDATE() THEN 1 END) as approved_today,
-        COUNT(CASE WHEN request_status = 'Rejected' THEN 1 END) as rejected,
-        COUNT(CASE WHEN request_status = 'Scheduled' THEN 1 END) as scheduled
-    FROM car_pms_records
+        COUNT(CASE WHEN p.request_status = 'Pending' THEN 1 END) as pending,
+        COUNT(CASE WHEN p.request_status = 'Approved' AND DATE(p.approved_at) = CURDATE() THEN 1 END) as approved_today,
+        COUNT(CASE WHEN p.request_status = 'Rejected' THEN 1 END) as rejected,
+        COUNT(CASE WHEN p.request_status = 'Scheduled' THEN 1 END) as scheduled
+    FROM car_pms_records p
+    LEFT JOIN customer_information ci ON p.customer_id = ci.account_id
+    WHERE ci.agent_id = :sales_agent_id
 ";
-$stats = $pdo->query($stats_query)->fetch(PDO::FETCH_ASSOC);
+$stmt = $pdo->prepare($stats_query);
+$stmt->bindParam(':sales_agent_id', $sales_agent_id, PDO::PARAM_INT);
+$stmt->execute();
+$stats = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Fetch PMS requests with customer information
 $search = $_GET['search'] ?? '';
@@ -147,8 +176,8 @@ $status_filter = $_GET['status'] ?? 'all';
 $service_filter = $_GET['service'] ?? 'all';
 $date_filter = $_GET['date'] ?? 'all';
 
-$where_conditions = [];
-$params = [];
+$where_conditions = ["ci.agent_id = ?"];
+$params = [$sales_agent_id];
 
 if (!empty($search)) {
     $where_conditions[] = "(p.plate_number LIKE ? OR a.FirstName LIKE ? OR a.LastName LIKE ? OR CONCAT('PMS-', YEAR(p.created_at), '-', LPAD(p.pms_id, 3, '0')) LIKE ?)";

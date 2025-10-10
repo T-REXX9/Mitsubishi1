@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     body {
       background: linear-gradient(to bottom, #1c1c1c, #b80000);
       color: white;
-      zoom: 90%;
+      zoom: 80%;
       display: flex;
       align-items: center;
       justify-content: center;

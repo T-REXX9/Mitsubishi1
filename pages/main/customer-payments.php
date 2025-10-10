@@ -17,7 +17,6 @@
     }
     
     body {
-      zoom: 75%;
     }
     .page-header {
       display: flex;

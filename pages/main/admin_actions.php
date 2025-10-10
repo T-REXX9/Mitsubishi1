@@ -55,18 +55,52 @@ try {
 }
 
 function getCustomerDetails($connect) {
+    // Ensure output buffer is clean to prevent JSON contamination
+    if (ob_get_level()) {
+        ob_clean();
+    }
+    
+    // Retrieve and validate input parameters
     $cusID = $_GET['cusID'] ?? null;
     $accountId = $_GET['accountId'] ?? null;
     
+    // Check that at least one parameter is provided
     if (!$cusID && !$accountId) {
-        echo json_encode(['success' => false, 'message' => 'No customer ID or account ID provided']);
+        echo json_encode([
+            'success' => false,
+            'message' => 'No customer ID or account ID provided'
+        ], JSON_UNESCAPED_UNICODE);
         return;
+    }
+    
+    // Validate cusID is a positive integer if provided
+    if ($cusID !== null) {
+        if (!is_numeric($cusID) || intval($cusID) <= 0) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Invalid customer ID. Must be a positive integer.'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+        $cusID = intval($cusID);
+    }
+    
+    // Validate accountId is a positive integer if provided
+    if ($accountId !== null) {
+        if (!is_numeric($accountId) || intval($accountId) <= 0) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Invalid account ID. Must be a positive integer.'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+        $accountId = intval($accountId);
     }
     
     try {
         if ($cusID) {
-            // Query by customer ID
-            $query = "SELECT 
+            // Query by customer ID - customer_information is the primary table
+            $query = "SELECT
                 ci.*,
                 a.Username,
                 a.Email,
@@ -81,8 +115,8 @@ function getCustomerDetails($connect) {
             $stmt = $connect->prepare($query);
             $stmt->bindParam(':cusID', $cusID, PDO::PARAM_INT);
         } else {
-            // Query by account ID
-            $query = "SELECT 
+            // Query by account ID - accounts is the primary table
+            $query = "SELECT
                 ci.*,
                 a.Username,
                 a.Email,
@@ -101,14 +135,73 @@ function getCustomerDetails($connect) {
         $stmt->execute();
         $customer = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        if ($customer) {
-            echo json_encode(['success' => true, 'customer' => $customer]);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Customer not found']);
+        // Handle case where query returns no results
+        if (!$customer) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Customer not found'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
         }
         
+        // Handle NULL values from LEFT JOINs by ensuring consistent structure
+        // Check if we got a valid result with at least some non-NULL data
+        $hasValidData = false;
+        foreach ($customer as $value) {
+            if ($value !== null) {
+                $hasValidData = true;
+                break;
+            }
+        }
+        
+        if (!$hasValidData) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'No valid customer data found'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+        
+        // Ensure all string values are UTF-8 encoded to prevent JSON encoding errors
+        array_walk_recursive($customer, function(&$value) {
+            if (is_string($value)) {
+                // Convert to UTF-8 if not already, replacing invalid characters
+                if (!mb_check_encoding($value, 'UTF-8')) {
+                    $value = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+                }
+            }
+        });
+        
+        // Attempt JSON encoding with error handling
+        $jsonResponse = json_encode([
+            'success' => true,
+            'customer' => $customer
+        ], JSON_UNESCAPED_UNICODE);
+        
+        // Check for JSON encoding errors
+        if ($jsonResponse === false) {
+            $jsonError = json_last_error_msg();
+            echo json_encode([
+                'success' => false,
+                'message' => 'Failed to encode customer data: ' . $jsonError
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+        
+        echo $jsonResponse;
+        
+    } catch (PDOException $e) {
+        // Handle database-specific errors
+        echo json_encode([
+            'success' => false,
+            'message' => 'Database error occurred while retrieving customer details'
+        ], JSON_UNESCAPED_UNICODE);
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+        // Handle any other unexpected errors
+        echo json_encode([
+            'success' => false,
+            'message' => 'An error occurred while retrieving customer details'
+        ], JSON_UNESCAPED_UNICODE);
     }
 }
 

@@ -4,9 +4,8 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
-require_once dirname(dirname(__DIR__)) . '/includes/database/db_conn.php';
+require_once dirname(dirname(__DIR__)) . '/includes/init.php';
 require_once dirname(__DIR__) . '/api/notification_api.php';
-require_once dirname(__DIR__) . '/backend/order_backend.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -15,6 +14,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 try {
+    // Get database connection
+    $connect = $GLOBALS['pdo'] ?? null;
+    
+    if (!$connect) {
+        throw new Exception('Database connection not available');
+    }
+    
     // Get JSON input
     $input = json_decode(file_get_contents('php://input'), true);
     
@@ -78,7 +84,7 @@ try {
                 delivery_date, actual_delivery_date, delivery_address,
                 order_notes, special_instructions, warranty_package, insurance_details,
                 created_at, order_date
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
         ");
         
         $stmt->execute([
@@ -92,20 +98,20 @@ try {
             $input['vehicle_color'],
             $input['model_year'],
             $input['base_price'],
-            $input['discount_amount'] ?? 0,
+            !empty($input['discount_amount']) ? $input['discount_amount'] : 0,
             $input['total_price'],
             $input['payment_method'],
-            $input['down_payment'] ?? null,
-            $input['financing_term'] ?? null,
-            $input['monthly_payment'] ?? null,
+            !empty($input['down_payment']) ? $input['down_payment'] : null,
+            !empty($input['financing_term']) ? $input['financing_term'] : null,
+            !empty($input['monthly_payment']) ? $input['monthly_payment'] : null,
             $input['order_status'],
             !empty($input['delivery_date']) ? $input['delivery_date'] : null,
             !empty($input['actual_delivery_date']) ? $input['actual_delivery_date'] : null,
-            $input['delivery_address'] ?? null,
-            $input['order_notes'] ?? null,
-            $input['special_instructions'] ?? null,
-            $input['warranty_package'] ?? null,
-            $input['insurance_details'] ?? null
+            !empty($input['delivery_address']) ? $input['delivery_address'] : null,
+            !empty($input['order_notes']) ? $input['order_notes'] : null,
+            !empty($input['special_instructions']) ? $input['special_instructions'] : null,
+            !empty($input['warranty_package']) ? $input['warranty_package'] : null,
+            !empty($input['insurance_details']) ? $input['insurance_details'] : null
         ]);
         
         $order_id = $connect->lastInsertId();
@@ -163,34 +169,37 @@ try {
         $today = new DateTime();
         $age = $today->diff($birthday)->y;
         
-        // Create customer information
+        // Create customer information - assign to current sales agent
         $stmt = $connect->prepare("
             INSERT INTO customer_information (
-                account_id, lastname, firstname, middlename, suffix, nationality,
-                birthday, age, gender, civil_status, mobile_number, employment_status,
-                company_name, position, monthly_income, valid_id_type, valid_id_number,
-                Status, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Approved', NOW())
+                account_id, agent_id, lastname, firstname, middlename, suffix, nationality,
+                birthday, age, gender, civil_status, mobile_number, complete_address,
+                employment_status, company_name, position, monthly_income,
+                valid_id_type, valid_id_image, valid_id_number, Status, customer_type
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Approved', 'Walk In')
         ");
         
         $stmt->execute([
             $account_id,
-            $input['manual_lastname'],
-            $input['manual_firstname'],
-            $input['manual_middlename'] ?? null,
-            $input['manual_suffix'] ?? null,
-            $input['manual_nationality'] ?? 'Filipino',
+            $sales_agent_id, // Assign walk-in customer to current sales agent
+            !empty($input['manual_lastname']) ? $input['manual_lastname'] : 'N/A',
+            !empty($input['manual_firstname']) ? $input['manual_firstname'] : 'N/A',
+            !empty($input['manual_middlename']) ? $input['manual_middlename'] : null,
+            !empty($input['manual_suffix']) ? $input['manual_suffix'] : null,
+            !empty($input['manual_nationality']) ? $input['manual_nationality'] : 'Filipino',
             $input['manual_birthday'],
             $age,
-            $input['manual_gender'] ?? null,
-            $input['manual_civil_status'] ?? null,
-            $input['manual_mobile'],
-            $input['manual_employment'] ?? null,
-            $input['manual_company'] ?? null,
-            $input['manual_position'] ?? null,
-            $input['manual_income'] ?? null,
-            $input['manual_valid_id'] ?? null,
-            $input['manual_valid_id_number'] ?? null
+            !empty($input['manual_gender']) ? $input['manual_gender'] : 'N/A',
+            !empty($input['manual_civil_status']) ? $input['manual_civil_status'] : 'N/A',
+            !empty($input['manual_mobile']) ? $input['manual_mobile'] : 'N/A',
+            !empty($input['manual_address']) ? $input['manual_address'] : 'N/A',
+            !empty($input['manual_employment']) ? $input['manual_employment'] : 'N/A',
+            !empty($input['manual_company']) ? $input['manual_company'] : 'N/A',
+            !empty($input['manual_position']) ? $input['manual_position'] : 'N/A',
+            !empty($input['manual_income']) ? $input['manual_income'] : null,
+            !empty($input['manual_valid_id']) ? $input['manual_valid_id'] : 'N/A',
+            'N/A', // valid_id_image - not collected in walk-in form
+            !empty($input['manual_valid_id_number']) ? $input['manual_valid_id_number'] : 'N/A'
         ]);
         
         $customer_id = $connect->lastInsertId();
@@ -208,7 +217,7 @@ try {
                 delivery_date, actual_delivery_date, delivery_address,
                 order_notes, special_instructions, warranty_package, insurance_details,
                 created_at, order_date
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
         ");
         
         $stmt->execute([
@@ -222,20 +231,20 @@ try {
             $input['vehicle_color'],
             $input['model_year'],
             $input['base_price'],
-            $input['discount_amount'] ?? 0,
+            !empty($input['discount_amount']) ? $input['discount_amount'] : 0,
             $input['total_price'],
             $input['payment_method'],
-            $input['down_payment'] ?? null,
-            $input['financing_term'] ?? null,
-            $input['monthly_payment'] ?? null,
+            !empty($input['down_payment']) ? $input['down_payment'] : null,
+            !empty($input['financing_term']) ? $input['financing_term'] : null,
+            !empty($input['monthly_payment']) ? $input['monthly_payment'] : null,
             $input['order_status'],
             !empty($input['delivery_date']) ? $input['delivery_date'] : null,
             !empty($input['actual_delivery_date']) ? $input['actual_delivery_date'] : null,
-            $input['delivery_address'] ?? null,
-            $input['order_notes'] ?? null,
-            $input['special_instructions'] ?? null,
-            $input['warranty_package'] ?? null,
-            $input['insurance_details'] ?? null
+            !empty($input['delivery_address']) ? $input['delivery_address'] : null,
+            !empty($input['order_notes']) ? $input['order_notes'] : null,
+            !empty($input['special_instructions']) ? $input['special_instructions'] : null,
+            !empty($input['warranty_package']) ? $input['warranty_package'] : null,
+            !empty($input['insurance_details']) ? $input['insurance_details'] : null
         ]);
         
         $order_id = $connect->lastInsertId();
@@ -303,5 +312,59 @@ function generateOrderNumber() {
     $day = $now->format('d');
     $random = str_pad(mt_rand(1, 999), 3, '0', STR_PAD_LEFT);
     return "ORD-{$year}{$month}{$day}{$random}";
+}
+
+/**
+ * Generate payment schedule for financing orders
+ */
+function generatePaymentSchedule($order_id, $customer_id, $total_price, $down_payment, $financing_term, $monthly_payment, $order_date = null)
+{
+    global $connect;
+    
+    if (!$financing_term || !$monthly_payment) {
+        return false;
+    }
+    
+    try {
+        // Extract number of months from financing term (e.g., "36 months" -> 36)
+        $months = (int) filter_var($financing_term, FILTER_SANITIZE_NUMBER_INT);
+        
+        if ($months <= 0) {
+            return false;
+        }
+        
+        // Calculate loan amount (total price minus down payment)
+        $loan_amount = $total_price - ($down_payment ?? 0);
+        
+        // Use order date or current date as starting point
+        $start_date = $order_date ? new DateTime($order_date) : new DateTime();
+        
+        // Generate payment schedule
+        for ($i = 1; $i <= $months; $i++) {
+            // Calculate due date (first payment due 30 days after order)
+            $due_date = clone $start_date;
+            $due_date->add(new DateInterval('P' . ($i * 30) . 'D'));
+            
+            // Insert payment schedule record
+            $sql = "INSERT INTO payment_schedule (
+                        order_id, customer_id, payment_number, due_date, 
+                        amount_due, status, created_at
+                    ) VALUES (?, ?, ?, ?, ?, 'Pending', NOW())";
+                        
+            $stmt = $connect->prepare($sql);
+            $stmt->execute([
+                $order_id,
+                $customer_id,
+                $i,
+                $due_date->format('Y-m-d'),
+                $monthly_payment
+            ]);
+        }
+        
+        return true;
+    } catch (Exception $e) {
+        error_log("Payment schedule generation failed: " . $e->getMessage());
+        return false;
+    }
 }
 ?>
