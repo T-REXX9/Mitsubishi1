@@ -138,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 1px solid #e0e0e0;
+        border-bottom: 3px solid #CC0000;
         position: relative;
         z-index: 10;
     }
@@ -456,9 +456,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 </style>
-
-    
-
 </head>
 <body>
     <header class="header">

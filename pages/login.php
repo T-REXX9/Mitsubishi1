@@ -134,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     body {
-      background: linear-gradient(to bottom, #1c1c1c, #b80000);
+      background: #dbdbdbff;
       color: white;
       display: flex;
       align-items: center;
@@ -150,7 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     .login-box {
-      background-color: rgba(255, 255, 255, 0.1);
+      background-color: #5f5c5cb0;
       margin: 0 auto;
       padding: 28px 24px;
       border-radius: 15px;

@@ -478,6 +478,8 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
     <title>Chat Support - Mitsubishi Motors</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="../includes/css/chat-support.css" rel="stylesheet">
+
+
 </head>
 
 <body>

@@ -148,14 +148,9 @@ try {
         }
 
         .page-title {
-
             font-weight: 400;
             background: #E60012;
-
-       
-
             margin-bottom: 20px;
-
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;

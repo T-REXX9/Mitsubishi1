@@ -245,7 +245,7 @@ try {
   /* Vehicle Showcase */
   .vehicle-showcase {
     padding: 80px 32px;
-    background: rgba(24, 24, 24, 0.8);
+    background: #000000;
   }
 
   .section-header {
@@ -275,7 +275,7 @@ try {
   }
 
   .vehicle-card {
-    background: linear-gradient(145deg, rgba(139, 0, 0, 0.3), rgba(17, 17, 17, 0.9));
+    background: #8584848c;
     border-radius: 12px;
     overflow: hidden;
     transition: all 0.3s ease;
@@ -415,77 +415,7 @@ try {
     font-size: 0.95rem;
   }
 
-  /* News Section */
-  .news-section {
-    padding: 80px 32px;
-    background: rgba(24, 24, 24, 0.6);
-  }
 
-  .news-item {
-    max-width: 800px;
-    margin: 0 auto;
-    background: linear-gradient(145deg, rgba(139, 0, 0, 0.3), rgba(17, 17, 17, 0.8));
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid rgba(255, 215, 0, 0.2);
-    transition: all 0.3s ease;
-  }
-
-  .news-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 40px rgba(255, 215, 0, 0.2);
-  }
-
-  .news-image {
-    height: 300px;
-    background: url('../includes/images/Lucena-MZM-2.webp') center/cover;
-    /* Updated to existing image to avoid 404 */
-    position: relative;
-  }
-
-  .news-content {
-    padding: 40px;
-  }
-
-  .news-category {
-    display: inline-block;
-    background: #ffd700;
-    color: #111;
-    padding: 6px 15px;
-    border-radius: 15px;
-    font-size: 0.8rem;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 20px;
-  }
-
-  .news-title {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #fff;
-    line-height: 1.3;
-    margin-bottom: 15px;
-  }
-
-  .news-excerpt {
-    color: #ccc;
-    line-height: 1.6;
-    margin-bottom: 25px;
-  }
-
-  .news-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255, 215, 0, 0.2);
-  }
-
-  .news-date {
-    color: #999;
-    font-size: 0.9rem;
-  }
 
   .read-more {
     color: #ffd700;
@@ -510,13 +440,12 @@ try {
     flex-direction: column;
     align-items: center;
     padding: 80px 32px;
-    background: url('../includes/images/parallax2.webp') center/cover fixed;
     position: relative;
     background-attachment: fixed;
     background-repeat: no-repeat;
     background-size: cover;
     background-position: center;
-    min-height: 500px;
+    min-height: 100px;
     border-radius: 0;
   }
 
@@ -576,6 +505,57 @@ try {
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(255, 215, 0, 0.3);
   }
+
+      /* Tablet */
+    @media (max-width: 1024px) {
+        .container {
+            max-width: 95%;
+        }
+    }
+
+    /* Phones */
+    @media (max-width: 768px) {
+        .header {
+            flex-direction: column;
+            gap: 15px;
+            padding: 15px 20px;
+        }
+
+        .user-section {
+            flex-direction: column;
+            gap: 12px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .container {
+            padding: 20px 15px;
+        }
+
+        .form-container {
+            padding: 20px;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Large Desktops */
+    @media (min-width: 1200px) {
+        .container {
+            max-width: 1100px;
+        }
+
+        .inquiry-card {
+            max-width: 100%;
+        }
+
+        .form-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
 
   /* Responsive Design */
   @media (max-width: 991px) {
@@ -696,6 +676,10 @@ try {
       padding: 14px 0;
     }
   }
+
+  
+
+  
 </style>
 
 <!-- Hero Banner -->
@@ -795,22 +779,7 @@ try {
   </div>
 </section>
 
-<!-- News Section -->
-<section class="news-section">
-  <div class="section-header">
-    <h2 class="section-title">Latest News</h2>
-    <p class="section-subtitle">Stay updated with the latest from Mitsubishi Motors</p>
-  </div>
-  <div class="news-item">
-    <div class="news-image"></div>
-    <div class="news-content">
-      <div class="news-category">Dealership News</div>
-      <h3 class="news-title">San Pablo City Becomes Newest Home of MZM and 64th Mitsubishi Motors Outlet of the Philippines</h3>
-      <p class="news-excerpt">We're excited to announce the opening of our newest dealership in San Pablo City, bringing world-class Mitsubishi vehicles and services closer to our valued customers in the region.</p>
-      <div class="news-meta">
-        <span class="news-date">December 2024</span>
-        <a href="https://www.mitsubishi-motors.com.ph/articles/san-pablo-city-becomes-newest-home-of-mzm-and-64th-mitsubishi-motors-outlet-in-the-country" class="read-more" target="_blank" rel="noopener">Read More →</a>
-      </div>
+
     </div>
   </div>
 </section>
