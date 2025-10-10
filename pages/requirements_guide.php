@@ -68,7 +68,7 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
             cursor: pointer; 
             font-size: 0.9rem; 
             font-weight: 600; 
-            transition: all 0.3s ease; }
+            transition: all 0.3s ease; } 
 
         .container { max-width: 1000px; 
             margin: 0 auto; 

@@ -50,19 +50,21 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
 		}
 
 		body {
-			background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 25%, #2d1b1b 50%, #8b0000 75%, #b80000 100%);
-			min-height: 100vh;
-			color: white;
+			background:#ffffff;
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
 		}
 
 		.header {
-			background: rgba(0, 0, 0, 0.4);
-			padding: 20px 30px;
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			backdrop-filter: blur(20px);
-			border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+			background: #ffffff;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #CC0000;
+            position: relative;
+            z-index: 10;
 		}
 
 		.logo-section {
@@ -74,19 +76,17 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
 		.logo {
 			width: 60px;
 			height: auto;
-			filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));
+			filter: drop-shadow(0 0 3px rgba(204, 48, 27, 0.93));
 		}
 
 		.brand-text {
 			font-size: 1.4rem;
-			font-weight: 700;
-			background: linear-gradient(45deg, #ffd700, #ffed4e);
-			-webkit-background-clip: text;
-			-webkit-text-fill-color: transparent;
-			background-clip: text;
+            font-weight: 700;
+           color: #E60012;
 		}
 
 		.user-section {
+			font-size: 1.3rem;	
 			display: flex;
 			align-items: center;
 			gap: 20px;
@@ -106,7 +106,7 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
 		.page-title {
 			font-size: 2.8rem;
 			margin-bottom: 20px;
-			background: linear-gradient(45deg, #ffd700, #ffed4e, #fff);
+			background: linear-gradient(45deg, #E60012, #E60012, #E60012);
 			-webkit-background-clip: text;
 			-webkit-text-fill-color: transparent;
 			background-clip: text;
@@ -114,7 +114,7 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
 		}
 
 		.vehicle-info {
-			background: rgba(255, 255, 255, 0.1);
+			background: rgba(102, 102, 102, 0.92);
 			padding: 20px;
 			border-radius: 15px;
 			text-align: center;
@@ -123,7 +123,7 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
 		}
 
 		.requirements-container {
-			background: rgba(255, 255, 255, 0.1);
+			background: rgba(102, 102, 102, 0.92);
 			border-radius: 20px;
 			padding: 40px;
 			backdrop-filter: blur(20px);
@@ -270,8 +270,9 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
 		}
 
 		.btn-proceed {
-			background: linear-gradient(45deg, #ffd700, #ffed4e);
-			color: #1a1a1a;
+			background: #E60012;
+			color: #ffffff;
+			align-text: center;
 			box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
 		}
 
@@ -282,8 +283,8 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
 
 		.btn-back {
 			background: rgba(255, 255, 255, 0.1);
-			color: #ffd700;
-			border: 2px solid #ffd700;
+			color: #000000;
+			border: 2px solid #000000;
 		}
 
 		.btn-back:hover {
