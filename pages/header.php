@@ -19,7 +19,7 @@
     }
     body {
       font-family: 'Segoe UI', Arial, sans-serif;
-      background: linear-gradient(to bottom, #111, #8b0000);
+      background: #ffffff;
       color: white;
       min-height: 100vh;
     }

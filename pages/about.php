@@ -19,6 +19,7 @@ include 'header.php';
     text-align: center;
   }
   .about-section {
+    background: #e60013d0;
     margin: 32px 0;
   }
   .section-title {
@@ -67,7 +68,7 @@ include 'header.php';
     margin-top: 32px;
   }
   .contact-card {
-    background: rgba(255, 255, 255, 0.05);
+    background: #E60012;
     border-radius: 12px;
     padding: 24px;
     text-align: center;
@@ -78,6 +79,7 @@ include 'header.php';
     margin-bottom: 16px;
   }
   .contact-info {
+    font-weight: bold;
     color: #ccc;
     line-height: 1.8;
   }
@@ -127,16 +129,7 @@ include 'header.php';
     margin-bottom: 30px;
   }
   
-  .section-title {
-    display: inline-block;
-    font-size: 2rem;
-    font-weight: 700;
-    background: linear-gradient(to right, #ffd700, #ffec8b);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 20px;
-    position: relative;
-  }
+
   
   .section-title::after {
     content: '';
@@ -405,9 +398,9 @@ include 'header.php';
   }
   
   .contact-card {
+    color: #000000;
     position: relative;
-    background: linear-gradient(135deg, rgba(24, 24, 24, 0.8), rgba(139, 0, 0, 0.2));
-    border-radius: 15px;
+    background: #9c9797ea;
     padding: 30px;
     text-align: center;
     border: 1px solid rgba(255, 215, 0, 0.2);
@@ -429,7 +422,7 @@ include 'header.php';
   }
   
   .contact-card:hover {
-    border-color: rgba(255, 215, 0, 0.5);
+    border-color: rgba(148, 81, 81, 0.73);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
     transform: translateY(-5px);
   }
@@ -469,15 +462,16 @@ include 'header.php';
   }
   
   .contact-info {
-    color: #ddd;
+    color: #000000d8;
     line-height: 1.8;
+    text: center;
     position: relative;
     z-index: 1;
   }
   
   .map-container {
     position: relative;
-    height: 400px;
+    height: 100px;
     margin-top: 50px;
     border-radius: 12px;
     overflow: hidden;
@@ -559,165 +553,8 @@ include 'header.php';
     <h1 class="hero-title">About Mitsubishi Motors San Pablo</h1>
     <p class="hero-subtitle">Driving Innovation and Excellence in Automotive Service</p>
   </div>
-  
-  <div class="about-section">
-    <div class="highlight-box">
-      <h2 class="section-title">Our Story</h2>
-      <p class="section-content">
-        Welcome to Mitsubishi Motors San Pablo, the newest addition to the Mitsubishi Motors Philippines network. 
-        As the 64th outlet in the Philippines, we are proud to bring world-class automotive excellence to 
-        San Pablo City and its surrounding areas. Our state-of-the-art facility combines modern design with 
-        cutting-edge technology to provide you with an exceptional automotive experience.
-      </p>
-      
-      <p class="section-content">
-        Since our opening in 2024, we have been committed to delivering the highest standards of customer service,
-        technical expertise, and genuine Mitsubishi products to our valued clients in Quezon Province and beyond.
-        Our team of dedicated professionals ensures that every visit to our dealership is memorable and satisfying.
-      </p>
-    </div>
+
     
-    <h2 class="section-title">Our Core Values</h2>
-    <div class="value-grid">
-      <div class="value-item">
-        <div class="value-icon"><i class="fas fa-medal"></i></div>
-        <h3 class="value-title">Excellence</h3>
-        <p class="value-description">We strive for excellence in every aspect of our business, from sales to service.</p>
-      </div>
-      
-      <div class="value-item">
-        <div class="value-icon"><i class="fas fa-handshake"></i></div>
-        <h3 class="value-title">Integrity</h3>
-        <p class="value-description">We build trust through honest and ethical business practices.</p>
-      </div>
-      
-      <div class="value-item">
-        <div class="value-icon"><i class="fas fa-lightbulb"></i></div>
-        <h3 class="value-title">Innovation</h3>
-        <p class="value-description">We embrace new technologies and ideas to better serve our customers.</p>
-      </div>
-      
-      <div class="value-item">
-        <div class="value-icon"><i class="fas fa-users"></i></div>
-        <h3 class="value-title">Community</h3>
-        <p class="value-description">We are committed to making a positive impact in our local community.</p>
-      </div>
-    </div>
-  </div>
-  
-  <div class="timeline-section">
-    <h2 class="section-title">Our Journey</h2>
-    
-    <div class="timeline">
-      <div class="timeline-item">
-        <div class="timeline-content">
-          <div class="timeline-date">June 2023</div>
-          <h3 class="timeline-title">Breaking Ground</h3>
-          <p class="timeline-description">Construction begins on our new state-of-the-art facility in San Pablo City.</p>
-        </div>
-        <div class="timeline-dot"></div>
-        <div class="timeline-arrow"></div>
-      </div>
-      
-      <div class="timeline-item">
-        <div class="timeline-content">
-          <div class="timeline-date">October 2023</div>
-          <h3 class="timeline-title">Team Building</h3>
-          <p class="timeline-description">Assembly of our expert sales and service team begins with intensive training programs.</p>
-        </div>
-        <div class="timeline-dot"></div>
-        <div class="timeline-arrow"></div>
-      </div>
-      
-      <div class="timeline-item">
-        <div class="timeline-content">
-          <div class="timeline-date">December 2023</div>
-          <h3 class="timeline-title">Facility Completion</h3>
-          <p class="timeline-description">Our modern showroom and service center finished construction ahead of schedule.</p>
-        </div>
-        <div class="timeline-dot"></div>
-        <div class="timeline-arrow"></div>
-      </div>
-      
-      <div class="timeline-item">
-        <div class="timeline-content">
-          <div class="timeline-date">January 2024</div>
-          <h3 class="timeline-title">Grand Opening</h3>
-          <p class="timeline-description">Official inauguration as the 64th Mitsubishi Motors dealership in the Philippines.</p>
-        </div>
-        <div class="timeline-dot"></div>
-        <div class="timeline-arrow"></div>
-      </div>
-      
-      <div class="timeline-item">
-        <div class="timeline-content">
-          <div class="timeline-date">March 2024</div>
-          <h3 class="timeline-title">Service Excellence Award</h3>
-          <p class="timeline-description">Recognized for outstanding customer satisfaction in our first quarter of operation.</p>
-        </div>
-        <div class="timeline-dot"></div>
-        <div class="timeline-arrow"></div>
-      </div>
-    </div>
-  </div>
-  
-  <div class="team-section">
-    <h2 class="section-title">Our Leadership Team</h2>
-    
-    <div class="team-grid">
-      <div class="team-member">
-        <img src="../../includes/images/team/director.jpg" alt="Dealership Director" class="member-image">
-        <div class="member-info">
-          <h3 class="member-name">Juan Dela Cruz</h3>
-          <p class="member-position">Dealership Director</p>
-          <div class="member-social">
-            <a href="#" class="social-link"><i class="fab fa-linkedin-in"></i></a>
-            <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
-            <a href="#" class="social-link"><i class="fas fa-envelope"></i></a>
-          </div>
-        </div>
-      </div>
-      
-      <div class="team-member">
-        <img src="../../includes/images/team/sales-manager.jpg" alt="Sales Manager" class="member-image">
-        <div class="member-info">
-          <h3 class="member-name">Maria Santos</h3>
-          <p class="member-position">Sales Manager</p>
-          <div class="member-social">
-            <a href="#" class="social-link"><i class="fab fa-linkedin-in"></i></a>
-            <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
-            <a href="#" class="social-link"><i class="fas fa-envelope"></i></a>
-          </div>
-        </div>
-      </div>
-      
-      <div class="team-member">
-        <img src="../../includes/images/team/service-manager.jpg" alt="Service Manager" class="member-image">
-        <div class="member-info">
-          <h3 class="member-name">Carlos Reyes</h3>
-          <p class="member-position">Service Manager</p>
-          <div class="member-social">
-            <a href="#" class="social-link"><i class="fab fa-linkedin-in"></i></a>
-            <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
-            <a href="#" class="social-link"><i class="fas fa-envelope"></i></a>
-          </div>
-        </div>
-      </div>
-      
-      <div class="team-member">
-        <img src="../../includes/images/team/finance-manager.jpg" alt="Finance Manager" class="member-image">
-        <div class="member-info">
-          <h3 class="member-name">Sophia Lim</h3>
-          <p class="member-position">Finance Manager</p>
-          <div class="member-social">
-            <a href="#" class="social-link"><i class="fab fa-linkedin-in"></i></a>
-            <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
-            <a href="#" class="social-link"><i class="fas fa-envelope"></i></a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <div class="about-section">
     <div class="highlight-box">
@@ -749,27 +586,7 @@ include 'header.php';
       </div>
     </div>
     
-    <div class="contact-card">
-      <div class="contact-icon"><i class="fas fa-phone-alt"></i></div>
-      <div class="contact-title">Get In Touch</div>
-      <div class="contact-info">
-        📞 Phone: (049) 503-9693<br>
-        📧 Email: smf.hr@yahoo.com<br>
-        🌐 Website: www.mitsubishimotors.com.ph<br>
-        📱 Follow us on social media
-      </div>
-    </div>
-    
-    <div class="contact-card">
-      <div class="contact-icon"><i class="fas fa-tools"></i></div>
-      <div class="contact-title">Service Department</div>
-      <div class="contact-info">
-        📞 Service: (049) 503-9693<br>
-        📧 Service: smf.hr@yahoo.com<br>
-        🔧 Emergency: 24/7 Roadside Assistance<br>
-        ⚡ Express Service Available
-      </div>
-    </div>
+
   </div>
   
   <div class="map-container">
