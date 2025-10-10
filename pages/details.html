@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payment Summary - Mitsubishi Motors</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+    body {
+      margin: 0;
+      background: linear-gradient(to bottom, #d3d3d3, #8b0000);
+    }
+    header {
+      background: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+    }
+    .logo img {
+      height: 30px;
+      margin-right: 10px;
+    }
+    .profile {
+      display: flex;
+      align-items: center;
+    }
+    .profile-icon {
+      height: 30px;
+      margin-right: 5px;
+    }
+    .container {
+      padding: 20px;
+    }
+    .details, .payment-input {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+    label {
+      font-weight: bold;
+    }
+    input {
+      padding: 5px;
+      width: 150px;
+    }
+    .set-btn {
+      background: royalblue;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .customer-card {
+      float: right;
+      text-align: center;
+    }
+    .customer-card img {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+    th, td {
+      border: 1px solid #aaa;
+      padding: 10px;
+      text-align: center;
+    }
+    .status-approved {
+      background: green;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 5px;
+    }
+    .status-pending {
+      background: red;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 5px;
+    }
+    a {
+      color: blue;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/5/5c/Mitsubishi_logo.svg" alt="Mitsubishi Logo">
+      <strong>MITSUBISHI MOTORS</strong>
+    </div>
+    <div class="profile">
+      <img src="https://cdn-icons-png.flaticon.com/512/9131/9131529.png" class="profile-icon" alt="Agent Icon">
+      <strong>AGENT NAME</strong>
+    </div>
+  </header>
+  <div class="container">
+    <div class="details">
+      <div>
+        <label>Model:</label><br>
+        <input type="text" value="XForce">
+      </div>
+      <div>
+        <label>Price:</label><br>
+        <input type="text" value="₱1,581,000">
+      </div>
+      <div>
+        <label>Color:</label><br>
+        <input type="text" value="Silver">
+      </div>
+      <div class="customer-card">
+        <img src="https://cdn-icons-png.flaticon.com/512/9131/9131529.png" alt="Customer">
+        <div>Nicole Villar</div>
+      </div>
+    </div>
+    <div class="payment-input">
+      <div>
+        <label>Date of Payment</label><br>
+        <input type="date" value="2025-03-27">
+      </div>
+      <div>
+        <label>Monthly Amortization</label><br>
+        <input type="text" value="PHP 260,000">
+      </div>
+      <div>
+        <br>
+        <button class="set-btn">SET</button>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Amount Paid</th>
+          <th>Total Paid</th>
+          <th>Remaining Balance</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>27/03/25</td>
+          <td>PHP 260,000</td>
+          <td>PHP 780,000</td>
+          <td>PHP 979,000</td>
+          <td><span class="status-pending">Pending</span></td>
+          <td><a href="#">Edit</a></td>
+        </tr>
+        <tr>
+          <td>27/02/25</td>
+          <td>PHP 260,000</td>
+          <td>PHP 520,000</td>
+          <td>PHP 1,239,000</td>
+          <td><span class="status-approved">Approved</span></td>
+          <td><a href="#">Edit</a></td>
+        </tr>
+        <tr>
+          <td>27/01/25</td>
+          <td>PHP 260,000</td>
+          <td>PHP 260,000</td>
+          <td>PHP 1,499,000</td>
+          <td><span class="status-approved">Approved</span></td>
+          <td><a href="#">Edit</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

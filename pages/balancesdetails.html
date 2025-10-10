@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mitsubishi Xpander Balance</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom, #1a1a1a, #cc0000);
+      color: #000;
+    }
+
+    .balance-container {
+      background: #ddd;
+      max-width: 900px;
+      margin: 2em auto;
+      padding: 2em;
+      border-radius: 8px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 1em;
+    }
+
+    .header img {
+      width: 100px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.5em;
+    }
+
+    .vehicle-image {
+      width: 100%;
+      max-height: 200px;
+      object-fit: cover;
+      margin-bottom: 1em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1em;
+    }
+
+    th, td {
+      border: 1px solid #999;
+      padding: 12px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #bbb;
+    }
+
+    .logo-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 1em;
+    }
+
+    .logo-title img {
+      height: 30px;
+    }
+
+    .footer {
+      text-align: center;
+      font-weight: bold;
+      padding-top: 10px;
+      border-top: 1px solid #ccc;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="balance-container">
+    <div class="header">
+      <h1>BALANCE DETAILS</h1>
+      <img src="https://i.imgur.com/XaK3j7u.png" alt="Mitsubishi Xpander" class="vehicle-image">
+    </div>
+
+    <div class="logo-title">
+      <img src="mitsubishi-logo.png" alt="Mitsubishi Logo">
+      <div>
+        <strong>MITSUBISHI MOTORS</strong><br />
+        MAWS - 45762800
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Amount Paid</th>
+          <th>Total Paid</th>
+          <th>Remaining Balance</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>27/03/25</td>
+          <td>PHP 260,000</td>
+          <td>PHP 780,000</td>
+          <td>PHP 979,000</td>
+        </tr>
+        <tr>
+          <td>27/02/25</td>
+          <td>PHP 260,000</td>
+          <td>PHP 520,000</td>
+          <td>PHP 1,239,000</td>
+        </tr>
+        <tr>
+          <td>27/01/25</td>
+          <td>PHP 260,000</td>
+          <td>PHP 260,000</td>
+          <td>PHP 1,499,000</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

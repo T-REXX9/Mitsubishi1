@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Column Structure Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .result {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .error { border-left: 4px solid #dc3545; }
+        .success { border-left: 4px solid #28a745; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Database Structure Analysis</h1>
+    <p>This will help identify the correct column names to fix the SQL error.</p>
+    
+    <button onclick="checkTables()">Check Table Structures</button>
+    <div id="result"></div>
+
+    <script>
+        async function checkTables() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '🔄 Checking database structure...';
+            
+            try {
+                const response = await fetch('../test_scripts/test_table_structure.php', {
+                    credentials: 'include'
+                });
+                
+                const text = await response.text();
+                resultDiv.className = 'result success';
+                resultDiv.textContent = text;
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        // Auto-run on page load
+        document.addEventListener('DOMContentLoaded', checkTables);
+    </script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mitsubishi Admin Dashboard</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 220px;
+      background: linear-gradient(to bottom, #000, #4b0000);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 20px 0;
+    }
+
+    .sidebar img.logo {
+      width: 160px;
+      margin: 0 auto 30px;
+    }
+
+    .nav-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      padding: 10px 20px;
+      color: white;
+      text-decoration: none;
+    }
+
+    .nav-item:hover, .nav-item.active {
+      background-color: white;
+      color: black;
+      font-weight: bold;
+    }
+
+    .nav-item img {
+      width: 24px;
+      margin-right: 10px;
+    }
+
+    .main {
+      flex-grow: 1;
+      background: linear-gradient(to bottom, #ccc, #7c0a0a);
+      padding: 30px;
+      position: relative;
+      text-align: center;
+    }
+
+    .main img.main-logo {
+      width: 100px;
+      margin-bottom: 20px;
+    }
+
+    .top-bar {
+      position: absolute;
+      top: 0;
+      right: 0;
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      background: #ddd;
+      width: 100%;
+      justify-content: flex-end;
+    }
+
+    .top-bar span {
+      margin-left: 10px;
+      font-weight: bold;
+    }
+
+    .buttons {
+      margin-top: 40px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .btn {
+      background: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <img class="logo" src="https://upload.wikimedia.org/wikipedia/commons/3/3e/Mitsubishi_logo.png" alt="Mitsubishi Logo">
+    <a class="nav-item active" href="#"><img src="https://img.icons8.com/windows/32/dashboard.png" /> DASHBOARD</a>
+    <a class="nav-item" href="#"><img src="https://img.icons8.com/color/32/product.png" /> PRODUCT LIST</a>
+    <a class="nav-item" href="#"><img src="https://img.icons8.com/color/32/box.png" /> INVENTORY</a>
+    <a class="nav-item" href="#"><img src="https://img.icons8.com/color/32/user-folder.png" /> ACCOUNTS</a>
+    <a class="nav-item" href="#"><img src="https://img.icons8.com/color/32/purchase-order.png" /> TRANSACTION RECORDS</a>
+    <a class="nav-item" href="#"><img src="https://img.icons8.com/color/32/sales-performance.png" /> SALES REPORT</a>
+    <a class="nav-item" href="#"><img src="https://img.icons8.com/fluency/32/checked.png" /> SOLVED UNITS</a>
+    <a class="nav-item" href="#"><img src="https://img.icons8.com/fluency/32/manager.png" /> HANDLED CLIENTS</a>
+  </div>
+  <div class="main">
+    <div class="top-bar">
+      <img src="https://img.icons8.com/ios-filled/30/user.png" alt="User Icon">
+      <span>ADMIN NAME</span>
+    </div>
+    <img class="main-logo" src="https://upload.wikimedia.org/wikipedia/commons/3/3e/Mitsubishi_logo.png" alt="Mitsubishi Motors">
+    <div class="buttons">
+      <button class="btn">ACCOUNT REVIEW</button>
+      <button class="btn">TRANSACTION UPDATE</button>
+      <button class="btn">CAR LISTING</button>
+    </div>
+  </div>
+</body>
+</html>

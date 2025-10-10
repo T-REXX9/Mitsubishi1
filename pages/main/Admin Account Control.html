@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accounts</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      display: flex;
+      height: 100vh;
+      background: linear-gradient(to bottom, #e0e0e0, #7c0a0a);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      background-color: #1a1a1a;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .sidebar h3 {
+      text-align: center;
+      margin: 20px 0;
+      font-size: 18px;
+    }
+
+    .nav a {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      color: white;
+      text-decoration: none;
+      border-left: 4px solid transparent;
+    }
+
+    .nav a.active,
+    .nav a:hover {
+      background-color: #333;
+      border-left: 4px solid white;
+    }
+
+    .sidebar-bottom {
+      padding: 10px 20px;
+      font-size: 14px;
+      border-top: 1px solid #333;
+    }
+
+    /* Top bar */
+    .main {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-bar {
+      background-color: #ccc;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .top-bar .title {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .top-bar .admin::before {
+      content: "👤";
+      margin-right: 5px;
+    }
+
+    .admin {
+      font-weight: bold;
+    }
+
+    /* Content */
+    .content {
+      padding: 20px;
+    }
+
+    .section {
+      background-color: #fff;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .section h3 {
+      margin-top: 0;
+    }
+
+    .search-bar {
+      text-align: right;
+      margin-bottom: 10px;
+    }
+
+    .search-bar input {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      width: 200px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 700px;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div>
+      <h3>MITSUBISHI MOTORS</h3>
+      <div class="nav">
+        <a href="#">Dashboard</a>
+        <a href="#">Product List</a>
+        <a href="#">Inventory</a>
+        <a href="#" class="active">Accounts</a>
+        <a href="#">Transaction Records</a>
+        <a href="#">Sales Report</a>
+      </div>
+    </div>
+    <div class="sidebar-bottom">
+      <p>Sales Agent Activity</p>
+      <p>• Solved Units</p>
+      <p>• Handled Clients</p>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="top-bar">
+      <div class="title">Accounts</div>
+      <div class="admin">ADMIN NAME</div>
+    </div>
+
+    <div class="content">
+      <!-- Sales Agent Accounts -->
+      <div class="section">
+        <h3>Sales Agent Accounts</h3>
+        <div class="search-bar">
+          <input type="text" placeholder="🔍 Type to Search ..." />
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Lastname</th>
+                <th>Name</th>
+                <th>Middle Name</th>
+                <th>Gender</th>
+                <th>Phone</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Perdez</td><td>Eiron</td><td>Aluan</td><td>M</td><td>0909456</td>
+              </tr>
+              <td>Sarmiento</td><td>Jessa</td><td>Sore</td><td>F</td><td>0920687</td>
+              <tr>
+                <td>Delica</td><td>Nasief</td><td>N/A</td><td>M</td><td>0909785</td>
+              </tr>
+              <tr>
+                <td>Reyes</td><td>Jane</td><td>De Silva</td><td>F</td><td>0909325</td>
+              </tr>
+              <tr>
+                <td>Gomez</td><td>Wayne</td><td>Reyes</td><td>F</td><td>0909765</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Client Accounts -->
+      <div class="section">
+        <h3>Client Accounts</h3>
+        <div class="search-bar">
+          <input type="text" placeholder="🔍 Type to Search ..." />
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Lastname</th>
+                <th>Name</th>
+                <th>Middle Name</th>
+                <th>Gender</th>
+                <th>Type of ID</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Reyes</td><td>Rea</td><td>N/A</td><td>F</td><td>National</td></tr>
+              <tr><td>Anderson</td><td>David</td><td>N/A</td><td>M</td><td>National</td></tr>
+              <tr><td>Dimagiba</td><td>Leo</td><td>N/A</td><td>M</td><td>National</td></tr>
+              <tr><td>Papuri</td><td>Celestine</td><td>N/A</td><td>F</td><td>National</td></tr>
+              <tr><td>Manata</td><td>Ace</td><td>N/A</td><td>M</td><td>National</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

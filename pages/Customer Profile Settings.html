@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile Menu</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(to bottom, #ffffff, #8b0000);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .profile-container {
+      width: 90%;
+      max-width: 600px;
+      background-color: #f3f3f3;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .profile-header {
+      display: flex;
+      align-items: center;
+      padding: 20px;
+      background: linear-gradient(to bottom, #fff, #f0f0f0);
+      border-bottom: 1px solid #ccc;
+    }
+
+    .profile-header .back-arrow {
+      font-size: 24px;
+      cursor: pointer;
+      margin-right: 20px;
+    }
+
+    .profile-header img {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: #ddd;
+      display: block;
+    }
+
+    .profile-info {
+      margin-left: 15px;
+    }
+
+    .profile-info h4 {
+      margin-bottom: 5px;
+    }
+
+    .menu-section {
+      background-color: #ccc;
+      padding: 20px;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px 0;
+      border-bottom: 1px solid #aaa;
+    }
+
+    .menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .menu-item .left {
+      display: flex;
+      align-items: center;
+    }
+
+    .menu-item .left img {
+      width: 24px;
+      height: 24px;
+      margin-right: 15px;
+    }
+
+    .menu-item span {
+      font-weight: bold;
+    }
+
+    .menu-item .right {
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="profile-container">
+    <div class="profile-header">
+      <div class="back-arrow">←</div>
+      <img src="https://img.icons8.com/ios-filled/50/user-male-circle.png" alt="User Icon" />
+      <div class="profile-info">
+        <h4>NAME</h4>
+        <p>EMAIL</p>
+      </div>
+      <div class="right">❯</div>
+    </div>
+
+    <div class="menu-section">
+      <div class="menu-item">
+        <div class="left">
+          <img src="https://img.icons8.com/ios-filled/50/terms-and-conditions.png" alt="Terms Icon" />
+          <span>TERMS & CONDITION</span>
+        </div>
+        <div class="right">❯</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="left">
+          <img src="https://img.icons8.com/ios-filled/50/help.png" alt="Help Icon" />
+          <span>HELP</span>
+        </div>
+        <div class="right">❯</div>
+      </div>
+
+      <hr style="margin: 15px 0; border-color: #999;" />
+
+      <div class="menu-item">
+        <div class="left">
+          <img src="https://img.icons8.com/ios-filled/50/logout-rounded-left.png" alt="Logout Icon" />
+          <span>LOG OUT</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

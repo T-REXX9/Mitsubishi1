@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mitsubishi Inquiry</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom, #000000, #d50000);
+      color: #000;
+    }
+
+    .container {
+      background: linear-gradient(to bottom, #dddddd, #cccccc);
+      width: 90%;
+      max-width: 800px;
+      margin: 2em auto;
+      padding: 2em;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 1em;
+    }
+
+    .logo img {
+      width: 60px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 0.2em;
+      color: #000;
+    }
+
+    .form-section {
+      margin-top: 1.5em;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-top: 1em;
+      font-size: 0.9em;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="date"] {
+      width: 100%;
+      padding: 6px;
+      border: none;
+      border-bottom: 2px solid #000;
+      background: transparent;
+      font-size: 1em;
+    }
+
+    textarea {
+      width: 100%;
+      border: none;
+      border-bottom: 2px solid #000;
+      background: transparent;
+      resize: none;
+      padding: 6px;
+      font-size: 1em;
+    }
+
+    .checkbox-area {
+      margin-top: 1.5em;
+      display: flex;
+      align-items: center;
+      font-size: 0.9em;
+    }
+
+    .checkbox-area input[type="checkbox"] {
+      margin-right: 0.5em;
+      transform: scale(1.2);
+    }
+
+    .submit-area {
+      margin-top: 2em;
+      text-align: right;
+    }
+
+    .submit-area button {
+      background-color: red;
+      color: white;
+      border: none;
+      padding: 0.7em 2em;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1em;
+    }
+
+    small {
+      font-size: 0.7em;
+      display: block;
+      margin-top: 1em;
+    }
+
+    a {
+      color: #000;
+      text-decoration: underline;
+    }
+
+    .back-arrow {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 24px;
+      color: #000;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="back-arrow">&#8592;</div>
+  <div class="container">
+    <div class="logo">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/6/6f/Mitsubishi_logo.svg" alt="Mitsubishi Logo">
+    </div>
+    <h2>Inquire</h2>
+
+    <form>
+      <div class="form-section">
+        <h4>Personal Information</h4>
+        <label>FULL NAME</label>
+        <input type="text" required />
+
+        <label>EMAIL ADDRESS*</label>
+        <input type="email" required />
+
+        <label>PHONE NUMBER*</label>
+        <input type="text" required />
+      </div>
+
+      <div class="form-section">
+        <h4>Vehicle Information</h4>
+        <label>MODEL</label>
+        <input type="text" />
+
+        <label>VARIANT</label>
+        <input type="text" />
+
+        <label>YEAR</label>
+        <input type="text" />
+
+        <label>COLOR</label>
+        <input type="text" />
+      </div>
+
+      <div class="form-section">
+        <h4>Additional Details</h4>
+        <label>Trade-in Vehicle (if applicable)</label>
+        <input type="text" />
+
+        <label>Financing Required</label>
+        <input type="text" />
+
+        <label>Comments/Questions</label>
+        <textarea rows="3"></textarea>
+        <textarea rows="2"></textarea>
+
+        <label>Date</label>
+        <input type="date" />
+      </div>
+
+      <div class="checkbox-area">
+        <input type="checkbox" id="agree" />
+        <label for="agree">I Agree.</label>
+      </div>
+
+      <small>
+        I agree to MMPC’s <a href="#">Privacy Policy</a> and to receive newsletters and other promotions from MMPC, authorized dealers, and business partners.
+      </small>
+
+      <div class="submit-area">
+        <button type="submit">SUBMIT</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Customer Chat - Mitsubishi Motors</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    body {
+      display: flex;
+      height: 100vh;
+    }
+    .sidebar {
+      width: 250px;
+      background: linear-gradient(to bottom, #111, #400000);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 10px;
+    }
+    .sidebar img.logo {
+      width: 180px;
+      margin: 0 auto 30px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      padding: 15px 10px;
+      gap: 15px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background 0.3s;
+    }
+    .nav-item:hover, .nav-item.active {
+      background: white;
+      color: black;
+    }
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background: #e0e0e0;
+    }
+    .chat-container {
+      flex: 1;
+      display: flex;
+      background: linear-gradient(to bottom, #d8d8d8, #8b0000);
+    }
+    .contact-list {
+      width: 250px;
+      background: #f0f0f0;
+      border-right: 1px solid #ccc;
+    }
+    .contact {
+      display: flex;
+      align-items: center;
+      padding: 15px;
+      gap: 10px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .contact.active {
+      background-color: #7b68ee;
+      color: white;
+    }
+    .chat-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .message {
+      max-width: 70%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 10px;
+      background-color: #f1f1f1;
+    }
+    .message.agent {
+      background-color: #e0e0e0;
+      align-self: flex-end;
+    }
+    .message.customer {
+      background-color: white;
+      align-self: flex-start;
+    }
+    .chat-input {
+      display: flex;
+      align-items: center;
+      padding: 10px 20px;
+      background-color: white;
+    }
+    .chat-input input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      margin: 0 10px;
+    }
+    .chat-input button {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/1/15/Mitsubishi_logo.svg" class="logo" alt="Mitsubishi Logo" />
+    <div class="nav-item">DASHBOARD</div>
+    <div class="nav-item">INVENTORY</div>
+    <div class="nav-item">CUSTOMER ACCOUNTS</div>
+    <div class="nav-item">ORDERS</div>
+    <div class="nav-item active">CUSTOMER CHATS</div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <strong>MITSUBISHI MOTORS</strong>
+      <div>👤 AGENT NAME</div>
+    </div>
+    <div class="chat-container">
+      <div class="contact-list">
+        <div class="contact active">👨‍💼 Rea Reyes</div>
+        <div class="contact">👨‍💼 David Anderson</div>
+        <div class="contact">👨‍💼 Leo Dimagiba</div>
+      </div>
+      <div class="chat-box">
+        <div class="message customer">Hi, I’m interested in the Mitsubishi Montero Sport. Do you have available units?</div>
+        <div class="message agent">Good day Ma’am! Yes, we currently have available units. May I know which variant you’re considering?</div>
+        <div class="message customer">The GLS 2WD AT in Jet Black Mica.</div>
+        <div class="message agent">The SRP for that variant is ₱1,568,000. Would you prefer cash or financing?</div>
+        <div class="message customer">Financing, please.</div>
+        <div class="message agent">
+          Here’s a sample quotation:<br>
+          Downpayment: ₱450,000<br>
+          Term: 60 months<br>
+          Add-On Rate: 27.05%<br>
+          Monthly Amortization: ₱28,046<br>
+          Would you like to proceed with this plan or try other terms?
+        </div>
+        <div class="chat-input">
+          <button>➕</button>
+          <input type="text" placeholder="Type message ..." />
+          <button>📤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

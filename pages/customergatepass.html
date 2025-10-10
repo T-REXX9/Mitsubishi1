@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Customer Gate Pass</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom, #eeeeee, #6e0000);
+      color: black;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1em;
+      font-weight: bold;
+    }
+
+    .card {
+      background-color: #eee;
+      max-width: 600px;
+      margin: 2em auto;
+      padding: 1em 2em;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      margin-bottom: 1em;
+    }
+
+    .field-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5em;
+    }
+
+    .field-row input {
+      width: 48%;
+      padding: 0.3em;
+      border: 1px solid #aaa;
+    }
+
+    .notice {
+      text-align: center;
+      margin: 1em auto;
+      color: white;
+      font-size: 0.9em;
+    }
+
+    .download-btn {
+      display: block;
+      margin: 1em auto;
+      padding: 0.75em 2em;
+      background-color: red;
+      color: white;
+      border: none;
+      font-weight: bold;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .download-btn:hover {
+      background-color: #c00;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div>&larr;</div>
+    <div style="color: red;">DONE</div>
+  </div>
+
+  <div class="card">
+    <div class="title-row">
+      <div>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Mitsubishi_logo.svg" width="24" style="vertical-align: middle;"/>
+        Mitsubishi
+      </div>
+      <div>Customer Gate Pass</div>
+    </div>
+
+    <div class="field-row">
+      <input type="text" value="MAG-WE0875294" readonly />
+      <input type="text" value="May 2, 2025" readonly />
+    </div>
+
+    <div class="field-row">
+      <input type="text" value="Mitsubishi Xpander 2022" readonly />
+      <input type="text" value="0909-576-7896" readonly />
+    </div>
+
+    <div class="field-row">
+      <input type="text" value="Alex Gonzaga" readonly />
+      <input type="text" value="8:00 - 9:00 AM" readonly />
+    </div>
+
+    <div class="field-row">
+      <input type="text" value="Sariaya, Quezon" readonly />
+      <input type="text" value="Mitsubishi San Pablo" readonly />
+    </div>
+
+    <div class="field-row">
+      <input type="text" value="May 12, 2025 - Mon" readonly />
+      <input type="text" value="Reo Ramos" readonly />
+    </div>
+  </div>
+
+  <div class="notice">
+    Notice: Please ensure to download the gatepass and present it on the scheduled test drive day.
+  </div>
+
+  <button class="download-btn" onclick="alert('Gate pass downloaded.')">
+    DOWNLOAD ⬇
+  </button>
+
+</body>
+</html>

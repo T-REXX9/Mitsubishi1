@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mitsubishi Dashboard - Customer Accounts</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      display: flex;
+      height: 100vh;
+      background: linear-gradient(to bottom, #1a1a1a, #ff0000);
+    }
+
+    .sidebar {
+      width: 250px;
+      background: #141414;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 0;
+    }
+
+    .sidebar img.logo {
+      width: 150px;
+      margin: 0 auto 20px;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      padding: 15px 20px;
+      cursor: pointer;
+    }
+
+    .menu-item img {
+      width: 24px;
+      margin-right: 10px;
+    }
+
+    .menu-item.active {
+      background: white;
+      color: black;
+    }
+
+    .section-title {
+      font-size: 12px;
+      color: #aaa;
+      padding: 10px 20px 5px;
+    }
+
+    .main {
+      flex: 1;
+      background: linear-gradient(to bottom, #ccc, #7c0a0a);
+      padding: 20px;
+    }
+
+    .topbar {
+      width: 100%;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      background-color: #e0e0e0;
+      padding: 10px 20px;
+      font-weight: bold;
+    }
+
+    .content-area {
+      margin-top: 20px;
+      padding: 20px;
+    }
+
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .filters {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .filters select {
+      padding: 5px;
+      font-size: 14px;
+    }
+
+    .new-button {
+      padding: 8px 15px;
+      background-color: #3366ff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .table-container {
+      background-color: white;
+      border-radius: 10px;
+      padding: 10px;
+      overflow-x: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Mitsubishi_logo.svg/1024px-Mitsubishi_logo.svg.png" class="logo" alt="Mitsubishi Logo">
+    <div class="menu-item">
+      <img src="https://img.icons8.com/ios-filled/50/dashboard.png" alt="Dashboard">
+      DASHBOARD
+    </div>
+    <div class="menu-item">
+      <img src="https://img.icons8.com/emoji/48/card-file-box-emoji.png" alt="Inventory">
+      INVENTORY
+    </div>
+    <div class="menu-item active">
+      <img src="https://img.icons8.com/ios-filled/50/user-group-man-man.png" alt="Accounts">
+      CUSTOMER ACCOUNTS
+    </div>
+    <div class="menu-item">
+      <img src="https://img.icons8.com/ios-filled/50/shopping-cart.png" alt="Orders">
+      ORDERS
+    </div>
+    <div class="menu-item">
+      <img src="https://img.icons8.com/ios-filled/50/chat-message.png" alt="Chats">
+      CUSTOMER CHATS
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <img src="https://img.icons8.com/ios-filled/24/user-male-circle.png" style="margin-right: 10px;" alt="User Icon" /> AGENT NAME
+    </div>
+
+    <div class="content-area">
+      <div class="header-bar">
+        <h2>Customer Accounts</h2>
+        <button class="new-button">+ New</button>
+      </div>
+
+      <div class="filters">
+        <label>Date <select><option>DD / MM / YR</option></select></label>
+        <label>Category <select><option>CURRENT</option></select></label>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Customer Name</th>
+              <th>Phone Number</th>
+              <th>Email</th>
+              <th>Gender</th>
+              <th>Type of</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Rea Reyes</td><td>09095622584</td><td>rea@gmail.com</td><td>F</td><td>National</td></tr>
+            <tr><td>David Anderson</td><td>09915637429</td><td>david@gmail.com</td><td>M</td><td>National</td></tr>
+            <tr><td>Leo Dimagiba</td><td>09207598246</td><td>leodimagiba@gmail.com</td><td>M</td><td>National</td></tr>
+            <tr><td>Celestine Papuri</td><td>09093541853</td><td>cele@gmail.com</td><td>F</td><td>National</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Debug from Inventory Context</title>
+</head>
+<body>
+    <h1>API Debug Test from Inventory Context</h1>
+    <div id="results"></div>
+    
+    <script>
+        async function testAPIFromInventoryContext() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<h3>Testing API calls with same context as inventory page...</h3>';
+            
+            // Test the exact same API calls as the inventory page
+            try {
+                console.log('Testing vehicles API...');
+                resultsDiv.innerHTML += '<p>Testing vehicles API...</p>';
+                
+                const response = await fetch('../../api/vehicles.php');
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                resultsDiv.innerHTML += `<p>Response status: ${response.status}</p>`;
+                
+                if (!response.ok) {
+                    resultsDiv.innerHTML += `<p style="color: red;">HTTP Error: ${response.status} ${response.statusText}</p>`;
+                    const text = await response.text();
+                    resultsDiv.innerHTML += `<p style="color: red;">Response text: <pre>${text}</pre></p>`;
+                    return;
+                }
+                
+                const text = await response.text();
+                console.log('Raw response text:', text);
+                resultsDiv.innerHTML += `<p>Raw response: <pre>${text.substring(0, 500)}${text.length > 500 ? '...' : ''}</pre></p>`;
+                
+                try {
+                    const data = JSON.parse(text);
+                    console.log('Parsed data:', data);
+                    
+                    if (data.success) {
+                        resultsDiv.innerHTML += `<p style="color: green;">✅ Success! Found ${data.data.length} vehicles</p>`;
+                        if (data.data.length > 0) {
+                            resultsDiv.innerHTML += `<p>First vehicle: ${data.data[0].model_name} ${data.data[0].variant}</p>`;
+                        }
+                    } else {
+                        resultsDiv.innerHTML += `<p style="color: red;">❌ API returned error: ${data.message}</p>`;
+                        if (data.debug) {
+                            resultsDiv.innerHTML += `<p style="color: orange;">Debug info: ${data.debug}</p>`;
+                        }
+                    }
+                } catch (jsonError) {
+                    resultsDiv.innerHTML += `<p style="color: red;">❌ JSON Parse Error: ${jsonError.message}</p>`;
+                    resultsDiv.innerHTML += `<p>This is the "Unexpected end of JSON input" error you're seeing!</p>`;
+                }
+                
+            } catch (fetchError) {
+                console.error('Fetch error:', fetchError);
+                resultsDiv.innerHTML += `<p style="color: red;">❌ Fetch Error: ${fetchError.message}</p>`;
+            }
+            
+            // Test categories
+            try {
+                resultsDiv.innerHTML += '<h3>Testing categories API...</h3>';
+                const catResponse = await fetch('../../api/vehicles.php?categories=1');
+                const catText = await catResponse.text();
+                console.log('Categories response:', catText);
+                
+                if (catResponse.ok) {
+                    const catData = JSON.parse(catText);
+                    if (catData.success) {
+                        resultsDiv.innerHTML += `<p style="color: green;">✅ Categories loaded: ${catData.data.join(', ')}</p>`;
+                    } else {
+                        resultsDiv.innerHTML += `<p style="color: red;">❌ Categories error: ${catData.message}</p>`;
+                    }
+                } else {
+                    resultsDiv.innerHTML += `<p style="color: red;">❌ Categories HTTP error: ${catResponse.status}</p>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML += `<p style="color: red;">❌ Categories error: ${error.message}</p>`;
+            }
+            
+            // Test stats
+            try {
+                resultsDiv.innerHTML += '<h3>Testing stats API...</h3>';
+                const statsResponse = await fetch('../../api/vehicles.php?stats=1');
+                const statsText = await statsResponse.text();
+                console.log('Stats response:', statsText);
+                
+                if (statsResponse.ok) {
+                    const statsData = JSON.parse(statsText);
+                    if (statsData.success) {
+                        resultsDiv.innerHTML += `<p style="color: green;">✅ Stats loaded: ${JSON.stringify(statsData.data)}</p>`;
+                    } else {
+                        resultsDiv.innerHTML += `<p style="color: red;">❌ Stats error: ${statsData.message}</p>`;
+                    }
+                } else {
+                    resultsDiv.innerHTML += `<p style="color: red;">❌ Stats HTTP error: ${statsResponse.status}</p>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML += `<p style="color: red;">❌ Stats error: ${error.message}</p>`;
+            }
+        }
+        
+        // Run the test when page loads
+        document.addEventListener('DOMContentLoaded', testAPIFromInventoryContext);
+    </script>
+</body>
+</html>

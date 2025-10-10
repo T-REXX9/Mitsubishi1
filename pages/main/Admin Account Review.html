@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mitsubishi Accounts Page</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+    body {
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(to bottom, #f0f0f0, #7c0a0a);
+      color: #000;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #ccc;
+      padding: 10px 20px;
+    }
+    .top-bar .logo {
+      font-weight: bold;
+    }
+    .top-bar .admin-name {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .accounts-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .accounts-table th, .accounts-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+    .accounts-table th {
+      background-color: #eee;
+    }
+    .status {
+      padding: 4px 8px;
+      border-radius: 4px;
+      color: white;
+      font-weight: bold;
+    }
+    .status.approved {
+      background-color: green;
+    }
+    .status.declined {
+      background-color: red;
+    }
+    .status.pending {
+      background-color: orange;
+    }
+    .action-btn {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .view-btn {
+      background-color: #0044cc;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="logo">← MITSUBISHI MOTORS</div>
+    <div class="admin-name">👤 ADMIN NAME</div>
+  </div>
+
+  <h2>Accounts</h2>
+  <table class="accounts-table">
+    <thead>
+      <tr>
+        <th>DATE</th>
+        <th>LASTNAME</th>
+        <th>NAME</th>
+        <th>MIDDLE NAME</th>
+        <th>SUFFIX</th>
+        <th>AGE</th>
+        <th>ACTION</th>
+        <th>STATUS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>April 5, 2025</td>
+        <td>Fernandez</td>
+        <td>Aaron</td>
+        <td>Perez</td>
+        <td>N/A</td>
+        <td>23</td>
+        <td><button class="action-btn view-btn">✔ VIEW</button></td>
+        <td><span class="status approved">Approved</span></td>
+      </tr>
+      <tr>
+        <td>April 1, 2025</td>
+        <td>Ramirez</td>
+        <td>Shane</td>
+        <td>De Silva</td>
+        <td>N/A</td>
+        <td>18</td>
+        <td><button class="action-btn view-btn">✔ VIEW</button></td>
+        <td><span class="status approved">Approved</span></td>
+      </tr>
+      <tr>
+        <td>March 30, 2025</td>
+        <td>De Chavez</td>
+        <td>Kyle</td>
+        <td>Stalavista</td>
+        <td>N/A</td>
+        <td>25</td>
+        <td><button class="action-btn view-btn">✔ VIEW</button></td>
+        <td><span class="status declined">Declined</span></td>
+      </tr>
+      <tr>
+        <td>March 27, 2025</td>
+        <td>De Guzman</td>
+        <td>Joel</td>
+        <td>Reyes</td>
+        <td>Jr.</td>
+        <td>26</td>
+        <td><button class="action-btn view-btn">✔ VIEW</button></td>
+        <td><span class="status pending">Pending</span></td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>

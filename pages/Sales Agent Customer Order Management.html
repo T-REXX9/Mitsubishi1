@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mitsubishi Dashboard</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: linear-gradient(to bottom, #ccc, #7c0a0a);
+      display: flex;
+      height: 100vh;
+    }
+
+    .sidebar {
+      width: 220px;
+      background-color: #111;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 0;
+    }
+
+    .sidebar .logo {
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      margin-bottom: 40px;
+    }
+
+    .sidebar .logo img {
+      height: 20px;
+      margin-right: 10px;
+    }
+
+    .sidebar nav a {
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+    }
+
+    .sidebar nav a img {
+      margin-right: 10px;
+      height: 20px;
+    }
+
+    .sidebar nav a.active, .sidebar nav a:hover {
+      background-color: #333;
+    }
+
+    .main {
+      flex: 1;
+      background: linear-gradient(to bottom, #ddd, #7c0a0a);
+      padding: 20px;
+      position: relative;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #e0e0e0;
+      padding: 10px 20px;
+    }
+
+    .topbar .right {
+      display: flex;
+      align-items: center;
+    }
+
+    .topbar select {
+      margin-left: 10px;
+    }
+
+    .panel {
+      background: #eaeaea;
+      border-radius: 10px;
+      padding: 20px;
+      margin-top: 20px;
+      box-shadow: 4px 4px 0 #600;
+    }
+
+    .panel h2 {
+      margin-bottom: 10px;
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      border: 1px solid #555;
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #ddd;
+    }
+
+    .btn-new {
+      background-color: #377dff;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      float: right;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Mitsubishi_logo.svg/1024px-Mitsubishi_logo.svg.png" />
+      <strong>MITSUBISHI MOTORS</strong>
+    </div>
+    <nav>
+      <a href="#"><img src="https://img.icons8.com/ios-filled/50/dashboard.png"/>DASHBOARD</a>
+      <a href="#"><img src="https://img.icons8.com/emoji/48/package.png"/>INVENTORY</a>
+      <a href="#"><img src="https://img.icons8.com/ios/50/user-group-man-man.png"/>CUSTOMER ACCOUNTS</a>
+      <a href="#" class="active"><img src="https://img.icons8.com/ios/50/shopping-cart.png"/>ORDERS</a>
+      <a href="#"><img src="https://img.icons8.com/ios/50/chat.png"/>CUSTOMER CHATS</a>
+    </nav>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div><strong>Orders</strong></div>
+      <div class="right">
+        <label for="date">Date</label>
+        <select id="date">
+          <option>DD / MM / YR</option>
+        </select>
+        <span style="margin-left: 20px">
+          <img src="https://img.icons8.com/ios-filled/24/user-male-circle.png" style="vertical-align: middle; margin-right: 5px;" /> AGENT NAME
+        </span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Select Account</h2>
+      <button class="btn-new">+ New</button>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Customer Name</th>
+              <th>Phone Number</th>
+              <th>Email</th>
+              <th>Gender</th>
+              <th>Type of</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Rea Reyes</strong></td>
+              <td><strong>09095622584</strong></td>
+              <td><strong>rea@gmail.com</strong></td>
+              <td>F</td>
+              <td>National</td>
+            </tr>
+            <tr>
+              <td>David Anderson</td>
+              <td>09915637429</td>
+              <td>david@gmail.com</td>
+              <td>M</td>
+              <td>National</td>
+            </tr>
+            <tr>
+              <td>Leo Dimagiba</td>
+              <td>09207598246</td>
+              <td>leodimagiba@gmail.com</td>
+              <td>M</td>
+              <td>National</td>
+            </tr>
+            <tr>
+              <td>Celestine Papuri</td>
+              <td>09093541853</td>
+              <td>cele@gmail.com</td>
+              <td>F</td>
+              <td>National</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

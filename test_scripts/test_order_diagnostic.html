@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Backend Diagnostic Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-header {
+            background: #dc3545;
+            color: white;
+            padding: 10px 15px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 8px 8px 0 0;
+        }
+        .result {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { border-left: 4px solid #28a745; }
+        .error { border-left: 4px solid #dc3545; }
+        .warning { border-left: 4px solid #ffc107; }
+        .info { border-left: 4px solid #17a2b8; }
+        button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #c82333; }
+        .step {
+            margin: 10px 0;
+            padding: 10px;
+            background: #e9ecef;
+            border-left: 3px solid #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Order Backend Diagnostic Test</h1>
+    <p>This test will help identify exactly why the order backend is returning empty responses.</p>
+    
+    <div class="test-section">
+        <div class="test-header">
+            <h2>🔍 Step-by-Step Diagnosis</h2>
+        </div>
+        <button onclick="runDiagnostic()">🚀 Start Diagnostic</button>
+        <div id="diagnosticResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-header">
+            <h2>🔬 Raw Request Test</h2>
+        </div>
+        <button onclick="testRawRequest()">Test Raw Request</button>
+        <div id="rawResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-header">
+            <h2>📝 Manual Session Check</h2>
+        </div>
+        <button onclick="checkSession()">Check Session Status</button>
+        <div id="sessionResult" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        function setResult(elementId, content, className = 'info') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${className}`;
+            element.textContent = content;
+        }
+
+        function appendResult(elementId, content) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.textContent += content + '\\n';
+        }
+
+        async function runDiagnostic() {
+            const resultId = 'diagnosticResult';
+            setResult(resultId, '🚀 Starting comprehensive diagnostic...', 'info');
+
+            try {
+                appendResult(resultId, '\\n📋 STEP 1: Testing basic connectivity...');
+                
+                // Test if the backend file exists
+                const response = await fetch('../includes/backend/order_backend.php', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                appendResult(resultId, `   Response status: ${response.status}`);
+                appendResult(resultId, `   Response OK: ${response.ok}`);
+                
+                if (!response.ok) {
+                    appendResult(resultId, '❌ Backend file not accessible');
+                    setResult(resultId, document.getElementById(resultId).textContent, 'error');
+                    return;
+                }
+
+                appendResult(resultId, '\\n📋 STEP 2: Testing with action parameter...');
+                
+                const actionResponse = await fetch('../includes/backend/order_backend.php?action=get_customer_orders', {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+
+                appendResult(resultId, `   Action response status: ${actionResponse.status}`);
+                
+                const responseText = await actionResponse.text();
+                appendResult(resultId, `   Response length: ${responseText.length} bytes`);
+                appendResult(resultId, `   Response content: "${responseText}"`);
+
+                if (responseText.length === 0) {
+                    appendResult(resultId, '\\n❌ ISSUE IDENTIFIED: Empty response from backend');
+                    appendResult(resultId, '   This suggests either:');
+                    appendResult(resultId, '   1. PHP fatal error (no output at all)');
+                    appendResult(resultId, '   2. Session not properly initialized');
+                    appendResult(resultId, '   3. Database connection failure');
+                    appendResult(resultId, '   4. Backend file execution error');
+                    
+                    appendResult(resultId, '\\n📋 STEP 3: Testing session status...');
+                    await testSessionStatus(resultId);
+                    
+                } else {
+                    appendResult(resultId, '\\n✅ Backend is responding with content');
+                    try {
+                        const jsonData = JSON.parse(responseText);
+                        appendResult(resultId, '✅ JSON is valid');
+                        appendResult(resultId, `📦 Response data: ${JSON.stringify(jsonData, null, 2)}`);
+                        setResult(resultId, document.getElementById(resultId).textContent, 'success');
+                    } catch (parseError) {
+                        appendResult(resultId, `❌ JSON parse error: ${parseError.message}`);
+                        setResult(resultId, document.getElementById(resultId).textContent, 'error');
+                    }
+                }
+
+            } catch (error) {
+                appendResult(resultId, `\\n❌ Network error: ${error.message}`);
+                setResult(resultId, document.getElementById(resultId).textContent, 'error');
+            }
+        }
+
+        async function testSessionStatus(resultId) {
+            try {
+                const sessionResponse = await fetch('../test_scripts/test_session_simple.php', {
+                    credentials: 'include'
+                });
+                const sessionText = await sessionResponse.text();
+                appendResult(resultId, `   Session test result: ${sessionText}`);
+            } catch (error) {
+                appendResult(resultId, `   Session test error: ${error.message}`);
+            }
+        }
+
+        async function testRawRequest() {
+            const resultId = 'rawResult';
+            setResult(resultId, '🔬 Testing raw HTTP request...', 'info');
+
+            try {
+                const startTime = Date.now();
+                
+                const response = await fetch('../includes/backend/order_backend.php?action=get_customer_orders&debug=1', {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'User-Agent': navigator.userAgent,
+                        'Accept': 'application/json, text/plain, */*',
+                        'Accept-Language': 'en-US,en;q=0.9',
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
+                    }
+                });
+
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+
+                appendResult(resultId, `🕐 Response time: ${responseTime}ms`);
+                appendResult(resultId, `📊 Status: ${response.status} ${response.statusText}`);
+                appendResult(resultId, `🔗 URL: ${response.url}`);
+                appendResult(resultId, `✅ Response OK: ${response.ok}`);
+                
+                // Check headers
+                appendResult(resultId, '\\n📋 Response Headers:');
+                for (let [key, value] of response.headers.entries()) {
+                    appendResult(resultId, `   ${key}: ${value}`);
+                }
+
+                // Get response as text
+                const responseText = await response.text();
+                appendResult(resultId, `\\n📏 Content Length: ${responseText.length} bytes`);
+                
+                if (responseText.length === 0) {
+                    appendResult(resultId, '\\n❌ EMPTY RESPONSE CONFIRMED');
+                    appendResult(resultId, 'The backend is not outputting any content.');
+                    setResult(resultId, document.getElementById(resultId).textContent, 'error');
+                } else {
+                    appendResult(resultId, `\\n📝 Response Content:\\n${responseText}`);
+                    setResult(resultId, document.getElementById(resultId).textContent, 'success');
+                }
+
+            } catch (error) {
+                appendResult(resultId, `\\n❌ Request failed: ${error.message}`);
+                setResult(resultId, document.getElementById(resultId).textContent, 'error');
+            }
+        }
+
+        async function checkSession() {
+            const resultId = 'sessionResult';
+            setResult(resultId, '👤 Checking session status...', 'info');
+
+            try {
+                // Test session through a simple PHP file
+                const response = await fetch('../test_scripts/test_session_debug.php', {
+                    credentials: 'include'
+                });
+                
+                const sessionInfo = await response.text();
+                appendResult(resultId, '📋 Session Information:');
+                appendResult(resultId, sessionInfo);
+                
+                if (sessionInfo.includes('user_id')) {
+                    setResult(resultId, document.getElementById(resultId).textContent, 'success');
+                } else {
+                    appendResult(resultId, '\\n❌ No user_id found in session');
+                    appendResult(resultId, 'You may need to log in first.');
+                    setResult(resultId, document.getElementById(resultId).textContent, 'warning');
+                }
+
+            } catch (error) {
+                appendResult(resultId, `❌ Session check failed: ${error.message}`);
+                setResult(resultId, document.getElementById(resultId).textContent, 'error');
+            }
+        }
+
+        // Auto-run diagnostic on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 Diagnostic page loaded');
+        });
+    </script>
+</body>
+</html>

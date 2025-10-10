@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mitsubishi Xpander</title>
+  <style>
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(to bottom, #e0dede, #7b0f0f);
+      color: #fff;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .icons {
+      display: flex;
+      gap: 15px;
+    }
+
+    .main {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .main h1 {
+      color: black;
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+    }
+
+    .main img {
+      width: 400px;
+      max-width: 100%;
+      transition: 0.3s ease-in-out;
+    }
+
+    .price {
+      font-size: 2rem;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .desc {
+      font-size: 1rem;
+      color: white;
+      margin: 10px 0;
+    }
+
+    .specs, .features {
+      text-align: left;
+      margin: 20px auto;
+      max-width: 800px;
+    }
+
+    .specs ul, .features ul {
+      list-style: disc;
+      margin-left: 20px;
+    }
+
+    .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    button {
+      background: #ddd;
+      color: black;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      box-shadow: 4px 4px #640909;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .color-picker {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .color-option {
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      border: 2px solid white;
+      cursor: pointer;
+    }
+
+    .color-option.black { background: black; }
+    .color-option.white { background: white; }
+    .color-option.maroon { background: maroon; }
+    .color-option.silver { background: silver; border-color: blue; }
+
+    .view-btn {
+      background: #555;
+      color: white;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-top: 10px;
+      float: right;
+      margin-right: 15%;
+      box-shadow: 3px 3px #3a0202;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div>
+      <span style="font-size: 2rem; cursor: pointer;" onclick="goBack()">&#8592;</span>
+      <span style="font-size: 2rem; margin-left: 10px; cursor: pointer;" onclick="toggleMenu()">&#9776;</span>
+    </div>
+    <div class="icons">
+      <span style="font-size: 1.5rem; cursor: pointer;" onclick="openChat()">💬</span>
+      <span style="font-size: 1.5rem; cursor: pointer;" onclick="openProfile()">👤</span>
+    </div>
+  </div>
+
+  <div class="main">
+    <h1>Mitsubishi Xpander</h1>
+    <img id="carImage" src="image.png" alt="Mitsubishi Xpander">
+    
+    <div class="price">₱925,000</div>
+    <div class="desc">2022 Xpander GLX 1.5 AT: Redefining the 7-Seater MPV Experience</div>
+
+    <button class="view-btn" onclick="viewInterior()">VIEW INTERIOR</button>
+
+    <div class="specs">
+      <strong>Performance:</strong>
+      <ul>
+        <li>Power: 105 PS @ 6000 rpm.</li>
+        <li>Torque: 141 Nm @ 4000 rpm.</li>
+        <li>Suspension: MacPherson struts with coil spring (front), torsion beam (rear).</li>
+        <li>Fuel Efficiency: 10 km/l in the city, 22.5 km/l on the highway (estimated).</li>
+      </ul>
+    </div>
+
+    <div class="features">
+      <strong>Key Features:</strong>
+      <ul>
+        <li>Engine: 1.5L In-Line 4-Cylinder DOHC with MIVEC (4A91).</li>
+        <li>Transmission: 5-speed manual or 4-speed automatic.</li>
+        <li>Seating: 2+3+2 configuration.</li>
+        <li>Safety: Four-wheel ABS, EBD, dual front airbags.</li>
+        <li>Interior: Black fabric seats, tilt and telescopic steering adjustment.</li>
+        <li>Exterior: Dynamic Shield front fascia, 17-inch alloy wheels.</li>
+      </ul>
+    </div>
+
+    <div class="color-picker">
+      <label>Color:</label>
+      <div class="color-option black" onclick="changeColor('black')"></div>
+      <div class="color-option white" onclick="changeColor('white')"></div>
+      <div class="color-option maroon" onclick="changeColor('maroon')"></div>
+      <div class="color-option silver" onclick="changeColor('silver')"></div>
+    </div>
+
+    <div class="buttons">
+      <button onclick="showQuote()">QUOTE</button>
+      <button onclick="bookTestDrive()">BOOK TEST DRIVE</button>
+      <button onclick="inquire()">INQUIRE</button>
+    </div>
+  </div>
+
+  <script>
+    function changeColor(color) {
+      const carImage = document.getElementById("carImage");
+      carImage.src = `car-xpander-${color}.png`; // Make sure these images exist!
+    }
+
+    function showQuote() {
+      alert("Quote request sent!");
+    }
+
+    function bookTestDrive() {
+      alert("Test drive booked!");
+    }
+
+    function inquire() {
+      alert("Inquiry submitted!");
+    }
+
+    function viewInterior() {
+      alert("Showing interior view...");
+    }
+
+    function goBack() {
+      alert("Going back...");
+    }
+
+    function toggleMenu() {
+      alert("Menu toggled.");
+    }
+
+    function openChat() {
+      alert("Opening chat...");
+    }
+
+    function openProfile() {
+      alert("Opening profile...");
+    }
+  </script>
+</body>
+</html>

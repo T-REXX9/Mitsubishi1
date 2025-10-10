@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Help Center</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: linear-gradient(to bottom, #d3d3d3, #8b0000);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background: #e0e0e0;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      padding: 15px 20px;
+      font-weight: bold;
+    }
+
+    .header span {
+      font-size: 22px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+
+    .tabs {
+      display: flex;
+      overflow-x: auto;
+      padding: 0 10px;
+      border-bottom: 2px solid black;
+    }
+
+    .tab {
+      padding: 10px 20px;
+      margin: 10px 5px;
+      background: white;
+      border-radius: 20px;
+      white-space: nowrap;
+      cursor: pointer;
+      font-weight: bold;
+      border: none;
+    }
+
+    .tab.active {
+      background: black;
+      color: white;
+    }
+
+    .faq-section {
+      padding: 15px 20px;
+    }
+
+    .faq-item {
+      background: white;
+      margin: 10px 0;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .faq-question {
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+    }
+
+    .faq-answer {
+      margin-top: 5px;
+      font-size: 14px;
+      color: #333;
+      display: none;
+    }
+
+    .faq-item.open .faq-answer {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <span>&larr;</span>
+      Help Center
+    </div>
+    <div class="tabs">
+      <button class="tab active">General</button>
+      <button class="tab">Account</button>
+      <button class="tab">Payment</button>
+      <button class="tab">Reservation</button>
+      <button class="tab">Request</button>
+      <span style="margin-left:auto; margin-right:10px;">⚙️</span>
+    </div>
+    <div class="faq-section">
+      <div class="faq-item open">
+        <div class="faq-question">
+          <span>How do I manage my notifications?</span>
+          <span>&#9660;</span>
+        </div>
+        <div class="faq-answer">
+          To manage my notifications blah blah blah blah blah blah blah blah blah
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question">
+          <span>Where can I see my balanced?</span>
+          <span>&#9660;</span>
+        </div>
+        <div class="faq-answer">Your balance can be found in the account section.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question">
+          <span>Is my data and private?</span>
+          <span>&#9660;</span>
+        </div>
+        <div class="faq-answer">Yes, your data is encrypted and secure.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question">
+          <span>How do I use this app?</span>
+          <span>&#9660;</span>
+        </div>
+        <div class="faq-answer">This app is easy to use. Just explore the menu.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question">
+          <span>How can I unloved someone?</span>
+          <span>&#9660;</span>
+        </div>
+        <div class="faq-answer">Unloving someone can be hard. Just tap "unfollow".</div>
+      </div>
+      <!-- Add more questions as needed -->
+    </div>
+  </div>
+
+  <script>
+    // FAQ expand/collapse
+    document.querySelectorAll('.faq-item').forEach(item => {
+      item.addEventListener('click', () => {
+        item.classList.toggle('open');
+      });
+    });
+
+    // Tab toggle
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Test Drive Confirmation</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom, #eeeeee, #790000);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      text-align: center;
+      position: relative;
+    }
+
+    .done-button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-weight: bold;
+      color: black;
+      cursor: pointer;
+    }
+
+    .message-box {
+      max-width: 600px;
+      padding: 1em;
+      font-size: 1.1em;
+    }
+  </style>
+</head>
+<body>
+  <div class="done-button" onclick="handleDone()">DONE</div>
+
+  <div class="message-box">
+    <p>
+      Your Test Drive Request has been successfully submitted. It will<br />
+      be reviewed by the sales agent, and you will be notified once a<br />
+      decision has been made.
+    </p>
+  </div>
+
+  <script>
+    function handleDone() {
+      // You can redirect or perform another action here
+      alert("Returning to main page...");
+      // Example: window.location.href = "index.html";
+    }
+  </script>
+</body>
+</html>

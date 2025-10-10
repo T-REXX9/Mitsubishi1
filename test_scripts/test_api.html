@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <h1>Delivery API Test</h1>
+    
+    <button onclick="testDeliveryCreation()">Test Create Delivery</button>
+    <button onclick="testGetDeliveries()">Test Get Deliveries</button>
+    
+    <div id="results"></div>
+
+    <script>
+    async function testDeliveryCreation() {
+        const testData = {
+            delivery_date: '2024-08-25',
+            vehicle_id: 1,
+            model_name: 'Test Model',
+            variant: 'Test Variant',
+            units_delivered: 1,
+            unit_price: 1000000
+        };
+        
+        try {
+            console.log('Sending data:', testData);
+            
+            const response = await fetch('/Mitsubishi-main/api/deliveries.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(testData)
+            });
+            
+            const responseText = await response.text();
+            console.log('Raw response:', responseText);
+            
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (e) {
+                console.error('JSON parse error:', e);
+                document.getElementById('results').innerHTML = `<h3>Response (non-JSON):</h3><pre>${responseText}</pre>`;
+                return;
+            }
+            
+            console.log('Parsed response:', data);
+            document.getElementById('results').innerHTML = `<h3>Response:</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            
+            if (data.success) {
+                Swal.fire('Success!', 'Delivery created successfully', 'success');
+            } else {
+                Swal.fire('Error!', data.message || 'Failed to create delivery', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('results').innerHTML = `<h3>Error:</h3><pre>${error.message}</pre>`;
+            Swal.fire('Error!', error.message, 'error');
+        }
+    }
+    
+    async function testGetDeliveries() {
+        try {
+            const response = await fetch('/Mitsubishi-main/api/deliveries.php');
+            const data = await response.json();
+            console.log('Get deliveries response:', data);
+            document.getElementById('results').innerHTML = `<h3>Get Deliveries Response:</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('results').innerHTML = `<h3>Error:</h3><pre>${error.message}</pre>`;
+        }
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .response { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 3px; font-family: monospace; white-space: pre-wrap; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        input { padding: 8px; margin: 5px; width: 300px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chat API Test</h1>
+        
+        <div class="test-section">
+            <h3>1. Test Message Sending</h3>
+            <input type="text" id="testMessage" value="Do you have a Montero Sport available?" placeholder="Enter test message">
+            <button onclick="testSendMessage()">Send Message</button>
+            <div id="sendResult" class="response"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>2. Test Get Messages</h3>
+            <button onclick="testGetMessages()">Get Messages</button>
+            <div id="messagesResult" class="response"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>3. Session Info</h3>
+            <button onclick="testSession()">Check Session</button>
+            <div id="sessionResult" class="response"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>4. Vehicle Database Test</h3>
+            <button onclick="testVehicleQuery()">Test Vehicle Query</button>
+            <div id="vehicleResult" class="response"></div>
+        </div>
+    </div>
+
+    <script>
+        function updateResult(elementId, data, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            element.textContent = JSON.stringify(data, null, 2);
+            element.parentElement.className = 'test-section ' + (isSuccess ? 'success' : 'error');
+        }
+
+        function testSendMessage() {
+            const message = document.getElementById('testMessage').value;
+            const formData = new FormData();
+            formData.append('action', 'send_message');
+            formData.append('message_text', message);
+
+            fetch('chat_api_simple.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers.get('content-type'));
+                return response.text();
+            })
+            .then(text => {
+                console.log('Raw response:', text);
+                try {
+                    const data = JSON.parse(text);
+                    updateResult('sendResult', data, data.success);
+                } catch (e) {
+                    updateResult('sendResult', {error: 'Invalid JSON', raw: text}, false);
+                }
+            })
+            .catch(error => {
+                updateResult('sendResult', {error: error.message}, false);
+            });
+        }
+
+        function testGetMessages() {
+            const formData = new FormData();
+            formData.append('action', 'get_messages');
+
+            fetch('chat_api_simple.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                updateResult('messagesResult', data, data.success);
+            })
+            .catch(error => {
+                updateResult('messagesResult', {error: error.message}, false);
+            });
+        }
+
+        function testSession() {
+            fetch('test_session_simple.php')
+            .then(response => response.json())
+            .then(data => {
+                updateResult('sessionResult', data, true);
+            })
+            .catch(error => {
+                updateResult('sessionResult', {error: error.message}, false);
+            });
+        }
+
+        function testVehicleQuery() {
+            const messages = [
+                "Do you have a Montero Sport?",
+                "What's the price of Xpander?", 
+                "Show me available vehicles",
+                "Hello there!"
+            ];
+            
+            let results = [];
+            let completed = 0;
+            
+            messages.forEach((msg, index) => {
+                const formData = new FormData();
+                formData.append('action', 'send_message');
+                formData.append('message_text', msg);
+
+                fetch('chat_api_simple.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    results[index] = {message: msg, response: data};
+                    completed++;
+                    
+                    if (completed === messages.length) {
+                        updateResult('vehicleResult', results, true);
+                    }
+                })
+                .catch(error => {
+                    results[index] = {message: msg, error: error.message};
+                    completed++;
+                    
+                    if (completed === messages.length) {
+                        updateResult('vehicleResult', results, false);
+                    }
+                });
+            });
+        }
+
+        // Auto-test on page load
+        window.onload = function() {
+            testSession();
+        };
+    </script>
+</body>
+</html>

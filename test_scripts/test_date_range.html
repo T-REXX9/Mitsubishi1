@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Report Date Range Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 20px 0; padding: 15px; border-radius: 5px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; max-height: 300px; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        .kpi-display { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 20px 0; }
+        .kpi-card { padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #007bff; }
+    </style>
+</head>
+<body>
+    <h1>Sales Report Date Range Test</h1>
+    
+    <div>
+        <h3>Test with Current Month (2025)</h3>
+        <button onclick="testCurrentMonth()">Test Current Month (Should be Empty)</button>
+        <div id="current-result"></div>
+    </div>
+    
+    <div>
+        <h3>Test with August 2024 (Where data exists)</h3>
+        <button onclick="testAugust2024()">Test August 2024 (Should have data)</button>
+        <div id="august-result"></div>
+        <div id="august-kpi" class="kpi-display"></div>
+    </div>
+
+    <script>
+        async function testCurrentMonth() {
+            const resultDiv = document.getElementById('current-result');
+            resultDiv.innerHTML = '<p>Testing current month...</p>';
+            
+            try {
+                const response = await fetch('api/sales-report.php?action=summary');
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultDiv.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="${data.total_revenue > 0 ? 'success' : 'error'}">
+                            <h4>Current Month Results:</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testAugust2024() {
+            const resultDiv = document.getElementById('august-result');
+            const kpiDiv = document.getElementById('august-kpi');
+            resultDiv.innerHTML = '<p>Testing August 2024...</p>';
+            
+            try {
+                // Test with August 2024 date range
+                const response = await fetch('api/sales-report.php?action=summary&start_date=2024-08-01&end_date=2024-08-31');
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultDiv.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="${data.total_revenue > 0 ? 'success' : 'error'}">
+                            <h4>August 2024 Results:</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                    
+                    // Display KPIs if we have data
+                    if (data.total_revenue > 0) {
+                        kpiDiv.innerHTML = `
+                            <div class="kpi-card">
+                                <strong>Total Revenue</strong><br>
+                                ₱${formatCurrency(data.total_revenue)}
+                            </div>
+                            <div class="kpi-card">
+                                <strong>Units Sold</strong><br>
+                                ${data.units_sold}
+                            </div>
+                            <div class="kpi-card">
+                                <strong>Total Transactions</strong><br>
+                                ${data.total_transactions}
+                            </div>
+                            <div class="kpi-card">
+                                <strong>Completed Orders</strong><br>
+                                ${data.completed_orders}
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        function formatCurrency(amount) {
+            if (amount === null || amount === undefined || isNaN(amount)) {
+                return '0';
+            }
+            
+            if (amount >= 1000000) {
+                return (amount / 1000000).toFixed(1) + 'M';
+            } else if (amount >= 1000) {
+                return (amount / 1000).toFixed(0) + 'K';
+            } else {
+                return amount.toLocaleString();
+            }
+        }
+
+        // Auto test on load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                testCurrentMonth();
+                setTimeout(() => {
+                    testAugust2024();
+                }, 2000);
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Inquire - Mitsubishi Motors</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom, #111 0%, #c00000 100%);
+      color: #000;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.8);
+      max-width: 850px;
+      margin: 50px auto;
+      padding: 30px 40px;
+      border-radius: 8px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 1em;
+    }
+
+    .header img {
+      width: 60px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.4em;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 15px;
+      font-size: 0.9em;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="date"],
+    textarea {
+      width: 100%;
+      padding: 8px;
+      font-size: 1em;
+      margin-top: 5px;
+      border: none;
+      border-bottom: 1px solid #666;
+      background: transparent;
+    }
+
+    textarea {
+      resize: none;
+      height: 60px;
+    }
+
+    .section-title {
+      margin-top: 25px;
+      font-size: 1em;
+      font-weight: bold;
+    }
+
+    .checkbox {
+      display: flex;
+      align-items: center;
+      margin-top: 15px;
+    }
+
+    .checkbox input {
+      margin-right: 10px;
+    }
+
+    .privacy {
+      font-size: 0.75em;
+      margin-top: 10px;
+    }
+
+    .submit-btn {
+      text-align: right;
+      margin-top: 25px;
+    }
+
+    .submit-btn button {
+      padding: 10px 25px;
+      background-color: #d00000;
+      color: white;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+    }
+
+    a {
+      color: #000;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h2>Inquire</h2>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/9/97/Mitsubishi_logo.svg" alt="Mitsubishi Logo"/>
+  </div>
+
+  <form id="inquiryForm">
+    <div class="section-title">Personal Information</div>
+    <label>FULL NAME</label>
+    <input type="text" name="fullname" required>
+
+    <label>EMAIL ADDRESS*</label>
+    <input type="email" name="email" required>
+
+    <label>PHONE NUMBER*</label>
+    <input type="tel" name="phone" required>
+
+    <div class="section-title">Vehicle Information</div>
+    <label>MODEL</label>
+    <input type="text" name="model">
+
+    <label>VARIANT</label>
+    <input type="text" name="variant">
+
+    <label>YEAR</label>
+    <input type="text" name="year">
+
+    <label>COLOR</label>
+    <input type="text" name="color">
+
+    <div class="section-title">Additional Details</div>
+    <label>Trade-in Vehicle (if applicable)</label>
+    <input type="text" name="tradein">
+
+    <label>Financing Required</label>
+    <input type="text" name="financing">
+
+    <label>Comments/Questions</label>
+    <textarea name="comments"></textarea>
+
+    <label>Date</label>
+    <input type="date" name="date" required>
+
+    <div class="checkbox">
+      <input type="checkbox" id="agree" required />
+      <label for="agree">I Agree.</label>
+    </div>
+
+    <div class="privacy">
+      I agree to MMPC’s <a href="#">Privacy Policy</a> and to receive newsletters and other promotions from MMPC, authorized dealers, and business partners.
+    </div>
+
+    <div class="submit-btn">
+      <button type="submit">SUBMIT</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  document.getElementById("inquiryForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    alert("Inquiry form submitted successfully!");
+  });
+</script>
+
+</body>
+</html>

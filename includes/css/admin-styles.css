@@ -1,0 +1,37 @@
+/* Admin-specific styles for dashboard and interfaces */
+
+/* Admin dashboard specific styling */
+.admin-card {
+  background: linear-gradient(135deg, #dc2626, #991b1b);
+  color: white;
+}
+
+.admin-interface {
+  border-left: 4px solid var(--primary-red);
+}
+
+/* Vehicle management specific styles */
+.vehicle-form fieldset {
+  border: 2px solid var(--border-light);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+.vehicle-form legend {
+  color: var(--primary-red);
+  font-weight: 700;
+  padding: 0 10px;
+}
+
+/* Account review specific styles */
+.account-review-table {
+  box-shadow: var(--shadow-medium);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* Transaction update specific styles */
+.transaction-card {
+  border-left: 4px solid var(--accent-blue);
+}

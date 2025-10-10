@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Update Profile</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: linear-gradient(to bottom, #111, #e62e2e);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      background: #bbb;
+      padding: 40px;
+      border-radius: 10px;
+      width: 80%;
+      max-width: 900px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    }
+
+    .profile-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      justify-content: space-between;
+    }
+
+    .profile-image {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .profile-image img {
+      width: 100px;
+      height: 100px;
+      border: 2px solid black;
+      border-radius: 10px;
+      object-fit: cover;
+      background-color: white;
+    }
+
+    .profile-image button {
+      margin-top: 8px;
+      padding: 5px 10px;
+    }
+
+    .id-number {
+      font-weight: bold;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+    }
+
+    .form-group label {
+      width: 150px;
+    }
+
+    .form-group input, .form-group textarea {
+      flex-grow: 1;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    textarea {
+      height: 120px;
+      resize: none;
+    }
+
+    .verify-label {
+      color: red;
+      margin-left: 5px;
+      font-size: 0.9em;
+    }
+
+    .buttons {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .buttons button {
+      padding: 10px 20px;
+      border: none;
+      margin: 0 10px;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .update {
+      background: #9caf61;
+      color: black;
+    }
+
+    .logout {
+      background: transparent;
+      color: black;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="profile-header">
+      <div class="profile-image">
+        <img src="https://img.icons8.com/ios-filled/100/000000/user.png" alt="User" />
+        <button>Upload</button>
+      </div>
+      <div style="flex-grow: 1; margin-left: 20px;">
+        <div class="form-group">
+          <label>Display Name :</label>
+          <input type="text" />
+        </div>
+        <div class="form-group">
+          <label>Full Name :</label>
+          <input type="text" />
+        </div>
+      </div>
+      <div class="id-number">ID Number: XXXXXXXXXXXX</div>
+    </div>
+
+    <div class="form-group">
+      <label>Email :</label>
+      <input type="email" />
+      <span class="verify-label">*Verify Email</span>
+    </div>
+    <div class="form-group">
+      <label>Email Address :</label>
+      <input type="email" />
+    </div>
+    <div class="form-group">
+      <label>About Yourself :</label>
+      <textarea></textarea>
+    </div>
+
+    <div class="buttons">
+      <button class="update">Update Profile</button>
+      <button class="logout">Log Out</button>
+    </div>
+  </div>
+</body>
+</html>

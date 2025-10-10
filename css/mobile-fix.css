@@ -1,0 +1,288 @@
+/* Universal Mobile Fix for Mitsubishi Motors Website */
+/* Created to resolve mobile scrolling, viewport, and layout issues */
+
+/* Reset zoom on mobile devices */
+@media (max-width: 991px) {
+  body {
+    zoom: 100% !important;
+    -webkit-text-size-adjust: 100% !important;
+    -ms-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
+  }
+}
+
+/* Fix body overflow and scrolling issues */
+html, body {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+/* Ensure proper mobile viewport behavior */
+@media (max-width: 991px) {
+  html {
+    overflow: auto !important;
+    height: auto !important;
+  }
+  
+  body {
+    min-height: 100vh !important;
+    height: auto !important;
+    position: relative !important;
+    overflow-y: visible !important;
+  }
+}
+
+/* Fix container constraints on mobile */
+@media (max-width: 767px) {
+  .container, 
+  .hero-banner,
+  .vehicle-showcase,
+  .services-section,
+  .news-section,
+  .cta-section {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+  }
+  
+  /* Fix hero sections that use 100vh */
+  .hero-banner,
+  .hero-section {
+    min-height: 60vh !important;
+    height: auto !important;
+  }
+}
+
+/* Fix sticky/fixed header issues */
+@media (max-width: 991px) {
+  header {
+    position: fixed !important;
+    top: 0 !important;
+    width: 100% !important;
+    z-index: 9999 !important;
+    transform: translateZ(0); /* Hardware acceleration */
+  }
+  
+  /* Add padding to body to account for fixed header */
+  body {
+    padding-top: 70px !important;
+  }
+  
+  /* Ensure nav menu scrolls properly when open */
+  nav.active {
+    max-height: calc(100vh - 70px) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+}
+
+/* Fix dashboard and sidebar scrolling */
+@media (max-width: 991px) {
+  .dashboard-grid,
+  .vehicle-grid,
+  .services-grid,
+  .promo-grid {
+    overflow: visible !important;
+    height: auto !important;
+  }
+  
+  /* Fix sidebar scrolling issues */
+  .sidebar,
+  [class*="sidebar"] {
+    position: relative !important;
+    height: auto !important;
+    overflow: visible !important;
+    max-height: none !important;
+  }
+}
+
+/* Fix modal and overlay scrolling */
+.modal, 
+.overlay,
+[class*="modal"],
+[class*="overlay"] {
+  position: fixed !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+/* Fix card and content containers */
+@media (max-width: 767px) {
+  .card,
+  .promo-card,
+  .vehicle-card,
+  .service-card,
+  [class*="card"] {
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+
+/* Fix form inputs on mobile */
+@media (max-width: 767px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  select,
+  textarea {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+  }
+}
+
+/* Fix images and media */
+img, 
+video, 
+iframe {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* Fix tables on mobile */
+@media (max-width: 767px) {
+  table {
+    display: block !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+}
+
+/* Improve touch targets */
+@media (max-width: 991px) {
+  a, 
+  button, 
+  input[type="submit"],
+  input[type="button"],
+  .btn,
+  .card-btn,
+  [class*="btn"] {
+    min-height: 44px !important;
+    min-width: 44px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
+/* Fix z-index stacking issues */
+.header {
+  z-index: 1000 !important;
+}
+
+nav {
+  z-index: 1001 !important;
+}
+
+.modal {
+  z-index: 2000 !important;
+}
+
+/* Fix parallax issues on mobile */
+@media (max-width: 991px) {
+  .parallax,
+  [class*="parallax"],
+  .services-section,
+  .cta-section {
+    background-attachment: scroll !important;
+  }
+}
+
+/* Fix absolute positioned elements */
+@media (max-width: 767px) {
+  .bg-particles,
+  .particle,
+  [class*="particle"] {
+    display: none !important; /* Hide decorative elements that can cause issues */
+  }
+}
+
+/* Ensure content is accessible */
+main,
+.content,
+.container,
+[role="main"] {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Fix footer positioning */
+footer {
+  position: relative !important;
+  margin-top: auto !important;
+}
+
+/* Additional mobile-specific fixes */
+@media (max-width: 767px) {
+  /* Remove horizontal scroll from specific problem elements */
+  * {
+    max-width: 100vw !important;
+  }
+  
+  /* Fix grid layouts */
+  .dashboard-grid,
+  .vehicle-grid,
+  .services-grid {
+    grid-template-columns: 1fr !important;
+    gap: 15px !important;
+  }
+  
+  /* Fix padding and margins */
+  .container {
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+  }
+  
+  /* Fix text overflow */
+  h1, h2, h3, h4, h5, h6 {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+}
+
+/* iOS-specific fixes */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari fixes */
+  body {
+    position: relative !important;
+  }
+  
+  /* Fix iOS rubber band scrolling */
+  .fixed {
+    position: fixed !important;
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
+  }
+}
+
+/* Android-specific fixes */
+@media (max-width: 991px) {
+  /* Fix Android keyboard issues */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    position: relative !important;
+    z-index: 999 !important;
+  }
+}
+
+/* Smooth transitions for responsive changes */
+* {
+  transition-property: none !important;
+}
+
+@media (min-width: 768px) {
+  * {
+    transition-property: all !important;
+  }
+}
+
+/* Debug helper - uncomment to visualize overflow issues */
+/* * {
+  outline: 1px solid red !important;
+} */

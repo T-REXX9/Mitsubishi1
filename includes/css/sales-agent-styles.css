@@ -1,0 +1,34 @@
+/* Sales Agent-specific styles for dashboard and interfaces */
+
+/* Sales agent dashboard specific styling */
+.sales-agent-card {
+  background: linear-gradient(135deg, #059669, #047857);
+  color: white;
+}
+
+.sales-agent-interface {
+  border-left: 4px solid var(--success-green);
+}
+
+/* Test drive management specific styles */
+.test-drive-priority.urgent {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+}
+
+/* Amortization specific styles */
+.payment-timeline {
+  background: linear-gradient(90deg, var(--border-light) 0%, var(--success-green) 40%, var(--border-light) 100%);
+  height: 6px;
+  border-radius: 3px;
+}
+
+/* Inquiry management specific styles */
+.inquiry-priority.urgent {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fbbf24;
+}

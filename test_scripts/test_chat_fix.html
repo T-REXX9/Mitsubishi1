@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat API Test</title>
+</head>
+<body>
+    <h1>Chat API Test</h1>
+    <button id="testSend">Test Send Message</button>
+    <button id="testGet">Test Get Messages</button>
+    <div id="results"></div>
+
+    <script>
+        function showResult(action, result) {
+            const div = document.getElementById('results');
+            div.innerHTML += `<h3>${action}</h3><pre>${JSON.stringify(result, null, 2)}</pre><hr>`;
+        }
+
+        document.getElementById('testSend').addEventListener('click', function() {
+            fetch('pages/chat_support.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'action=send_message&message_text=Hello, I need help with Montero Sport pricing'
+            })
+            .then(response => {
+                console.log('Response headers:', response.headers);
+                console.log('Response status:', response.status);
+                return response.text();
+            })
+            .then(text => {
+                console.log('Raw response:', text);
+                try {
+                    const json = JSON.parse(text);
+                    showResult('Send Message', json);
+                } catch (e) {
+                    showResult('Send Message ERROR', { error: 'Invalid JSON', response: text.substring(0, 500) });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showResult('Send Message ERROR', { error: error.message });
+            });
+        });
+
+        document.getElementById('testGet').addEventListener('click', function() {
+            fetch('pages/chat_support.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'action=get_messages'
+            })
+            .then(response => {
+                console.log('Response headers:', response.headers);
+                console.log('Response status:', response.status);
+                return response.text();
+            })
+            .then(text => {
+                console.log('Raw response:', text);
+                try {
+                    const json = JSON.parse(text);
+                    showResult('Get Messages', json);
+                } catch (e) {
+                    showResult('Get Messages ERROR', { error: 'Invalid JSON', response: text.substring(0, 500) });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showResult('Get Messages ERROR', { error: error.message });
+            });
+        });
+    </script>
+</body>
+</html>

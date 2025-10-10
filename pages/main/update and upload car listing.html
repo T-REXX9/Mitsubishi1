@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mitsubishi Upload Options</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+    body {
+      margin: 0;
+      background: linear-gradient(to bottom, #fff, #7c0a0a);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100vh;
+      justify-content: center;
+    }
+    .top-bar {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .logo img {
+      height: 60px;
+    }
+    .logo h1 {
+      margin: 10px 0 0 0;
+      color: white;
+    }
+    .button-grid {
+      display: flex;
+      gap: 40px;
+    }
+    .option {
+      background: #eee;
+      border-radius: 10px;
+      padding: 30px 40px;
+      text-align: center;
+      width: 180px;
+      cursor: pointer;
+      transition: transform 0.2s, background 0.3s;
+    }
+    .option:hover {
+      background: #ccc;
+      transform: translateY(-5px);
+    }
+    .option img {
+      height: 60px;
+      margin-bottom: 15px;
+    }
+    .option p {
+      margin: 0;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">←</div>
+  <div class="logo">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/3/3e/Mitsubishi_logo.png" alt="Mitsubishi Logo" />
+    <h1>MITSUBISHI MOTORS</h1>
+  </div>
+  <div class="button-grid">
+    <div class="option">
+      <img src="https://img.icons8.com/emoji/96/red-car.png" alt="Update Icon" />
+      <p>UPDATE</p>
+    </div>
+    <div class="option">
+      <img src="https://img.icons8.com/external-flat-juicy-fish/60/external-upload-automobile-flat-flat-juicy-fish.png" alt="Upload Icon" />
+      <p>UPLOAD</p>
+    </div>
+  </div>
+</body>
+</html>

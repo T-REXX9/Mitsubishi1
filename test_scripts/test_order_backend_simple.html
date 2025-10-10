@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Order Backend</title>
+</head>
+<body>
+    <h1>Order Backend Test</h1>
+    <div id="result"></div>
+    <button onclick="testOrderBackend()">Test Order Backend</button>
+    
+    <script>
+        function testOrderBackend() {
+            console.log('Testing order backend...');
+            
+            fetch('../includes/backend/order_backend.php?action=get_customer_orders', {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                return response.text();
+            })
+            .then(text => {
+                console.log('Raw response:', text);
+                document.getElementById('result').innerHTML = `
+                    <h3>Response:</h3>
+                    <pre style="background: #f5f5f5; padding: 10px; border-radius: 5px;">${text}</pre>
+                `;
+                
+                try {
+                    const json = JSON.parse(text);
+                    console.log('Parsed JSON:', json);
+                } catch (e) {
+                    console.error('JSON parse error:', e);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = `
+                    <h3>Error:</h3>
+                    <p style="color: red;">${error.message}</p>
+                `;
+            });
+        }
+        
+        // Auto-test on page load
+        document.addEventListener('DOMContentLoaded', testOrderBackend);
+    </script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mitsubishi Inquiry</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(to top, #5b0000, #8b0000, #ffffff);
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+      background-size: cover;
+      padding: 20px;
+      color: white;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 2rem;
+      padding: 10px;
+    }
+
+    .header-left, .header-right {
+      display: flex;
+      gap: 20px;
+      cursor: pointer;
+    }
+
+    .logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 30px;
+    }
+
+    .logo img {
+      width: 100px;
+      height: auto;
+    }
+
+    .logo h2 {
+      margin-top: 10px;
+      font-size: 1.5rem;
+      text-align: center;
+      font-weight: bold;
+      color: white;
+    }
+
+    .menu {
+      display: flex;
+      justify-content: center;
+      margin-top: 40px;
+      gap: 60px;
+      flex-wrap: wrap;
+    }
+
+    .menu-column {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .menu-column button {
+      background: white;
+      color: black;
+      padding: 12px 25px;
+      border: none;
+      border-radius: 10px;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.4);
+      transition: transform 0.2s ease;
+    }
+
+    .menu-column button:hover {
+      transform: scale(1.05);
+    }
+
+    @media (max-width: 768px) {
+      .menu {
+        flex-direction: column;
+        align-items: center;
+        gap: 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-left">
+      &#8592;
+      &#9776;
+    </div>
+    <div class="header-right">
+      &#128172;
+      &#128100;
+    </div>
+  </div>
+
+  <div class="logo">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Mitsubishi_logo.svg/1200px-Mitsubishi_logo.svg.png" alt="Mitsubishi Logo">
+    <h2>MITSUBISHI<br>MOTORS</h2>
+  </div>
+
+  <div class="menu">
+    <div class="menu-column">
+      <button onclick="goTo('XFORCE')">XFORCE</button>
+      <button onclick="goTo('MIRAGE')">MIRAGE</button>
+      <button onclick="goTo('XPANDER')">XPANDER</button>
+      <button onclick="goTo('MIRAGE G4')">MIRAGE G4</button>
+    </div>
+    <div class="menu-column">
+      <button onclick="goTo('TRITON')">TRITON</button>
+      <button onclick="goTo('MONTERO SPORT')">MONTERO<br>SPORT</button>
+      <button onclick="goTo('XPANDER CROSS')">XPANDER<br>CROSS</button>
+      <button onclick="goTo('MITSUBISHI L300')">MITSUBI<br>SHI L300</button>
+    </div>
+  </div>
+
+  <script>
+    function goTo(model) {
+      alert(`Redirecting to ${model} inquiry page...`);
+    }
+  </script>
+
+</body>
+</html>

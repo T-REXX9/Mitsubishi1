@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mitsubishi Test Drive Application</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #f0f0f0 0%, #6e0000 100%);
+            margin: 0;
+            padding: 2em;
+        }
+        .container {
+            background-color: #eee;
+            padding: 2em;
+            border-radius: 5px;
+            width: 90%;
+            max-width: 1000px;
+            margin: auto;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .header-logo {
+            text-align: center;
+            margin-bottom: 1em;
+        }
+        .header-logo img {
+            width: 100px;
+        }
+        h1 {
+            text-align: center;
+            color: #c00;
+            font-size: 1.5em;
+        }
+        .form-group {
+            margin-bottom: 1em;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 0.5em;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="date"],
+        .form-group select {
+            width: 100%;
+            padding: 0.5em;
+            font-size: 1em;
+        }
+        .form-time {
+            display: flex;
+            gap: 1em;
+        }
+        .form-time label {
+            flex: 1;
+        }
+        .upload-box {
+            margin-top: 1em;
+        }
+        .upload-box input[type="file"] {
+            display: block;
+            margin-bottom: 1em;
+        }
+        .submit-btn {
+            text-align: center;
+            margin-top: 2em;
+        }
+        .submit-btn button {
+            padding: 0.75em 2em;
+            background-color: #c00;
+            color: white;
+            font-weight: bold;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .checkbox-group {
+            display: flex;
+            gap: 1em;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-logo">
+            <img src="mitsubishi-logo.png" alt="Mitsubishi Logo">
+        </div>
+        <h1>APPLICATION FOR TEST DRIVE</h1>
+
+        <form>
+            <div class="form-group">
+                <label for="name">NAME</label>
+                <input type="text" id="name" name="name">
+            </div>
+
+            <div class="form-group">
+                <label for="dealer">DEALER</label>
+                <input type="text" id="dealer" name="dealer">
+            </div>
+
+            <div class="form-group">
+                <label for="testdate">Date of Test Drive</label>
+                <input type="date" id="testdate" name="testdate">
+            </div>
+
+            <div class="form-time">
+                <label for="time">Select Time:</label>
+                <select id="time" name="time">
+                    <option value="8">8:00 - 9:00</option>
+                    <option value="9">9:00 - 10:00</option>
+                    <option value="10">10:00 - 11:00</option>
+                    <option value="11">11:00 - 12:00</option>
+                    <option value="12">12:00 - 1:00</option>
+                    <option value="13">1:00 - 2:00</option>
+                </select>
+            </div>
+
+            <div class="upload-box">
+                <label for="license">Upload Driver’s License</label>
+                <input type="file" id="license" name="license">
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="agree" name="agree">
+                <label for="agree">I agree to Mitsubishi Motors' terms</label>
+            </div>
+
+            <div class="submit-btn">
+                <button type="submit">SUBMIT</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Report API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 20px 0; padding: 15px; border-radius: 5px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .warning { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; max-height: 300px; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .auth-section { background: #e7f3ff; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        input { padding: 8px; margin: 5px; border: 1px solid #ccc; border-radius: 3px; }
+        .status { font-weight: bold; padding: 5px 10px; border-radius: 3px; }
+        .status.connected { background: #d4edda; color: #155724; }
+        .status.disconnected { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Sales Report API Test</h1>
+    <p>This page tests the sales report API endpoints to ensure they're working correctly.</p>
+    
+    <div class="auth-section">
+        <h3>Authentication Status</h3>
+        <div id="authStatus" class="status disconnected">Not Connected</div>
+        <p><strong>Note:</strong> The API requires Admin authentication. Please ensure you're logged in as an Admin user.</p>
+        <button onclick="checkAuth()">Check Authentication</button>
+        <a href="../pages/login.php" target="_blank" style="margin-left: 10px;">Login as Admin</a>
+    </div>
+    
+    <div>
+        <button onclick="testSummary()">Test Summary API</button>
+        <button onclick="testByModel()">Test By Model API</button>
+        <button onclick="testRevenueTrend()">Test Revenue Trend API</button>
+        <button onclick="testInventory()">Test Inventory API</button>
+        <button onclick="testAll()">Test All APIs</button>
+        <button onclick="testDebugAPI()">Test Debug API (No Auth)</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+    
+    <div id="results"></div>
+    
+    <script>
+        const apiBase = 'api/sales-report.php';
+        
+        function addResult(title, success, data, error = null) {
+            const resultsDiv = document.getElementById('results');
+            const className = success ? 'success' : (error && error.includes('Unauthorized') ? 'warning' : 'error');
+            const icon = success ? '✅' : (className === 'warning' ? '⚠️' : '❌');
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${className}`;
+            
+            let errorInfo = '';
+            if (error) {
+                if (error.includes('Unauthorized')) {
+                    errorInfo = `<p><strong>Authentication Required:</strong> Please login as Admin first.</p>`;
+                } else if (error.includes('Unexpected token')) {
+                    errorInfo = `<p><strong>JSON Parse Error:</strong> The API returned HTML instead of JSON (likely an error page).</p>`;
+                } else {
+                    errorInfo = `<p><strong>Error:</strong> ${error}</p>`;
+                }
+            }
+            
+            resultDiv.innerHTML = `
+                <h3>${icon} ${title}</h3>
+                ${errorInfo}
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        async function checkAuth() {
+            try {
+                const response = await fetch('api/sales-report.php?action=summary');
+                const text = await response.text();
+                
+                if (response.status === 403) {
+                    document.getElementById('authStatus').className = 'status disconnected';
+                    document.getElementById('authStatus').textContent = 'Authentication Required';
+                    addResult('Authentication Check', false, {}, 'Not logged in as Admin');
+                } else if (response.ok) {
+                    try {
+                        JSON.parse(text);
+                        document.getElementById('authStatus').className = 'status connected';
+                        document.getElementById('authStatus').textContent = 'Authenticated as Admin';
+                        addResult('Authentication Check', true, { message: 'Successfully authenticated' });
+                    } catch (e) {
+                        document.getElementById('authStatus').className = 'status disconnected';
+                        document.getElementById('authStatus').textContent = 'API Error';
+                        addResult('Authentication Check', false, { response_text: text.substring(0, 200) + '...' }, 'API returned non-JSON response');
+                    }
+                } else {
+                    document.getElementById('authStatus').className = 'status disconnected';
+                    document.getElementById('authStatus').textContent = 'Connection Error';
+                    addResult('Authentication Check', false, { status: response.status, statusText: response.statusText }, `HTTP ${response.status}`);
+                }
+            } catch (error) {
+                document.getElementById('authStatus').className = 'status disconnected';
+                document.getElementById('authStatus').textContent = 'Connection Failed';
+                addResult('Authentication Check', false, {}, error.message);
+            }
+        }
+        
+        async function testAPI(endpoint, title) {
+            try {
+                const response = await fetch(`${apiBase}?${endpoint}`);
+                const text = await response.text();
+                
+                if (response.status === 403) {
+                    addResult(title, false, {}, 'Unauthorized access - please login as Admin');
+                    return;
+                }
+                
+                if (!response.ok) {
+                    addResult(title, false, { 
+                        status: response.status, 
+                        statusText: response.statusText,
+                        response: text.substring(0, 200) + '...'
+                    }, `HTTP ${response.status}: ${response.statusText}`);
+                    return;
+                }
+                
+                try {
+                    const data = JSON.parse(text);
+                    if (data.error) {
+                        addResult(title, false, data, data.error);
+                    } else {
+                        addResult(title, true, data);
+                    }
+                } catch (parseError) {
+                    addResult(title, false, { 
+                        raw_response: text.substring(0, 500) + '...',
+                        parse_error: parseError.message
+                    }, 'Failed to parse JSON response');
+                }
+            } catch (error) {
+                addResult(title, false, {}, error.message);
+            }
+        }
+        
+        function testSummary() {
+            testAPI('action=summary', 'Sales Summary');
+        }
+        
+        function testByModel() {
+            testAPI('action=by-model', 'Sales by Model');
+        }
+        
+        function testRevenueTrend() {
+            testAPI('action=revenue-trend', 'Revenue Trend');
+        }
+        
+        function testInventory() {
+            testAPI('action=inventory', 'Inventory Data');
+        }
+        
+        async function testAll() {
+            clearResults();
+            addResult('Starting API Tests...', true, { message: 'Testing all endpoints' });
+            
+            await checkAuth();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testSummary();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testByModel();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testRevenueTrend();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testInventory();
+            
+            addResult('All Tests Completed', true, { 
+                message: 'Check individual results above',
+                timestamp: new Date().toISOString()
+            });
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function testDebugAPI() {
+            addResult('Testing Debug API', true, { message: 'Testing connection without authentication...' });
+            
+            try {
+                // Test connection
+                const response1 = await fetch('debug_sales_api.php?action=test-connection');
+                const data1 = await response1.json();
+                addResult('Debug API - Connection Test', !data1.error, data1);
+                
+                // Test summary data
+                const response2 = await fetch('debug_sales_api.php?action=summary');
+                const data2 = await response2.json();
+                addResult('Debug API - Summary Data', !data2.error, data2);
+                
+            } catch (error) {
+                addResult('Debug API Test', false, {}, error.message);
+            }
+        }
+        
+        // Auto-run authentication check on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            addResult('Page Loaded', true, { 
+                message: 'Ready to test API endpoints',
+                api_base: apiBase,
+                note: 'Authentication required for all endpoints'
+            });
+            
+            // Check auth after a short delay
+            setTimeout(checkAuth, 1000);
+        });
+    </script>
+</body>
+</html>

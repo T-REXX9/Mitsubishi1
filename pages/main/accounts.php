@@ -1,0 +1,1247 @@
+<?php
+include_once(dirname(dirname(__DIR__)) . '/includes/init.php');
+include_once(dirname(dirname(__DIR__)) . '/includes/database/accounts_operations.php');
+include_once(dirname(dirname(__DIR__)) . '/includes/database/customer_operations.php');
+
+// Check if user is Admin
+if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'Admin') {
+    header("Location: ../../auth/login.php");
+    exit();
+}
+
+$accountsOp = new AccountsOperations();
+$customerOp = new CustomerOperations();
+
+// Handle AJAX requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    header('Content-Type: application/json');
+    
+    switch ($_POST['action']) {
+        case 'create':
+            $result = $accountsOp->createAccount($_POST);
+            $message = $result ? 'Account created successfully' : ($accountsOp->getLastError() ?: 'Failed to create account');
+            if ($result) {
+                require_once(dirname(dirname(__DIR__)) . '/includes/api/notification_api.php');
+                createNotification(null, 'Admin', 'Account Created', 'A new account has been created: ' . ($_POST['username'] ?? ''), 'account');
+            }
+            echo json_encode(['success' => $result, 'message' => $message]);
+            exit;
+            
+        case 'update':
+            $result = $accountsOp->updateAccount($_POST['id'], $_POST);
+if ($result) {
+    require_once(dirname(dirname(__DIR__)) . '/includes/api/notification_api.php');
+    createNotification(null, 'Admin', 'Account Updated', 'Account updated: ' . ($_POST['username'] ?? ''), 'account');
+}
+echo json_encode(['success' => $result, 'message' => $result ? 'Account updated successfully' : 'Failed to update account']);
+exit;
+            
+        case 'delete':
+            $delId = intval($_POST['id'] ?? 0);
+            // If deleting a SalesAgent, reassign their customers first
+            $acct = $accountsOp->getAccountById($delId);
+            if ($acct && ($acct['Role'] ?? '') === 'SalesAgent') {
+                $reassigned = $customerOp->reassignCustomersFromAgent($delId);
+            }
+            $result = $accountsOp->deleteAccount($delId);
+if ($result) {
+    require_once(dirname(dirname(__DIR__)) . '/includes/api/notification_api.php');
+    createNotification(null, 'Admin', 'Account Deleted', 'Account deleted: ID ' . $delId, 'account');
+}
+echo json_encode(['success' => $result, 'message' => $result ? 'Account deleted successfully' : 'Failed to delete account']);
+exit;
+            
+        case 'get_account':
+            $account = $accountsOp->getAccountById($_POST['id']);
+            echo json_encode(['success' => !!$account, 'data' => $account]);
+            exit;
+            
+        case 'view_customer':
+            $customer = $customerOp->getCustomerByAccountId($_POST['account_id']);
+            echo json_encode(['success' => !!$customer, 'data' => $customer]);
+            exit;
+            
+        case 'view_admin':
+            $admin = $accountsOp->getAccountById($_POST['account_id']);
+            echo json_encode(['success' => !!$admin, 'data' => $admin]);
+            exit;
+            
+        case 'view_sales_agent':
+            // Get account info and sales agent profile
+            $account = $accountsOp->getAccountById($_POST['account_id']);
+            $agentProfile = $accountsOp->getSalesAgentProfile($_POST['account_id']);
+            echo json_encode([
+                'success' => !!$account, 
+                'account' => $account,
+                'profile' => $agentProfile
+            ]);
+            exit;
+
+        case 'toggle_disable':
+            $id = intval($_POST['id'] ?? 0);
+            $disabled = intval($_POST['disabled'] ?? 0) === 1;
+            $ok = $accountsOp->setAccountDisabled($id, $disabled);
+            // If disabling a SalesAgent, reassign their customers immediately
+            $extraMsg = '';
+            if ($ok && $disabled) {
+                $acct = $accountsOp->getAccountById($id);
+                if ($acct && ($acct['Role'] ?? '') === 'SalesAgent') {
+                    $recount = $customerOp->reassignCustomersFromAgent($id);
+                    if ($recount > 0) {
+                        $extraMsg = " ($recount customers reassigned)";
+                    }
+                }
+            }
+            echo json_encode(['success' => $ok, 'message' => $ok ? (($disabled ? 'Account disabled' : 'Account enabled') . $extraMsg) : 'Failed to update account status']);
+            exit;
+
+        case 'reassign_customer':
+            // Securely reassign a customer to a selected active Sales Agent
+            $acctId = intval($_POST['account_id'] ?? 0);
+            $agentId = intval($_POST['agent_id'] ?? 0);
+            if ($acctId <= 0 || $agentId <= 0) {
+                echo json_encode(['success' => false, 'message' => 'Invalid parameters']);
+                exit;
+            }
+            $ok = $customerOp->setCustomerAgentByAccountId($acctId, $agentId);
+            if ($ok) {
+                // Fetch agent label for response
+                $agents = $customerOp->getActiveSalesAgents();
+                $label = '';
+                foreach ($agents as $ag) {
+                    if (intval($ag['Id']) === $agentId) {
+                        $label = trim(($ag['FirstName'] ?? '') . ' ' . ($ag['LastName'] ?? ''));
+                        break;
+                    }
+                }
+                echo json_encode(['success' => true, 'message' => 'Customer reassigned successfully', 'agent_label' => $label]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to reassign customer. Ensure the agent is active.']);
+            }
+            exit;
+    }
+}
+
+// Get filter parameters with enhanced search
+$role_filter = $_GET['role'] ?? 'all';
+$search_filter = $_GET['search'] ?? '';
+$sort_by = $_GET['sort'] ?? 'CreatedAt';
+$sort_order = $_GET['order'] ?? 'DESC';
+
+// Get accounts and statistics
+$accounts = $accountsOp->getAccounts($role_filter !== 'all' ? $role_filter : null, $search_filter, $sort_by, $sort_order);
+$stats = $accountsOp->getAccountStats();
+
+// Customer Accounts tab filters
+$cust_search = $_GET['cust_search'] ?? '';
+$cust_sort = $_GET['cust_sort'] ?? 'CreatedAt'; // CreatedAt | Username | AgentName
+$cust_order = $_GET['cust_order'] ?? 'DESC'; // ASC | DESC
+
+// Fetch customer accounts with assigned agent info
+$customerAccounts = $customerOp->listCustomerAccountsWithAgent($cust_search, $cust_sort, $cust_order);
+// Preload active (not disabled) Sales Agents for the dropdown
+$activeAgents = $customerOp->getActiveSalesAgents();
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Account Control - Mitsubishi</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link href="../../includes/css/common-styles.css" rel="stylesheet">
+  <link rel="stylesheet" href="../../includes/css/account-styles.css">
+  <style>
+    /* Page-specific overrides to avoid bottom white space and allow full-page scroll */
+    body { overflow-y: auto !important; }
+    .main-content { padding-bottom: 0 !important; }
+
+    /* Smaller confirm modal */
+    .modal.modal--sm { max-width: 360px; }
+    .modal.modal--sm .modal-header { padding: 12px 16px; }
+    .modal.modal--sm .modal-header h3 { font-size: 1rem; }
+    .modal.modal--sm .modal-body { padding: 14px 16px; }
+    .modal.modal--sm .modal-footer { padding: 12px 16px; }
+    .modal.modal--sm .btn { padding: 8px 14px; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <?php include '../../includes/components/sidebar.php'; ?>
+
+  <div class="main">
+    <?php include '../../includes/components/topbar.php'; ?>
+
+    <div class="main-content">
+      <div class="page-header">
+        <h1 class="page-title">
+          <i class="fas fa-users-cog"></i>
+          Admin Account Control
+        </h1>
+      </div>
+
+  <!-- Reassign Customer Modal -->
+  <div id="reassignModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3><i class="fas fa-user-exchange"></i> Reassign Customer to Sales Agent</h3>
+        <button class="modal-close" onclick="closeModal('reassignModal')">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="reassignAccountId" />
+        <div class="form-group">
+          <label class="form-label">Select Sales Agent <span class="required">*</span></label>
+          <select class="form-select" id="reassignAgentSelect" required>
+            <option value="">-- Choose Sales Agent --</option>
+            <?php foreach ($activeAgents as $ag): ?>
+              <option value="<?php echo (int)$ag['Id']; ?>">
+                <?php echo htmlspecialchars(trim(($ag['FirstName'] ?? '') . ' ' . ($ag['LastName'] ?? '')) . ' (' . ($ag['Username'] ?? '') . ')'); ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:8px;">
+          Only active (enabled) Sales Agent accounts are listed.
+        </p>
+        <div class="alert alert-success" id="reassignSuccessAlert"></div>
+        <div class="alert alert-error" id="reassignErrorAlert"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('reassignModal')">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="submitReassign()">Reassign</button>
+      </div>
+    </div>
+  </div>
+
+      <div class="tab-navigation">
+        <button class="tab-button active" data-tab="account-all">All Accounts</button>
+        <button class="tab-button" data-tab="customer-accounts">Customer Accounts</button>
+        <button class="tab-button" data-tab="account-create">Create Account</button>
+      </div>
+
+      <!-- Customer Accounts Tab -->
+      <div class="tab-content" id="customer-accounts">
+        <h3 class="section-heading">Customer Accounts</h3>
+        <div class="filter-bar">
+          <div class="search-input">
+            <i class="fas fa-search"></i>
+            <input type="text" id="custSearchInput" placeholder="Search customers by name, username, email..." value="<?php echo htmlspecialchars($cust_search); ?>">
+          </div>
+          <select class="filter-select" id="custSortFilter">
+            <option value="CreatedAt_DESC" <?php echo ($cust_sort === 'CreatedAt' && strtoupper($cust_order) === 'DESC') ? 'selected' : ''; ?>>Newest First</option>
+            <option value="CreatedAt_ASC" <?php echo ($cust_sort === 'CreatedAt' && strtoupper($cust_order) === 'ASC') ? 'selected' : ''; ?>>Oldest First</option>
+            <option value="Username_ASC" <?php echo ($cust_sort === 'Username' && strtoupper($cust_order) === 'ASC') ? 'selected' : ''; ?>>Username A-Z</option>
+            <option value="Username_DESC" <?php echo ($cust_sort === 'Username' && strtoupper($cust_order) === 'DESC') ? 'selected' : ''; ?>>Username Z-A</option>
+            <option value="AgentName_ASC" <?php echo ($cust_sort === 'AgentName' && strtoupper($cust_order) === 'ASC') ? 'selected' : ''; ?>>Agent Name A-Z</option>
+            <option value="AgentName_DESC" <?php echo ($cust_sort === 'AgentName' && strtoupper($cust_order) === 'DESC') ? 'selected' : ''; ?>>Agent Name Z-A</option>
+          </select>
+          <button class="btn btn-primary" onclick="applyCustomerFilters()">
+            <i class="fas fa-filter"></i> Apply Filters
+          </button>
+          <button class="btn btn-outline" onclick="clearCustomerFilters()">
+            <i class="fas fa-times"></i> Clear
+          </button>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Account ID</th>
+              <th>Name</th>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Assigned Sales Agent</th>
+              <th>Created</th>
+              <th>Last Login</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($customerAccounts as $row): ?>
+            <tr>
+              <td><?php echo htmlspecialchars($row['AccountId']); ?></td>
+              <td><?php echo htmlspecialchars(trim(($row['FirstName'] ?? '') . ' ' . ($row['LastName'] ?? ''))); ?></td>
+              <td><?php echo htmlspecialchars($row['Username']); ?></td>
+              <td><?php echo htmlspecialchars($row['Email']); ?></td>
+              <td>
+                <?php if (!empty($row['agent_id'])): ?>
+                  <span id="agentLabel-<?php echo (int)$row['AccountId']; ?>" title="<?php echo htmlspecialchars($row['AgentUsername'] ?? ''); ?>"><?php echo htmlspecialchars($row['AgentName'] ?? ''); ?></span>
+                <?php else: ?>
+                  <span id="agentLabel-<?php echo (int)$row['AccountId']; ?>" class="status warning">Unassigned</span>
+                <?php endif; ?>
+              </td>
+              <td><?php echo $row['CreatedAt'] ? date('M d, Y', strtotime($row['CreatedAt'])) : '—'; ?></td>
+              <td><?php echo !empty($row['LastLoginAt']) ? date('M d, Y', strtotime($row['LastLoginAt'])) : 'Never'; ?></td>
+              <td>
+                <?php $isDisabled = intval($row['IsDisabled'] ?? 0) === 1; ?>
+                <span class="status <?php echo $isDisabled ? 'error' : 'success'; ?>">
+                  <?php echo $isDisabled ? 'Disabled' : 'Active'; ?>
+                </span>
+              </td>
+              <td class="table-actions">
+                <button class="btn btn-small btn-view" onclick="viewCustomerInfo(<?php echo (int)$row['AccountId']; ?>)" title="View Customer Details">
+                  <i class="fas fa-eye"></i>
+                </button>
+                <?php if (!empty($row['agent_id'])): ?>
+                <button class="btn btn-small btn-outline" onclick="viewSalesAgentInfo(<?php echo (int)$row['agent_id']; ?>)" title="View Assigned Agent">
+                  Agent
+                </button>
+                <?php endif; ?>
+                <button class="btn btn-small btn-primary" onclick="openReassignModal(<?php echo (int)$row['AccountId']; ?>, <?php echo !empty($row['agent_id']) ? (int)$row['agent_id'] : 'null'; ?>)" title="Reassign to Sales Agent">
+                  Reassign
+                </button>
+              </td>
+            </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- All Accounts Tab -->
+      <div class="tab-content active" id="account-all">
+        <div class="info-cards">
+          <div class="info-card">
+            <div class="info-card-title">Total Accounts</div>
+            <div class="info-card-value"><?php echo $stats['total'] ?? 0; ?></div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">Admins</div>
+            <div class="info-card-value"><?php echo $stats['admin'] ?? 0; ?></div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">Sales Agents</div>
+            <div class="info-card-value"><?php echo $stats['salesagent'] ?? 0; ?></div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">Customers</div>
+            <div class="info-card-value"><?php echo $stats['customer'] ?? 0; ?></div>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <div class="search-input">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Search by name, username, email..." value="<?php echo htmlspecialchars($search_filter); ?>">
+          </div>
+          <select class="filter-select" id="roleFilter">
+            <option value="all" <?php echo $role_filter === 'all' ? 'selected' : ''; ?>>All Roles</option>
+            <option value="Admin" <?php echo $role_filter === 'Admin' ? 'selected' : ''; ?>>Admin</option>
+            <option value="SalesAgent" <?php echo $role_filter === 'SalesAgent' ? 'selected' : ''; ?>>Sales Agent</option>
+            <option value="Customer" <?php echo $role_filter === 'Customer' ? 'selected' : ''; ?>>Customer</option>
+          </select>
+          <select class="filter-select" id="sortFilter">
+            <option value="CreatedAt_DESC" <?php echo ($sort_by === 'CreatedAt' && $sort_order === 'DESC') ? 'selected' : ''; ?>>Newest First</option>
+            <option value="CreatedAt_ASC" <?php echo ($sort_by === 'CreatedAt' && $sort_order === 'ASC') ? 'selected' : ''; ?>>Oldest First</option>
+            <option value="Username_ASC" <?php echo ($sort_by === 'Username' && $sort_order === 'ASC') ? 'selected' : ''; ?>>Username A-Z</option>
+            <option value="Username_DESC" <?php echo ($sort_by === 'Username' && $sort_order === 'DESC') ? 'selected' : ''; ?>>Username Z-A</option>
+            <option value="Role_ASC" <?php echo ($sort_by === 'Role' && $sort_order === 'ASC') ? 'selected' : ''; ?>>Role A-Z</option>
+          </select>
+          <button class="btn btn-primary" onclick="applyFilters()">
+            <i class="fas fa-filter"></i> Apply Filters
+          </button>
+          <button class="btn btn-outline" onclick="clearFilters()">
+            <i class="fas fa-times"></i> Clear
+          </button>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Created</th>
+              <th>Last Login</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($accounts as $account): ?>
+            <tr>
+              <td><?php echo htmlspecialchars($account['Id']); ?></td>
+              <td><?php echo htmlspecialchars(($account['FirstName'] ?? '') . ' ' . ($account['LastName'] ?? '')); ?></td>
+              <td><?php echo htmlspecialchars($account['Username']); ?></td>
+              <td><?php echo htmlspecialchars($account['Email']); ?></td>
+              <td><span class="status <?php echo strtolower($account['Role']); ?>"><?php echo htmlspecialchars($account['Role']); ?></span></td>
+              <td><?php echo date('M d, Y', strtotime($account['CreatedAt'])); ?></td>
+              <td><?php echo $account['LastLoginAt'] ? date('M d, Y', strtotime($account['LastLoginAt'])) : 'Never'; ?></td>
+              <td>
+                <?php $isDisabled = intval($account['IsDisabled'] ?? 0) === 1; ?>
+                <span class="status <?php echo $isDisabled ? 'error' : 'success'; ?>">
+                  <?php echo $isDisabled ? 'Disabled' : 'Active'; ?>
+                </span>
+              </td>
+              <td class="table-actions">
+                <button class="btn btn-small btn-view" onclick="viewAccountInfo('<?php echo $account['Role']; ?>', <?php echo $account['Id']; ?>)" title="View Details">
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-small btn-outline" onclick="editAccount(<?php echo $account['Id']; ?>)">Edit</button>
+                <?php if ($isDisabled): ?>
+                  <button class="btn btn-small btn-primary" onclick="toggleDisable(<?php echo $account['Id']; ?>, false)">Enable</button>
+                <?php else: ?>
+                  <button class="btn btn-small btn-danger" onclick="toggleDisable(<?php echo $account['Id']; ?>, true)">Disable</button>
+                <?php endif; ?>
+              </td>
+            </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Create Account Tab -->
+      <div class="tab-content" id="account-create">
+        <h3 class="section-heading">Create New Account</h3>
+        <div class="alert alert-success" id="createSuccessAlert"></div>
+        <div class="alert alert-error" id="createErrorAlert"></div>
+        <form id="createAccountForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Role <span class="required">*</span></label>
+              <select class="form-select" name="role" required>
+                <option value="">Select role</option>
+                <option value="Admin">Admin</option>
+                <option value="SalesAgent">Sales Agent</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Username <span class="required">*</span></label>
+              <input type="text" class="form-input" name="username" placeholder="Enter username" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">First Name <span class="required">*</span></label>
+              <input type="text" class="form-input" name="first_name" placeholder="Enter first name" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Last Name <span class="required">*</span></label>
+              <input type="text" class="form-input" name="last_name" placeholder="Enter last name" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Email Address <span class="required">*</span></label>
+              <input type="email" class="form-input" name="email" placeholder="Enter email address" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Password <span class="required">*</span></label>
+              <input type="password" class="form-input" name="password" placeholder="Enter password" required>
+            </div>
+          </div>
+          <div class="action-area">
+            <button type="button" class="btn btn-secondary" onclick="clearCreateForm()">Clear Form</button>
+            <button type="submit" class="btn btn-primary">Create Account</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Account Modal - Updated to match topbar.php modal structure -->
+  <div id="editAccountModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Edit Account</h3>
+        <button class="modal-close" onclick="closeEditModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-success" id="editSuccessAlert"></div>
+        <div class="alert alert-error" id="editErrorAlert"></div>
+        <form id="editAccountForm">
+          <input type="hidden" id="editAccountId" name="id">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Role <span class="required">*</span></label>
+              <select class="form-select" id="editRole" name="role" required>
+                <option value="Admin">Admin</option>
+                <option value="SalesAgent">Sales Agent</option>
+                <option value="Customer">Customer</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Username <span class="required">*</span></label>
+              <input type="text" class="form-input" id="editUsername" name="username" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">First Name <span class="required">*</span></label>
+              <input type="text" class="form-input" id="editFirstName" name="first_name" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Last Name <span class="required">*</span></label>
+              <input type="text" class="form-input" id="editLastName" name="last_name" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address <span class="required">*</span></label>
+            <input type="email" class="form-input" id="editEmail" name="email" required>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="submitEditForm()">Update Account</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Action Modal -->
+  <div id="confirmModal" class="modal-overlay">
+    <div class="modal modal--sm">
+      <div class="modal-header">
+        <h3><i class="fas fa-triangle-exclamation" style="color:var(--primary-red);"></i> Confirm Action</h3>
+        <button class="modal-close" onclick="closeModal('confirmModal')">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="confirmMessage" style="font-size:14px;color:var(--text-dark);"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="confirmCancelBtn">Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirmOkBtn">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer Information Modal -->
+  <div id="customerInfoModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3><i class="fas fa-user-circle"></i> Customer Information</h3>
+        <button class="modal-close" onclick="closeModal('customerInfoModal')">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="customerInfoContent">
+          <!-- Content will be loaded here -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('customerInfoModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Information Modal -->
+  <div id="adminInfoModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3><i class="fas fa-user-shield"></i> Admin Information</h3>
+        <button class="modal-close" onclick="closeModal('adminInfoModal')">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="adminInfoContent">
+          <!-- Content will be loaded here -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('adminInfoModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sales Agent Information Modal -->
+  <div id="salesAgentInfoModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3><i class="fas fa-user-tie"></i> Sales Agent Information</h3>
+        <button class="modal-close" onclick="closeModal('salesAgentInfoModal')">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="salesAgentInfoContent">
+          <!-- Content will be loaded here -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('salesAgentInfoModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../includes/js/common-scripts.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Tab navigation functionality
+      document.querySelectorAll('.tab-button').forEach(function(button) {
+        button.addEventListener('click', function() {
+          // Remove active class from all buttons
+          document.querySelectorAll('.tab-button').forEach(function(btn) {
+            btn.classList.remove('active');
+          });
+          // Add active class to clicked button
+          this.classList.add('active');
+          
+          // Get the target tab content id
+          const tabId = this.getAttribute('data-tab');
+          // Hide all tab contents
+          document.querySelectorAll('.tab-content').forEach(function(tab) {
+            tab.classList.remove('active');
+          });
+          // Show the target tab content
+          document.getElementById(tabId).classList.add('active');
+          // Persist active tab in URL so refresh keeps context
+          const params = new URLSearchParams(window.location.search);
+          params.set('active_tab', tabId);
+          const newUrl = window.location.pathname + '?' + params.toString();
+          window.history.replaceState(null, '', newUrl);
+        });
+      });
+
+      // On load, activate tab from URL if provided
+      const params = new URLSearchParams(window.location.search);
+      const activeTab = params.get('active_tab');
+      if (activeTab) {
+        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        const btn = document.querySelector(`.tab-button[data-tab="${activeTab}"]`);
+        const tab = document.getElementById(activeTab);
+        if (btn && tab) {
+          btn.classList.add('active');
+          tab.classList.add('active');
+        }
+      }
+
+      // Form submission
+      document.getElementById('createAccountForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        formData.append('action', 'create');
+        
+        fetch('', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showAlert('createSuccessAlert', data.message);
+            this.reset();
+            setTimeout(() => location.reload(), 1500);
+          } else {
+            showAlert('createErrorAlert', data.message);
+          }
+        })
+        .catch(error => {
+          showAlert('createErrorAlert', 'An error occurred: ' + error.message);
+        });
+      });
+    });
+
+    // Apply filters function
+    function applyFilters() {
+      const role = document.getElementById('roleFilter').value;
+      const search = document.getElementById('searchInput').value;
+      const sort = document.getElementById('sortFilter').value;
+      
+      const params = new URLSearchParams();
+      if (role !== 'all') params.append('role', role);
+      if (search) params.append('search', search);
+      
+      if (sort) {
+        const [sortBy, sortOrder] = sort.split('_');
+        params.append('sort', sortBy);
+        params.append('order', sortOrder);
+      }
+      
+      window.location.href = '?' + params.toString();
+    }
+
+    // Clear filters function
+    function clearFilters() {
+      window.location.href = window.location.pathname;
+    }
+
+    // Apply filters for Customer Accounts tab
+    function applyCustomerFilters() {
+      const search = document.getElementById('custSearchInput').value;
+      const sort = document.getElementById('custSortFilter').value;
+
+      const params = new URLSearchParams(window.location.search);
+      // Set customer-specific params
+      if (search) { params.set('cust_search', search); } else { params.delete('cust_search'); }
+      if (sort) {
+        const [sortBy, sortOrder] = sort.split('_');
+        params.set('cust_sort', sortBy);
+        params.set('cust_order', sortOrder);
+      }
+      // Ensure the Customer Accounts tab is visible after reload
+      params.set('active_tab', 'customer-accounts');
+      window.location.href = '?' + params.toString();
+    }
+
+    // Clear Customer Accounts filters
+    function clearCustomerFilters() {
+      const params = new URLSearchParams(window.location.search);
+      params.delete('cust_search');
+      params.delete('cust_sort');
+      params.delete('cust_order');
+      params.set('active_tab', 'customer-accounts');
+      window.location.href = '?' + params.toString();
+    }
+
+    // Modal functions - Updated to match topbar.php
+    function openModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+      }
+    }
+
+    // Open Reassign modal and preselect current agent if present
+    function openReassignModal(accountId, currentAgentId) {
+      const sel = document.getElementById('reassignAgentSelect');
+      const acc = document.getElementById('reassignAccountId');
+      if (!sel || !acc) return;
+      acc.value = accountId;
+      sel.value = currentAgentId ? String(currentAgentId) : '';
+      const ok = document.getElementById('reassignSuccessAlert');
+      const err = document.getElementById('reassignErrorAlert');
+      if (ok) ok.classList.remove('active');
+      if (err) err.classList.remove('active');
+      openModal('reassignModal');
+    }
+
+    // Submit reassignment
+    function submitReassign() {
+      const accountId = document.getElementById('reassignAccountId')?.value;
+      const agentId = document.getElementById('reassignAgentSelect')?.value;
+      if (!accountId || !agentId) {
+        showAlert('reassignErrorAlert', 'Please select a Sales Agent.');
+        return;
+      }
+      const fd = new FormData();
+      fd.append('action', 'reassign_customer');
+      fd.append('account_id', accountId);
+      fd.append('agent_id', agentId);
+      fetch('', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(d => {
+          if (d.success) {
+            const label = document.getElementById('agentLabel-' + accountId);
+            if (label) {
+              label.textContent = d.agent_label || 'Assigned';
+              label.classList.remove('warning');
+              label.classList.remove('status');
+            }
+            showAlert('reassignSuccessAlert', d.message || 'Reassigned');
+            setTimeout(() => { closeModal('reassignModal'); }, 900);
+          } else {
+            showAlert('reassignErrorAlert', d.message || 'Failed to reassign');
+          }
+        })
+        .catch(err => showAlert('reassignErrorAlert', 'Error: ' + err.message));
+    }
+
+    // Edit account function
+    function editAccount(id) {
+      const formData = new FormData();
+      formData.append('action', 'get_account');
+      formData.append('id', id);
+      
+      fetch('', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          document.getElementById('editAccountId').value = data.data.Id;
+          document.getElementById('editUsername').value = data.data.Username;
+          document.getElementById('editEmail').value = data.data.Email;
+          document.getElementById('editRole').value = data.data.Role;
+          document.getElementById('editFirstName').value = data.data.FirstName || '';
+          document.getElementById('editLastName').value = data.data.LastName || '';
+          openModal('editAccountModal');
+        }
+      });
+    }
+
+    // Close edit modal
+    function closeEditModal() {
+      closeModal('editAccountModal');
+      // Reset form fields
+      document.getElementById('editSuccessAlert').classList.remove('active');
+      document.getElementById('editErrorAlert').classList.remove('active');
+    }
+
+    // Update account form submission
+    function submitEditForm() {
+      const form = document.getElementById('editAccountForm');
+      const formData = new FormData(form);
+      formData.append('action', 'update');
+      
+      fetch('', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showAlert('editSuccessAlert', data.message);
+          setTimeout(() => {
+            closeEditModal();
+            location.reload();
+          }, 1500);
+        } else {
+          showAlert('editErrorAlert', data.message);
+        }
+      });
+    }
+
+    // Custom confirm modal that returns a Promise<boolean>
+    function showConfirm(message) {
+      return new Promise((resolve) => {
+        const msg = document.getElementById('confirmMessage');
+        const okBtn = document.getElementById('confirmOkBtn');
+        const cancelBtn = document.getElementById('confirmCancelBtn');
+
+        msg.textContent = message;
+        openModal('confirmModal');
+
+        const cleanup = () => {
+          okBtn.removeEventListener('click', onOk);
+          cancelBtn.removeEventListener('click', onCancel);
+        };
+        const onOk = () => { cleanup(); closeModal('confirmModal'); resolve(true); };
+        const onCancel = () => { cleanup(); closeModal('confirmModal'); resolve(false); };
+
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+      });
+    }
+
+    // Enable/Disable account
+    async function toggleDisable(id, disabled) {
+      if (disabled) {
+        const ok = await showConfirm('Disable this account? The user will not be able to log in.');
+        if (!ok) return;
+      }
+      const formData = new FormData();
+      formData.append('action', 'toggle_disable');
+      formData.append('id', id);
+      formData.append('disabled', disabled ? 1 : 0);
+      fetch('', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(d => {
+          if (d.success) {
+            location.reload();
+          } else {
+            alert(d.message || 'Failed to update account');
+          }
+        })
+        .catch(err => alert('Error: ' + err.message));
+    }
+
+    // View account information based on role
+    function viewAccountInfo(role, accountId) {
+      switch(role) {
+        case 'Customer':
+          viewCustomerInfo(accountId);
+          break;
+        case 'Admin':
+          viewAdminInfo(accountId);
+          break;
+        case 'SalesAgent':
+          viewSalesAgentInfo(accountId);
+          break;
+      }
+    }
+
+    // View customer information function
+    function viewCustomerInfo(accountId) {
+      const formData = new FormData();
+      formData.append('action', 'view_customer');
+      formData.append('account_id', accountId);
+      
+      fetch('', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success && data.data) {
+          displayCustomerInfo(data.data);
+        } else {
+          displayNoCustomerInfo();
+        }
+        openModal('customerInfoModal');
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        displayNoCustomerInfo();
+        openModal('customerInfoModal');
+      });
+    }
+
+    // View admin information function
+    function viewAdminInfo(accountId) {
+      const formData = new FormData();
+      formData.append('action', 'view_admin');
+      formData.append('account_id', accountId);
+      
+      fetch('', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success && data.data) {
+          displayAdminInfo(data.data);
+        } else {
+          displayNoAdminInfo();
+        }
+        openModal('adminInfoModal');
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        displayNoAdminInfo();
+        openModal('adminInfoModal');
+      });
+    }
+
+    // View sales agent information function
+    function viewSalesAgentInfo(accountId) {
+      const formData = new FormData();
+      formData.append('action', 'view_sales_agent');
+      formData.append('account_id', accountId);
+      
+      fetch('', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          displaySalesAgentInfo(data.account, data.profile);
+        } else {
+          displayNoSalesAgentInfo();
+        }
+        openModal('salesAgentInfoModal');
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        displayNoSalesAgentInfo();
+        openModal('salesAgentInfoModal');
+      });
+    }
+
+    // Display customer information in modal
+    function displayCustomerInfo(customer) {
+      const content = document.getElementById('customerInfoContent');
+      content.innerHTML = `
+        <div class="customer-info-grid">
+          <div class="info-section">
+            <h4><i class="fas fa-user"></i> Personal Details</h4>
+            <div class="info-item">
+              <span class="info-label">Full Name:</span>
+              <span class="info-value">${customer.firstname || 'N/A'} ${customer.middlename || ''} ${customer.lastname || 'N/A'} ${customer.suffix || ''}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Birthday:</span>
+              <span class="info-value">${customer.birthday ? new Date(customer.birthday).toLocaleDateString() : 'N/A'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Age:</span>
+              <span class="info-value">${customer.age || 'N/A'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Gender:</span>
+              <span class="info-value">${customer.gender || 'N/A'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Civil Status:</span>
+              <span class="info-value">${customer.civil_status || 'N/A'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Nationality:</span>
+              <span class="info-value">${customer.nationality || 'N/A'}</span>
+            </div>
+          </div>
+          
+          <div class="info-section">
+            <h4><i class="fas fa-phone"></i> Contact Information</h4>
+            <div class="info-item">
+              <span class="info-label">Mobile Number:</span>
+              <span class="info-value">${customer.mobile_number || 'N/A'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Email:</span>
+              <span class="info-value">${customer.Email || 'N/A'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Username:</span>
+              <span class="info-value">${customer.Username || 'N/A'}</span>
+            </div>
+          </div>
+          
+          <div class="info-section">
+            <h4><i class="fas fa-briefcase"></i> Employment Details</h4>
+            <div class="info-item">
+              <span class="info-label">Employment Status:</span>
+              <span class="info-value">${customer.employment_status || 'N/A'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Company:</span>
+              <span class="info-value">${customer.company_name || 'N/A'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Position:</span>
+              <span class="info-value">${customer.position || 'N/A'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Monthly Income:</span>
+              <span class="info-value">${customer.monthly_income ? '₱' + parseFloat(customer.monthly_income).toLocaleString() : 'N/A'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Valid ID Type:</span>
+              <span class="info-value">${customer.valid_id_type || 'N/A'}</span>
+            </div>
+          </div>
+          
+          <div class="info-section">
+            <h4><i class="fas fa-clock"></i> Account Information</h4>
+            <div class="info-item">
+              <span class="info-label">Customer ID:</span>
+              <span class="info-value">${customer.cusID || 'N/A'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Account ID:</span>
+              <span class="info-value">${customer.account_id || 'N/A'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Role:</span>
+              <span class="info-value"><span class="status customer">${customer.Role || 'Customer'}</span></span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Status:</span>
+              <span class="info-value"><span class="status ${customer.Status ? customer.Status.toLowerCase() : 'pending'}">${customer.Status || 'Pending'}</span></span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Created:</span>
+              <span class="info-value">${customer.created_at ? new Date(customer.created_at).toLocaleDateString() : 'N/A'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Last Updated:</span>
+              <span class="info-value">${customer.updated_at ? new Date(customer.updated_at).toLocaleDateString() : 'N/A'}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Display message when no customer information is available
+    function displayNoCustomerInfo() {
+      const content = document.getElementById('customerInfoContent');
+      content.innerHTML = `
+        <div class="no-customer-info">
+          <i class="fas fa-info-circle" style="font-size: 48px; color: var(--text-light); margin-bottom: 20px;"></i>
+          <h4>No Customer Information Available</h4>
+          <p>This customer has not completed their profile information yet.</p>
+        </div>
+      `;
+    }
+
+    // Display admin information in modal
+    function displayAdminInfo(admin) {
+      const content = document.getElementById('adminInfoContent');
+      content.innerHTML = `
+        <div class="customer-info-grid">
+          <div class="info-section">
+            <h4><i class="fas fa-user"></i> Personal Details</h4>
+            <div class="info-item">
+              <span class="info-label">Full Name:</span>
+              <span class="info-value">${admin.FirstName || 'N/A'} ${admin.LastName || 'N/A'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Username:</span>
+              <span class="info-value">${admin.Username}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Email:</span>
+              <span class="info-value">${admin.Email}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Date of Birth:</span>
+              <span class="info-value">${admin.DateOfBirth ? new Date(admin.DateOfBirth).toLocaleDateString() : 'N/A'}</span>
+            </div>
+          </div>
+          
+          <div class="info-section">
+            <h4><i class="fas fa-shield-alt"></i> Account Information</h4>
+            <div class="info-item">
+              <span class="info-label">Account ID:</span>
+              <span class="info-value">${admin.Id}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Role:</span>
+              <span class="info-value"><span class="status admin">${admin.Role}</span></span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Created:</span>
+              <span class="info-value">${admin.CreatedAt ? new Date(admin.CreatedAt).toLocaleDateString() : 'N/A'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Last Login:</span>
+              <span class="info-value">${admin.LastLoginAt ? new Date(admin.LastLoginAt).toLocaleString() : 'Never'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Last Updated:</span>
+              <span class="info-value">${admin.UpdatedAt ? new Date(admin.UpdatedAt).toLocaleDateString() : 'N/A'}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Display sales agent information in modal
+    function displaySalesAgentInfo(account, profile) {
+      const content = document.getElementById('salesAgentInfoContent');
+      content.innerHTML = `
+        <div class="customer-info-grid">
+          <div class="info-section">
+            <h4><i class="fas fa-user"></i> Personal Details</h4>
+            <div class="info-item">
+              <span class="info-label">Full Name:</span>
+              <span class="info-value">${account.FirstName || 'N/A'} ${account.LastName || 'N/A'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Display Name:</span>
+              <span class="info-value">${profile?.display_name || 'N/A'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Username:</span>
+              <span class="info-value">${account.Username}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Email:</span>
+              <span class="info-value">${account.Email}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Contact Number:</span>
+              <span class="info-value">${profile?.contact_number || 'N/A'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Date of Birth:</span>
+              <span class="info-value">${account.DateOfBirth ? new Date(account.DateOfBirth).toLocaleDateString() : 'N/A'}</span>
+            </div>
+          </div>
+          
+          <div class="info-section">
+            <h4><i class="fas fa-id-badge"></i> Agent Information</h4>
+            <div class="info-item">
+              <span class="info-label">Agent ID Number:</span>
+              <span class="info-value">${profile?.agent_id_number || 'N/A'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Bio:</span>
+              <span class="info-value" style="white-space: pre-wrap;">${profile?.bio || 'N/A'}</span>
+            </div>
+          </div>
+          
+          <div class="info-section">
+            <h4><i class="fas fa-shield-alt"></i> Account Information</h4>
+            <div class="info-item">
+              <span class="info-label">Account ID:</span>
+              <span class="info-value">${account.Id}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Role:</span>
+              <span class="info-value"><span class="status salesagent">${account.Role}</span></span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Created:</span>
+              <span class="info-value">${account.CreatedAt ? new Date(account.CreatedAt).toLocaleDateString() : 'N/A'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Last Login:</span>
+              <span class="info-value">${account.LastLoginAt ? new Date(account.LastLoginAt).toLocaleString() : 'Never'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Profile Updated:</span>
+              <span class="info-value">${profile?.updated_at ? new Date(profile.updated_at).toLocaleDateString() : 'N/A'}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Display message when no admin information is available
+    function displayNoAdminInfo() {
+      const content = document.getElementById('adminInfoContent');
+      content.innerHTML = `
+        <div class="no-customer-info">
+          <i class="fas fa-info-circle" style="font-size: 48px; color: var(--text-light); margin-bottom: 20px;"></i>
+          <h4>No Admin Information Available</h4>
+          <p>Unable to retrieve admin information at this time.</p>
+        </div>
+      `;
+    }
+
+    // Display message when no sales agent information is available
+    function displayNoSalesAgentInfo() {
+      const content = document.getElementById('salesAgentInfoContent');
+      content.innerHTML = `
+        <div class="no-customer-info">
+          <i class="fas fa-info-circle" style="font-size: 48px; color: var(--text-light); margin-bottom: 20px;"></i>
+          <h4>No Sales Agent Information Available</h4>
+          <p>This sales agent has not completed their profile information yet.</p>
+        </div>
+      `;
+    }
+
+    // Helper functions
+    function showAlert(elementId, message) {
+      const alert = document.getElementById(elementId);
+      alert.textContent = message;
+      alert.classList.add('active');
+      setTimeout(() => alert.classList.remove('active'), 5000);
+    }
+
+    function clearCreateForm() {
+      document.getElementById('createAccountForm').reset();
+    }
+
+    // Enhanced search functionality - search on Enter key and real-time filtering
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        applyFilters();
+      }
+    });
+
+    // Auto-apply filters when sort changes
+    document.getElementById('sortFilter').addEventListener('change', function() {
+      applyFilters();
+    });
+
+    // Auto-apply filters when role changes
+    document.getElementById('roleFilter').addEventListener('change', function() {
+      applyFilters();
+    });
+  </script>
+</body>
+</html>

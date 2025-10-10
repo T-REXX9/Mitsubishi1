@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Inventory</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: linear-gradient(to bottom, #e0e0e0, #7c0a0a);
+      display: flex;
+      height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      background-color: #1a1a1a;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .sidebar h3 {
+      text-align: center;
+      margin: 20px 0;
+      font-size: 18px;
+    }
+
+    .nav a {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      color: white;
+      text-decoration: none;
+      border-left: 4px solid transparent;
+    }
+
+    .nav a.active,
+    .nav a:hover {
+      background-color: #333;
+      border-left: 4px solid white;
+    }
+
+    .nav a img {
+      width: 20px;
+      margin-right: 10px;
+    }
+
+    .sidebar-bottom {
+      padding: 10px 20px;
+      font-size: 14px;
+      border-top: 1px solid #333;
+    }
+
+    /* Main Content */
+    .main {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-bar {
+      background-color: #ccc;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .top-bar .logo {
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .top-bar .admin {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .top-bar .admin::before {
+      content: "👤";
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    .search-bar {
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .search-bar input {
+      padding: 7px 10px;
+      width: 300px;
+      border-radius: 5px;
+      border: 1px solid #aaa;
+    }
+
+    .btn-new {
+      background-color: #3178ff;
+      color: white;
+      padding: 7px 14px;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+
+    .table-wrapper {
+      background-color: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 900px;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #f0f0f0;
+    }
+
+    .status-low {
+      color: red;
+      font-weight: bold;
+    }
+
+    .status-high {
+      color: green;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div>
+      <h3>MITSUBISHI MOTORS</h3>
+      <div class="nav">
+        <a href="#"><img src="#" alt="">Dashboard</a>
+        <a href="#"><img src="#" alt="">Product List</a>
+        <a href="#" class="active"><img src="#" alt="">Inventory</a>
+        <a href="#"><img src="#" alt="">Accounts</a>
+        <a href="#"><img src="#" alt="">Transaction Records</a>
+        <a href="#"><img src="#" alt="">Sales Report</a>
+      </div>
+    </div>
+    <div class="sidebar-bottom">
+      <p>Sales Agent Activity</p>
+      <p>• Solved Units</p>
+      <p>• Handled Clients</p>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="top-bar">
+      <div class="logo">Inventory</div>
+      <div class="admin">ADMIN NAME</div>
+    </div>
+
+    <div class="content">
+      <div class="search-bar">
+        <input type="text" placeholder="🔍 Type to Search ..." />
+        <button class="btn-new">+ New</button>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Model Description</th>
+              <th>Name Plate</th>
+              <th>Year Model</th>
+              <th>CS #</th>
+              <th>Color</th>
+              <th>Color 2</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>Montero Spt GLS 2.4D 2WD AT</td>
+              <td>MONTERO</td>
+              <td>2025</td>
+              <td>HD808A</td>
+              <td>Jet Black Mica</td>
+              <td>BLACK</td>
+              <td class="status-low">Low Stock</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Xpander GLS 1.5G 2WD AT</td>
+              <td>XPANDER</td>
+              <td>2025</td>
+              <td>GE837A</td>
+              <td>Graphite Gray Metallic</td>
+              <td>GRAY</td>
+              <td class="status-high">High Stock</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>L300 C/C 2.2D MT</td>
+              <td>L300</td>
+              <td>2025</td>
+              <td>HW375A</td>
+              <td>Polar White</td>
+              <td>WHITE</td>
+              <td class="status-low">Low Stock</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

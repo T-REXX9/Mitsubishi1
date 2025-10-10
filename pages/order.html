@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Order Page</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom, #111, #cc0000);
+      color: #000;
+    }
+
+    .order-container {
+      max-width: 900px;
+      margin: 0 auto;
+      background-color: #e0e0e0;
+      padding: 1em;
+    }
+
+    .topbar {
+      background: #1a1a1a;
+      color: #fff;
+      text-align: center;
+      padding: 1em 0;
+      font-weight: bold;
+      font-size: 1.2em;
+    }
+
+    .tab {
+      background: #ccc;
+      padding: 0.8em;
+      font-weight: bold;
+    }
+
+    .order-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f5f5f5;
+      padding: 1em;
+      margin-top: 1em;
+    }
+
+    .car-info {
+      display: flex;
+      align-items: center;
+      gap: 1em;
+    }
+
+    .car-info img {
+      width: 100px;
+      height: auto;
+      border-radius: 4px;
+    }
+
+    .details {
+      font-size: 0.9em;
+      color: #000;
+    }
+
+    .details strong {
+      display: block;
+      font-size: 1em;
+      margin-bottom: 0.3em;
+    }
+
+    .price {
+      font-weight: bold;
+      font-size: 1.1em;
+      color: #000;
+    }
+
+    .arrow {
+      font-size: 2em;
+      color: #333;
+      padding: 0 1em;
+    }
+
+    @media (max-width: 600px) {
+      .order-content {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .price {
+        margin-top: 1em;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">ORDER</div>
+
+  <div class="order-container">
+    <div class="tab">Balance Details</div>
+
+    <div class="order-content">
+      <div class="car-info">
+        <img src="https://i.imgur.com/XaK3j7u.png" alt="Xpander">
+        <div class="details">
+          <strong>2022 Mitsubishi Xpander</strong>
+          Agent: Nasief Delica<br>
+          Sales Status: Loan
+        </div>
+      </div>
+      <div class="price">PHP 925,000</div>
+    </div>
+  </div>
+
+</body>
+</html>

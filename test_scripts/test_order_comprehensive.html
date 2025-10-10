@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Backend Comprehensive Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-header {
+            background: #2196F3;
+            color: white;
+            padding: 10px 15px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 8px 8px 0 0;
+        }
+        .result {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { border-left: 4px solid #4CAF50; }
+        .error { border-left: 4px solid #f44336; }
+        .warning { border-left: 4px solid #ff9800; }
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #1976D2; }
+        .status { 
+            display: inline-block; 
+            padding: 4px 8px; 
+            border-radius: 4px; 
+            font-size: 12px; 
+            font-weight: bold;
+        }
+        .status.pending { background: #fff3cd; color: #856404; }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Order Backend Comprehensive Test</h1>
+    
+    <div class="test-section">
+        <div class="test-header">
+            <h2>🔌 Backend API Test</h2>
+        </div>
+        <p>This test will verify if the order backend API is working correctly.</p>
+        <button onclick="testOrderBackend()">Test Order Backend API</button>
+        <div id="apiResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-header">
+            <h2>🗄️ Database Connection Test</h2>
+        </div>
+        <p>This test will check database connectivity and data availability.</p>
+        <button onclick="testDatabase()">Test Database</button>
+        <div id="dbResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-header">
+            <h2>👤 Session & Authentication Test</h2>
+        </div>
+        <p>This test will check session handling and user authentication.</p>
+        <button onclick="testSession()">Test Session</button>
+        <div id="sessionResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-header">
+            <h2>📋 Complete Flow Test</h2>
+        </div>
+        <p>This runs all tests in sequence to identify the exact issue.</p>
+        <button onclick="runCompleteTest()">Run Complete Test</button>
+        <div id="completeResult" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        function setStatus(elementId, status, message) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${status}`;
+            element.textContent = message;
+        }
+
+        function appendResult(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.textContent += message + '\\n';
+        }
+
+        async function testOrderBackend() {
+            const resultId = 'apiResult';
+            setStatus(resultId, 'pending', '🔄 Testing order backend API...');
+
+            try {
+                const response = await fetch('../includes/backend/order_backend.php?action=get_customer_orders', {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+
+                const responseText = await response.text();
+                
+                let result = `📊 Response Status: ${response.status}\\n`;
+                result += `📏 Response Length: ${responseText.length} bytes\\n`;
+                result += `📝 Raw Response: ${responseText}\\n\\n`;
+
+                if (!responseText.trim()) {
+                    result += '❌ ISSUE: Empty response body\\n';
+                    result += '🔍 This indicates the PHP script is not outputting anything\\n';
+                    setStatus(resultId, 'error', result);
+                    return false;
+                }
+
+                try {
+                    const jsonData = JSON.parse(responseText);
+                    result += '✅ JSON Parse: SUCCESS\\n';
+                    result += `📦 Parsed Data: ${JSON.stringify(jsonData, null, 2)}\\n`;
+                    
+                    if (jsonData.success) {
+                        result += '✅ API Response: SUCCESS\\n';
+                        setStatus(resultId, 'success', result);
+                        return true;
+                    } else {
+                        result += `❌ API Error: ${jsonData.error}\\n`;
+                        setStatus(resultId, 'warning', result);
+                        return false;
+                    }
+                } catch (parseError) {
+                    result += `❌ JSON Parse Error: ${parseError.message}\\n`;
+                    result += '🔍 This indicates malformed JSON or PHP errors in response\\n';
+                    setStatus(resultId, 'error', result);
+                    return false;
+                }
+            } catch (fetchError) {
+                setStatus(resultId, 'error', `❌ Network Error: ${fetchError.message}`);
+                return false;
+            }
+        }
+
+        async function testDatabase() {
+            const resultId = 'dbResult';
+            setStatus(resultId, 'pending', '🔄 Testing database connection...');
+
+            try {
+                const response = await fetch('../test_scripts/test_database_verification.php', {
+                    credentials: 'include'
+                });
+                const result = await response.text();
+                setStatus(resultId, response.ok ? 'success' : 'error', result);
+                return response.ok;
+            } catch (error) {
+                setStatus(resultId, 'error', `❌ Database test failed: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function testSession() {
+            const resultId = 'sessionResult';
+            setStatus(resultId, 'pending', '🔄 Testing session...');
+
+            // This is a simple test to see what session data is available
+            let result = '📋 Session Information:\\n';
+            result += `🌐 Current URL: ${window.location.href}\\n`;
+            result += `📊 User Agent: ${navigator.userAgent}\\n`;
+            result += `🍪 Cookies: ${document.cookie}\\n`;
+            
+            setStatus(resultId, 'success', result);
+            return true;
+        }
+
+        async function runCompleteTest() {
+            const resultId = 'completeResult';
+            document.getElementById(resultId).style.display = 'block';
+            document.getElementById(resultId).textContent = '';
+            document.getElementById(resultId).className = 'result pending';
+
+            appendResult(resultId, '🚀 Starting complete test sequence...');
+            appendResult(resultId, '');
+
+            // Test 1: Session
+            appendResult(resultId, '1️⃣ Testing Session...');
+            const sessionOk = await testSession();
+            appendResult(resultId, sessionOk ? '✅ Session: OK' : '❌ Session: FAILED');
+
+            // Test 2: Database
+            appendResult(resultId, '');
+            appendResult(resultId, '2️⃣ Testing Database...');
+            const dbOk = await testDatabase();
+            appendResult(resultId, dbOk ? '✅ Database: OK' : '❌ Database: FAILED');
+
+            // Test 3: Order Backend
+            appendResult(resultId, '');
+            appendResult(resultId, '3️⃣ Testing Order Backend API...');
+            const apiOk = await testOrderBackend();
+            appendResult(resultId, apiOk ? '✅ Order Backend: OK' : '❌ Order Backend: FAILED');
+
+            // Summary
+            appendResult(resultId, '');
+            appendResult(resultId, '📊 SUMMARY:');
+            appendResult(resultId, `   Session: ${sessionOk ? '✅' : '❌'}`);
+            appendResult(resultId, `   Database: ${dbOk ? '✅' : '❌'}`);
+            appendResult(resultId, `   Order Backend: ${apiOk ? '✅' : '❌'}`);
+
+            const allOk = sessionOk && dbOk && apiOk;
+            appendResult(resultId, '');
+            appendResult(resultId, allOk ? '🎉 ALL TESTS PASSED!' : '🔧 Some tests failed - check individual results above');
+
+            document.getElementById(resultId).className = allOk ? 'result success' : 'result warning';
+        }
+
+        // Auto-run basic test on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 Order Backend Test Page Loaded');
+        });
+    </script>
+</body>
+</html>

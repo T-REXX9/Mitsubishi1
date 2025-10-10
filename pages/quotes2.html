@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Quote Request</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom, #1a1a1a, #cc0000);
+      color: #000;
+    }
+
+    .form-container {
+      background: #ddd;
+      width: 90%;
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 20px 30px;
+      border-radius: 8px;
+    }
+
+    .logo {
+      text-align: center;
+    }
+
+    .logo img {
+      width: 60px;
+      margin-bottom: 8px;
+    }
+
+    h2 {
+      text-align: center;
+      margin: 0 0 20px;
+    }
+
+    .section {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"] {
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid #000;
+      background: transparent;
+      padding: 5px;
+      margin-top: 2px;
+    }
+
+    .radio-group {
+      margin-top: 10px;
+    }
+
+    .radio-group label {
+      font-weight: normal;
+      margin-right: 15px;
+    }
+
+    .radio-group input {
+      margin-right: 5px;
+    }
+
+    textarea {
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid #000;
+      margin-top: 5px;
+    }
+
+    .privacy {
+      margin-top: 15px;
+      font-size: 0.9em;
+    }
+
+    .privacy input {
+      margin-right: 8px;
+    }
+
+    .submit-btn {
+      background: #cc0000;
+      color: white;
+      border: none;
+      padding: 10px 30px;
+      font-size: 1em;
+      float: right;
+      margin-top: 15px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .submit-btn:hover {
+      background-color: #a00000;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="form-container">
+    <div class="logo">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/5/5a/Mitsubishi_logo.png" alt="Mitsubishi Logo" />
+      <h2>Quote</h2>
+    </div>
+
+    <form>
+      <div class="section">
+        <label>FIRST NAME:</label>
+        <input type="text" name="firstname">
+
+        <label>LAST NAME:</label>
+        <input type="text" name="lastname">
+
+        <label>EMAIL ADDRESS:</label>
+        <input type="email" name="email">
+
+        <label>PHONE NUMBER:</label>
+        <input type="tel" name="phone">
+      </div>
+
+      <div class="section">
+        <label>ENTER POSTCODE OR LOCATION:</label>
+        <input type="text" name="postcode">
+      </div>
+
+      <div class="section">
+        <label>PLANNING TO PURCHASE IN:</label>
+        <div class="radio-group">
+          <label><input type="radio" name="purchaseTime" value="30days">Within 30 Days</label>
+          <label><input type="radio" name="purchaseTime" value="3months">1-3 Months</label>
+          <label><input type="radio" name="purchaseTime" value="6months">3-6 Months</label>
+          <label><input type="radio" name="purchaseTime" value="12months">6-12 Months</label>
+          <label><input type="radio" name="purchaseTime" value="12+months">12+ Months</label>
+          <label><input type="radio" name="purchaseTime" value="undecided">Undecided</label>
+        </div>
+      </div>
+
+      <div class="section">
+        <label>MESSAGE (OPTIONAL):</label>
+        <textarea rows="3" name="message"></textarea>
+      </div>
+
+      <div class="privacy">
+        <label>
+          <input type="checkbox" required>
+          I Agree.
+        </label>
+        <p>
+          I agree to MMPC’s <a href="#" target="_blank">Privacy Policy</a> and to receive newsletters and other promotions from MMPC, authorized dealers, and business partners.
+        </p>
+      </div>
+
+      <button class="submit-btn" type="submit">SUBMIT</button>
+    </form>
+  </div>
+
+</body>
+</html>

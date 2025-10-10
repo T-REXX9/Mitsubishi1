@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Profile Update</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: linear-gradient(to bottom, #1c1c1c, #8c0000, #ff0000);
+      height: 100vh;
+      padding: 30px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .form-container {
+      background: linear-gradient(to bottom, #999, #d9a9a9);
+      border-radius: 10px;
+      padding: 30px 40px;
+      width: 90%;
+      max-width: 800px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .form-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+
+    .profile-pic {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-right: 20px;
+    }
+
+    .profile-pic img {
+      width: 80px;
+      height: 80px;
+      background: white;
+      border: 2px solid #666;
+      border-radius: 10px;
+    }
+
+    .profile-pic button {
+      margin-top: 10px;
+      padding: 5px 10px;
+      font-size: 0.9rem;
+    }
+
+    .form-details {
+      flex: 1;
+    }
+
+    .form-details label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    .form-details input,
+    .form-details textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      font-size: 1rem;
+      border: 1px solid #444;
+    }
+
+    .form-details textarea {
+      height: 120px;
+    }
+
+    .form-details .verify {
+      color: red;
+      font-size: 0.85rem;
+      margin-left: 10px;
+    }
+
+    .id-number {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .id-number span {
+      font-weight: normal;
+    }
+
+    .form-actions {
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    .form-actions button {
+      padding: 10px 30px;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .update-btn {
+      background-color: #a4c639;
+      color: black;
+      margin-bottom: 10px;
+    }
+
+    .logout-btn {
+      background: none;
+      border: none;
+      color: black;
+      text-decoration: underline;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    @media (max-width: 600px) {
+      .form-header {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .form-details {
+        width: 100%;
+      }
+
+      .profile-pic {
+        margin-bottom: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="form-container">
+    <div class="form-header">
+      <div class="profile-pic">
+        <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="Profile Icon">
+        <button onclick="uploadPhoto()">Upload</button>
+      </div>
+      <div class="form-details">
+        <label for="displayName">Display Name :</label>
+        <input type="text" id="displayName">
+
+        <label for="fullName">Full Name :</label>
+        <input type="text" id="fullName">
+
+        <div class="id-number">ID Number: <span>XXXXXXXXXXXX</span></div>
+      </div>
+    </div>
+
+    <div class="form-details">
+      <label for="email">Email :</label>
+      <input type="email" id="email">
+      <span class="verify">*Verify Email</span>
+
+      <label for="emailAddress">Email Address :</label>
+      <input type="email" id="emailAddress">
+
+      <label for="about">About Yourself :</label>
+      <textarea id="about"></textarea>
+    </div>
+
+    <div class="form-actions">
+      <button class="update-btn" onclick="updateProfile()">Update Profile</button><br>
+      <button class="logout-btn" onclick="logout()">Log Out</button>
+    </div>
+  </div>
+
+  <script>
+    function uploadPhoto() {
+      alert("Upload photo feature not implemented.");
+    }
+
+    function updateProfile() {
+      alert("Profile updated successfully!");
+    }
+
+    function logout() {
+      alert("Logged out!");
+    }
+  </script>
+
+</body>
+</html>

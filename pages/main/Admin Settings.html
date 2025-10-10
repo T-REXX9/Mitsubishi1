@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Settings</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/suneditor/dist/css/suneditor.min.css">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      display: flex;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom, #dedede, #7c0a0a);
+    }
+
+    .sidebar {
+      width: 220px;
+      background-color: #1a1a1a;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .sidebar h3 {
+      text-align: center;
+      margin: 20px 0;
+      font-size: 18px;
+    }
+
+    .nav a {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      color: white;
+      text-decoration: none;
+      border-left: 4px solid transparent;
+    }
+
+    .nav a.active,
+    .nav a:hover {
+      background-color: #333;
+      border-left: 4px solid white;
+    }
+
+    .sidebar-bottom {
+      padding: 10px 20px;
+      font-size: 14px;
+      border-top: 1px solid #333;
+    }
+
+    .main {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-bar {
+      background-color: #ccc;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .top-bar .title {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .admin::before {
+      content: "👤";
+      margin-right: 5px;
+    }
+
+    .admin {
+      font-weight: bold;
+    }
+
+    .content {
+      padding: 20px;
+      color: #000;
+    }
+
+    .section {
+      background: #fff;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.3);
+    }
+
+    .section label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    #bg-preview {
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-image: linear-gradient(45deg, #ddd 25%, transparent 25%), linear-gradient(-45deg, #ddd 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ddd 75%), linear-gradient(-45deg, transparent 75%, #ddd 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+    }
+
+    .upload-btn {
+      display: inline-block;
+      background-color: #0066ff;
+      color: white;
+      padding: 8px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #save-btn {
+      background-color: #d10000;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      float: right;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div>
+      <h3>MITSUBISHI MOTORS</h3>
+      <div class="nav">
+        <a href="#">Product List</a>
+        <a href="#">Inventory</a>
+        <a href="#">Accounts</a>
+        <a href="#">Transaction Records</a>
+        <a href="#">Sales Report</a>
+        <a href="#">Solved Units</a>
+        <a href="#">Handled Clients</a>
+        <a href="#" class="active">Settings</a>
+      </div>
+    </div>
+    <div class="sidebar-bottom">
+      <p>Sales Agent Activity</p>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="top-bar">
+      <div class="title">Settings</div>
+      <div class="admin">ADMIN NAME</div>
+    </div>
+
+    <div class="content">
+      <div class="section">
+        <label>About Us</label>
+        <textarea id="about-editor">Lorem ipsum dolor sit amet, consectetur adipiscing elit...</textarea>
+      </div>
+
+      <div class="section">
+        <label>Location</label>
+        <div>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</div>
+      </div>
+
+      <div class="section">
+        <label>Background Picture</label>
+        <div id="bg-preview">
+          <button class="upload-btn">Image</button>
+        </div>
+        <input type="file" id="imageUpload" style="display: none;" />
+        <button id="uploadBtn" class="upload-btn">Upload</button>
+      </div>
+
+      <button id="save-btn">Saved</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/suneditor/dist/suneditor.min.js"></script>
+  <script>
+    const editor = SUNEDITOR.create((document.getElementById('about-editor') || 'about-editor'), {
+      height: 200,
+      buttonList: [
+        ['formatBlock', 'font', 'bold', 'underline', 'italic', 'list', 'align', 'fontSize', 'fontColor', 'undo', 'redo']
+      ]
+    });
+
+    // Upload behavior
+    const uploadInput = document.getElementById('imageUpload');
+    const preview = document.getElementById('bg-preview');
+    const uploadBtn = document.querySelector('#uploadBtn');
+
+    preview.querySelector('button').onclick = () => {
+      uploadInput.click();
+    };
+
+    uploadBtn.onclick = () => {
+      uploadInput.click();
+    };
+
+    uploadInput.onchange = function () {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          preview.innerHTML = `<img src="${e.target.result}" alt="Background" style="max-height: 100%; max-width: 100%;">`;
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+  </script>
+</body>
+</html>

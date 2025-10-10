@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mitsubishi Motors Dashboard</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to bottom, #e0e0e0, #800000);
+      color: black;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #e0e0e0;
+      padding: 10px 20px;
+    }
+
+    header img {
+      height: 30px;
+      margin-right: 10px;
+    }
+
+    header .logo {
+      display: flex;
+      align-items: center;
+      font-weight: bold;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    .form-section {
+      background-color: #ccc;
+      padding: 20px;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .form-section .left, .form-section .right {
+      width: 48%;
+    }
+
+    .form-section input {
+      width: 100%;
+      padding: 5px;
+      margin: 5px 0;
+      border: 1px solid #999;
+      border-radius: 4px;
+    }
+
+    .image-preview {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .image-preview img {
+      width: 100%;
+      max-width: 350px;
+      border-radius: 5px;
+    }
+
+    .car-details {
+      background-color: #b30000;
+      color: white;
+      padding: 20px;
+      margin-top: 20px;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .car-details .left, .car-details .right {
+      width: 48%;
+    }
+
+    .car-details input {
+      width: 100%;
+      padding: 5px;
+      margin: 5px 0;
+      border-radius: 4px;
+      border: none;
+    }
+
+    .buttons {
+      text-align: right;
+      margin-top: 15px;
+    }
+
+    .buttons button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+
+    .buttons .clear {
+      background-color: white;
+    }
+
+    .buttons .submit {
+      background-color: black;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Mitsubishi_logo.svg/1200px-Mitsubishi_logo.svg.png" alt="Logo">
+      MITSUBISHI MOTORS
+    </div>
+    <div>
+      <span>&#128100; AGENT NAME</span>
+    </div>
+  </header>
+
+  <div class="container">
+    <form onsubmit="handleSubmit(event)">
+      <div class="form-section">
+        <div class="left">
+          <input type="text" placeholder="Lastname : Reyes">
+          <input type="text" placeholder="Name : Rea">
+          <input type="text" placeholder="Middle Name : Alonzo">
+          <input type="email" placeholder="Email : rea@gmail.com">
+          <input type="text" placeholder="Phone Number : 09095622584">
+          <input type="text" placeholder="Home Address : Sariaya, Quezon">
+          <input type="text" placeholder="Employment Status : Self Employed">
+          <input type="text" placeholder="Type of Valid ID : National ID">
+        </div>
+        <div class="right">
+          <input type="text" placeholder="Birthday : March 4, 2000">
+          <input type="text" placeholder="Age : 24">
+          <input type="text" placeholder="Gender : Female">
+          <input type="text" placeholder="Civil Status : Single">
+          <div class="image-preview">
+            <img src="https://www.mitsubishi-motors.com.ph/uploads/ebf35de3782b0d3ddc9d9f2b88e3d39f.jpg" alt="Car">
+          </div>
+        </div>
+      </div>
+
+      <div class="car-details">
+        <div class="left">
+          <input type="text" placeholder="MODEL : Mitsubishi Montero Sport">
+          <input type="text" placeholder="SRP : PHP 1,568,000">
+          <input type="text" placeholder="YEAR MODEL : 2024">
+          <input type="text" placeholder="COLOR : Jet Black Mica">
+          <input type="text" placeholder="SALE CONSULTANT : Luis Constantino">
+          <input type="text" placeholder="MONTHLY AMORTIZATION : PHP 28,046">
+        </div>
+        <div class="right">
+          <input type="text" placeholder="Date :">
+          <input type="text" placeholder="PURCHASED TYPE : CASH">
+          <input type="text" placeholder="DOWN PAYMENT :">
+          <input type="text" placeholder="SALE STATUS : LOAN">
+          <input type="text" placeholder="Order No :">
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button type="reset" class="clear">CLEAR</button>
+        <button type="submit" class="submit">SUBMIT</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    function handleSubmit(event) {
+      event.preventDefault();
+      alert("Form submitted successfully!");
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Performance API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 20px 0; padding: 15px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; max-height: 400px; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Agent Performance API Test</h1>
+    
+    <button onclick="testAgentAPI()">Test Agent Performance API</button>
+    <button onclick="testDebugAPI()">Test Debug API (No Auth)</button>
+    
+    <div id="results"></div>
+
+    <script>
+        async function testAgentAPI() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Testing agent performance API...</p>';
+            
+            try {
+                const response = await fetch('api/sales-report.php?action=by-agent');
+                const text = await response.text();
+                
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (parseError) {
+                    resultsDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ JSON Parse Error</h4>
+                            <p>Response is not valid JSON. Raw response:</p>
+                            <pre>${text.substring(0, 500)}...</pre>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                if (response.status === 403) {
+                    resultsDiv.innerHTML = `
+                        <div class="error">
+                            <h4>⚠️ Authentication Required</h4>
+                            <p>Please login as Admin first.</p>
+                            <a href="pages/login.php" target="_blank">Login Here</a>
+                        </div>
+                    `;
+                } else if (data.error) {
+                    resultsDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ API Error</h4>
+                            <p>${data.error}</p>
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Agent Performance Data Retrieved</h4>
+                            <p><strong>Number of agents found:</strong> ${Array.isArray(data) ? data.length : 'Unknown'}</p>
+                            <h5>Raw Data:</h5>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Connection Error</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testDebugAPI() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Testing debug API...</p>';
+            
+            try {
+                const response = await fetch('debug_sales_api.php?action=summary');
+                const data = await response.json();
+                
+                resultsDiv.innerHTML = `
+                    <div class="${data.error ? 'error' : 'success'}">
+                        <h4>${data.error ? '❌' : '✅'} Debug API Response</h4>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Debug API Error</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Auto-run test on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                testAgentAPI();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

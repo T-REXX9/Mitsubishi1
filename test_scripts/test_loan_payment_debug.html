@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Payment Calculation Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-header {
+            background: #dc3545;
+            color: white;
+            padding: 10px 15px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 8px 8px 0 0;
+        }
+        .result {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { border-left: 4px solid #28a745; }
+        .error { border-left: 4px solid #dc3545; }
+        .warning { border-left: 4px solid #ffc107; }
+        .info { border-left: 4px solid #17a2b8; }
+        button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #c82333; }
+        .calculation-comparison {
+            display: flex;
+            gap: 20px;
+        }
+        .calculation-box {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        .original { border-color: #007bff; }
+        .recalculated { border-color: #28a745; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Loan Payment Calculation Debug</h1>
+    <p>This tool will help identify why the payment calculations don't match when approving loan applications.</p>
+    
+    <div class="test-section">
+        <div class="test-header">
+            <h2>🧮 Test Payment Calculation</h2>
+        </div>
+        <p>Enter loan application details to test payment calculation:</p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0;">
+            <div>
+                <label>Vehicle Price: $</label>
+                <input type="number" id="vehiclePrice" value="50000" step="0.01">
+            </div>
+            <div>
+                <label>Down Payment: $</label>
+                <input type="number" id="downPayment" value="10000" step="0.01">
+            </div>
+            <div>
+                <label>Financing Term (months):</label>
+                <select id="financingTerm">
+                    <option value="12">12 months</option>
+                    <option value="24">24 months</option>
+                    <option value="36" selected>36 months</option>
+                    <option value="48">48 months</option>
+                    <option value="60">60 months</option>
+                </select>
+            </div>
+            <div>
+                <label>Interest Rate (%):</label>
+                <input type="number" id="interestRate" value="10.5" step="0.1">
+            </div>
+        </div>
+        
+        <button onclick="testCalculation()">Calculate Payment</button>
+        <div id="calculationResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-header">
+            <h2>🔍 Debug Specific Application</h2>
+        </div>
+        <p>Enter the application ID that's causing the mismatch error:</p>
+        
+        <div style="margin: 20px 0;">
+            <label>Application ID:</label>
+            <input type="number" id="applicationId" placeholder="Enter application ID">
+            <button onclick="debugApplication()">Debug Application</button>
+        </div>
+        
+        <div id="debugResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-header">
+            <h2>📊 Recent Applications Analysis</h2>
+        </div>
+        <button onclick="analyzeRecentApplications()">Analyze Recent Applications</button>
+        <div id="analysisResult" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        function setResult(elementId, content, className = 'info') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${className}`;
+            element.textContent = content;
+        }
+
+        function appendResult(elementId, content) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.textContent += content + '\\n';
+        }
+
+        async function testCalculation() {
+            const resultId = 'calculationResult';
+            setResult(resultId, '🧮 Calculating payment...', 'info');
+
+            const vehiclePrice = parseFloat(document.getElementById('vehiclePrice').value);
+            const downPayment = parseFloat(document.getElementById('downPayment').value);
+            const financingTerm = parseInt(document.getElementById('financingTerm').value);
+            const interestRate = parseFloat(document.getElementById('interestRate').value);
+
+            try {
+                // Test the loan backend calculation
+                const response = await fetch('../includes/backend/loan_backend.php?action=recalculate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        vehicle_price: vehiclePrice,
+                        down_payment: downPayment,
+                        financing_term: financingTerm,
+                        annual_rate: interestRate
+                    })
+                });
+
+                const result = await response.text();
+                appendResult(resultId, 'Backend calculation result:');
+                appendResult(resultId, result);
+
+                // Also do a simple calculation
+                const principal = vehiclePrice - downPayment;
+                const monthlyRate = (interestRate / 100) / 12;
+                const simplePayment = principal * (monthlyRate * Math.pow(1 + monthlyRate, financingTerm)) / (Math.pow(1 + monthlyRate, financingTerm) - 1);
+
+                appendResult(resultId, '\\nSimple calculation:');
+                appendResult(resultId, `Principal: $${principal.toFixed(2)}`);
+                appendResult(resultId, `Monthly Rate: ${(monthlyRate * 100).toFixed(4)}%`);
+                appendResult(resultId, `Monthly Payment: $${simplePayment.toFixed(2)}`);
+
+                setResult(resultId, document.getElementById(resultId).textContent, 'success');
+
+            } catch (error) {
+                appendResult(resultId, `\\nError: ${error.message}`);
+                setResult(resultId, document.getElementById(resultId).textContent, 'error');
+            }
+        }
+
+        async function debugApplication() {
+            const resultId = 'debugResult';
+            const applicationId = document.getElementById('applicationId').value;
+            
+            if (!applicationId) {
+                setResult(resultId, 'Please enter an application ID', 'warning');
+                return;
+            }
+
+            setResult(resultId, '🔍 Debugging application...', 'info');
+
+            try {
+                // Get application details
+                const response = await fetch(`../api/loan-applications.php?action=application&id=${applicationId}`, {
+                    credentials: 'include'
+                });
+
+                const appData = await response.json();
+                
+                if (appData.success) {
+                    const app = appData.data;
+                    appendResult(resultId, `Application ID: ${app.id}`);
+                    appendResult(resultId, `Vehicle: ${app.vehicle_name}`);
+                    appendResult(resultId, `Base Price: $${app.base_price}`);
+                    appendResult(resultId, `Down Payment: $${app.down_payment}`);
+                    appendResult(resultId, `Financing Term: ${app.financing_term} months`);
+                    appendResult(resultId, `Stored Monthly Payment: $${app.monthly_payment}`);
+                    appendResult(resultId, `Interest Rate: ${app.interest_rate}%`);
+                    
+                    // Test recalculation with these values
+                    appendResult(resultId, '\\n🧮 Testing recalculation...');
+                    
+                    const calcResponse = await fetch('../includes/backend/loan_backend.php?action=recalculate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            vehicle_price: app.base_price,
+                            down_payment: app.down_payment,
+                            financing_term: app.financing_term,
+                            annual_rate: app.interest_rate
+                        })
+                    });
+
+                    const calcResult = await calcResponse.json();
+                    if (calcResult.success) {
+                        appendResult(resultId, `Recalculated Payment: $${calcResult.data.monthly_payment}`);
+                        const difference = Math.abs(calcResult.data.monthly_payment - app.monthly_payment);
+                        appendResult(resultId, `Difference: $${difference.toFixed(2)}`);
+                        
+                        if (difference > 1.0) {
+                            appendResult(resultId, '❌ MISMATCH CONFIRMED - This is the source of the error!');
+                        } else {
+                            appendResult(resultId, '✅ Payments match within tolerance');
+                        }
+                    } else {
+                        appendResult(resultId, `Calculation error: ${calcResult.error}`);
+                    }
+
+                    setResult(resultId, document.getElementById(resultId).textContent, 'success');
+                } else {
+                    setResult(resultId, `Error: ${appData.error}`, 'error');
+                }
+
+            } catch (error) {
+                appendResult(resultId, `\\nError: ${error.message}`);
+                setResult(resultId, document.getElementById(resultId).textContent, 'error');
+            }
+        }
+
+        async function analyzeRecentApplications() {
+            const resultId = 'analysisResult';
+            setResult(resultId, '📊 Analyzing recent applications...', 'info');
+
+            try {
+                const response = await fetch('../api/loan-applications.php?action=applications', {
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+                
+                if (data.success && data.data.length > 0) {
+                    appendResult(resultId, `Found ${data.data.length} applications`);
+                    appendResult(resultId, '\\nPayment Analysis:');
+                    
+                    for (let i = 0; i < Math.min(5, data.data.length); i++) {
+                        const app = data.data[i];
+                        appendResult(resultId, `\\nApp #${app.id}:`);
+                        appendResult(resultId, `  Vehicle: ${app.vehicle_name}`);
+                        appendResult(resultId, `  Monthly Payment: $${app.monthly_payment}`);
+                        appendResult(resultId, `  Down Payment: $${app.down_payment}`);
+                        appendResult(resultId, `  Term: ${app.financing_term} months`);
+                        appendResult(resultId, `  Status: ${app.status}`);
+                    }
+
+                    setResult(resultId, document.getElementById(resultId).textContent, 'success');
+                } else {
+                    setResult(resultId, 'No applications found or access denied', 'warning');
+                }
+
+            } catch (error) {
+                setResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run basic analysis on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 Loan debug tool loaded');
+        });
+    </script>
+</body>
+</html>

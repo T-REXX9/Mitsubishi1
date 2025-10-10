@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product List</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: linear-gradient(to bottom, #e0e0e0, #7c0a0a);
+      display: flex;
+      height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      background-color: #1a1a1a;
+      color: white;
+      padding-top: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .sidebar h3 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 18px;
+    }
+
+    .nav {
+      flex-grow: 1;
+    }
+
+    .nav a {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      color: white;
+      text-decoration: none;
+      border-left: 4px solid transparent;
+    }
+
+    .nav a.active,
+    .nav a:hover {
+      background-color: #333;
+      border-left: 4px solid white;
+    }
+
+    .nav a img {
+      width: 20px;
+      margin-right: 10px;
+    }
+
+    .sidebar-bottom {
+      padding: 10px 20px;
+      font-size: 14px;
+      border-top: 1px solid #333;
+    }
+
+    /* Top bar and content */
+    .main {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-bar {
+      background-color: #ccc;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .top-bar .logo {
+      font-weight: bold;
+    }
+
+    .top-bar .admin {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .top-bar .admin::before {
+      content: "👤";
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    .filters {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+
+    .filters label {
+      font-weight: bold;
+    }
+
+    select, input[type="date"] {
+      padding: 5px;
+      border-radius: 4px;
+      border: 1px solid #888;
+    }
+
+    .btn-new {
+      background-color: #3178ff;
+      color: white;
+      padding: 7px 14px;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      float: right;
+    }
+
+    .table-wrapper {
+      background-color: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #f0f0f0;
+    }
+
+    td a {
+      color: #1a73e8;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .footer-note {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div>
+      <h3>MITSUBISHI MOTORS</h3>
+      <div class="nav">
+        <a href="#"><img src="#" alt="">Dashboard</a>
+        <a href="#" class="active"><img src="#" alt="">Product List</a>
+        <a href="#"><img src="#" alt="">Inventory</a>
+        <a href="#"><img src="#" alt="">Accounts</a>
+        <a href="#"><img src="#" alt="">Transaction Records</a>
+        <a href="#"><img src="#" alt="">Sales Report</a>
+      </div>
+    </div>
+    <div class="sidebar-bottom">
+      <p>Sales Agent Activity</p>
+      <p>• Solved Units</p>
+      <p>• Handled Clients</p>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="top-bar">
+      <div class="logo">List of Products</div>
+      <div class="admin">ADMIN NAME</div>
+    </div>
+
+    <div class="content">
+      <div class="filters">
+        <label for="date">Date</label>
+        <input type="date" id="date" value="2024-01-22" />
+        <label for="category">Category</label>
+        <select id="category">
+          <option>All</option>
+          <option>Mirage</option>
+          <option>Xforce</option>
+          <option>Montero Sport</option>
+          <option>Triton</option>
+          <option>XPander</option>
+          <option>Outlander</option>
+        </select>
+        <button class="btn-new">+ New</button>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Date Delivered</th>
+              <th>Model</th>
+              <th>Price</th>
+              <th>Delivered Units</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>2024-01-22</td>
+              <td>Mitsubishi Mirage</td>
+              <td>PHP 772,000</td>
+              <td>10 Units</td>
+              <td><a href="#">Edit</a></td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>2024-01-22</td>
+              <td>Mitsubishi XForce</td>
+              <td>PHP 1,350,000</td>
+              <td>20 Units</td>
+              <td><a href="#">Edit</a></td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>2024-01-22</td>
+              <td>Mitsubishi Montero Sport</td>
+              <td>PHP 2,340,000</td>
+              <td>30 Units</td>
+              <td><a href="#">Edit</a></td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>2024-01-22</td>
+              <td>Mitsubishi Triton</td>
+              <td>PHP 1,750,000</td>
+              <td>20 Units</td>
+              <td><a href="#">Edit</a></td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>2024-01-22</td>
+              <td>Mitsubishi XPander</td>
+              <td>PHP 1,276,000</td>
+              <td>25 Units</td>
+              <td><a href="#">Edit</a></td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td>2024-01-22</td>
+              <td>Mitsubishi Outlander</td>
+              <td>PHP 2,998,000</td>
+              <td>15 Units</td>
+              <td><a href="#">Edit</a></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="footer-note">Showing 2024 Delivered Models</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

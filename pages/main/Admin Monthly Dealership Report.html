@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sales Report</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      display: flex;
+      height: 100vh;
+      background: linear-gradient(to bottom, #e0e0e0, #7c0a0a);
+    }
+
+    .sidebar {
+      width: 220px;
+      background-color: #1a1a1a;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .sidebar h3 {
+      text-align: center;
+      margin: 20px 0;
+      font-size: 18px;
+    }
+
+    .nav a {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      color: white;
+      text-decoration: none;
+      border-left: 4px solid transparent;
+    }
+
+    .nav a.active,
+    .nav a:hover {
+      background-color: #333;
+      border-left: 4px solid white;
+    }
+
+    .sidebar-bottom {
+      padding: 10px 20px;
+      font-size: 14px;
+      border-top: 1px solid #333;
+    }
+
+    .main {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-bar {
+      background-color: #ccc;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .top-bar .title {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .admin::before {
+      content: "👤";
+      margin-right: 5px;
+    }
+
+    .admin {
+      font-weight: bold;
+    }
+
+    .content {
+      padding: 20px;
+      color: #000;
+    }
+
+    .filters {
+      margin-bottom: 15px;
+    }
+
+    .filters label {
+      font-weight: bold;
+    }
+
+    .filters input[type="date"] {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .chart-container {
+      background-color: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      margin-bottom: 20px;
+    }
+
+    .data-table {
+      display: flex;
+      gap: 20px;
+    }
+
+    .data-table table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #aaa;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #f4f4f4;
+      text-align: left;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div>
+      <h3>MITSUBISHI MOTORS</h3>
+      <div class="nav">
+        <a href="#">Dashboard</a>
+        <a href="#">Product List</a>
+        <a href="#">Inventory</a>
+        <a href="#">Accounts</a>
+        <a href="#">Transaction Records</a>
+        <a href="#" class="active">Sales Report</a>
+      </div>
+    </div>
+    <div class="sidebar-bottom">
+      <p>Sales Agent Activity</p>
+      <p>• Solved Units</p>
+      <p>• Handled Clients</p>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="top-bar">
+      <div class="title">Sales Report</div>
+      <div class="admin">ADMIN NAME</div>
+    </div>
+
+    <div class="content">
+      <div class="filters">
+        <label for="report-date">Date</label>
+        <input type="date" id="report-date" value="2025-01-27" />
+      </div>
+
+      <div class="chart-container">
+        <canvas id="salesChart"></canvas>
+      </div>
+
+      <div class="data-table">
+        <table>
+          <thead>
+            <tr><th colspan="2">Data Item</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Sales Revenue by Model</td>
+              <td>₱5,200,000 revenue from Mitsubishi Xpander</td>
+            </tr>
+            <tr>
+              <td>Most Requested Car Models</td>
+              <td>Mitsubishi Montero Sport ranked top for January</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    const salesChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: Array.from({ length: 40 }, (_, i) => `Month ${i + 1}`),
+        datasets: [
+          {
+            label: 'Total Revenue Growth (10yr avg)',
+            data: Array.from({ length: 40 }, () => Math.random() * 1000 + 1000),
+            borderColor: 'orange',
+            backgroundColor: 'rgba(255, 165, 0, 0.2)',
+            fill: true,
+            tension: 0.4,
+          },
+          {
+            label: 'Total Revenue Growth (5yr avg)',
+            data: Array.from({ length: 40 }, () => Math.random() * 800 + 800),
+            borderColor: 'black',
+            fill: false,
+            tension: 0.4,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Mitsubishi Motors Corporation - Sales Momentum',
+            font: {
+              size: 16
+            }
+          },
+          legend: {
+            position: 'top'
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: false
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

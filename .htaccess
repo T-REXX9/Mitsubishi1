@@ -1,0 +1,33 @@
+# Increase upload limits for 3D model files
+php_value upload_max_filesize 100M
+php_value post_max_size 200M
+php_value max_execution_time 600
+php_value max_input_time 600
+php_value memory_limit 512M
+
+# Enable file uploads
+php_flag file_uploads On
+
+# Set maximum number of files that can be uploaded
+php_value max_file_uploads 20
+
+# Security headers
+Header always set X-Content-Type-Options nosniff
+Header always set X-Frame-Options DENY
+Header always set X-XSS-Protection "1; mode=block"
+
+# Allow CORS for API endpoints
+<Files "*.php">
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
+</Files>
+
+# Allow CORS for GLB/GLTF static assets and set correct MIME types
+<FilesMatch "\.(glb|gltf)$">
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type"
+    AddType model/gltf-binary .glb
+    AddType model/gltf+json .gltf
+</FilesMatch>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mitsubishi Dashboard</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      display: flex;
+      height: 100vh;
+      background: linear-gradient(to bottom, #1a1a1a, #ff0000);
+    }
+
+    .sidebar {
+      width: 250px;
+      background: #141414;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 0;
+    }
+
+    .sidebar img.logo {
+      width: 150px;
+      margin: 0 auto 20px;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      padding: 15px 20px;
+      cursor: pointer;
+    }
+
+    .menu-item img {
+      width: 24px;
+      margin-right: 10px;
+    }
+
+    .menu-item.active {
+      background: white;
+      color: black;
+    }
+
+    .section-title {
+      font-size: 12px;
+      color: #aaa;
+      padding: 10px 20px 5px;
+    }
+
+    .main {
+      flex: 1;
+      background: linear-gradient(to bottom, #ccc, #7c0a0a);
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .topbar {
+      width: 100%;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      background-color: #e0e0e0;
+      padding: 10px 20px;
+      font-weight: bold;
+    }
+
+    .logo-center {
+      margin: 40px 0 20px;
+      text-align: center;
+    }
+
+    .logo-center img {
+      width: 100px;
+    }
+
+    .logo-center h1 {
+      color: white;
+      font-size: 1.4em;
+      margin-top: 10px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 30px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 30px;
+    }
+
+    .btn {
+      background: #ddd;
+      padding: 15px 25px;
+      border-radius: 10px;
+      box-shadow: 4px 4px 0 #600;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn:hover {
+      background: #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Mitsubishi_logo.svg/1024px-Mitsubishi_logo.svg.png" class="logo" alt="Mitsubishi Logo">
+    <div class="menu-item active">
+      <img src="https://img.icons8.com/ios-filled/50/dashboard.png" alt="Dashboard">
+      DASHBOARD
+    </div>
+    <div class="menu-item">
+      <img src="https://img.icons8.com/emoji/48/card-file-box-emoji.png" alt="Inventory">
+      INVENTORY
+    </div>
+    <div class="menu-item">
+      <img src="https://img.icons8.com/ios-filled/50/user-group-man-man.png" alt="Accounts">
+      CUSTOMER ACCOUNTS
+    </div>
+    <div class="menu-item">
+      <img src="https://img.icons8.com/ios-filled/50/shopping-cart.png" alt="Orders">
+      ORDERS
+    </div>
+    <div class="menu-item">
+      <img src="https://img.icons8.com/ios-filled/50/money-transfer.png" alt="Payments">
+      CUSTOMER PAYMENTS
+    </div>
+
+    <div class="section-title">Customer Assistant</div>
+    <div class="menu-item">
+      <img src="https://img.icons8.com/ios-filled/50/approval.png" alt="Approval">
+      ORDER APPROVAL
+    </div>
+    <div class="menu-item">
+      <img src="https://img.icons8.com/ios-filled/50/chat-message.png" alt="Chats">
+      CUSTOMER CHATS
+    </div>
+
+    <div class="section-title">Reports</div>
+    <div class="menu-item">
+      <img src="https://img.icons8.com/ios-filled/50/report-card.png" alt="Reports">
+      SALES REPORT
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <img src="https://img.icons8.com/ios-filled/24/user-male-circle.png" style="margin-right: 10px;" alt="User Icon" /> AGENT NAME
+    </div>
+
+    <div class="logo-center">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Mitsubishi_logo.svg/1024px-Mitsubishi_logo.svg.png" alt="Logo">
+      <h1>MITSUBISHI MOTORS</h1>
+    </div>
+
+    <div class="buttons">
+      <button class="btn">TEST DRIVE REQUEST</button>
+      <button class="btn">CLIENT AMORTIZATION UPDATE</button>
+      <button class="btn" style="margin-top: 20px">INQUIRY</button>
+    </div>
+  </div>
+</body>
+</html>

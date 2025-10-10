@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Status Check</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .status-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .logged-in {
+            border-left: 5px solid #28a745;
+        }
+        .logged-out {
+            border-left: 5px solid #dc3545;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .session-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: left;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="status-card" id="statusCard">
+        <h1>🔐 Login Status Check</h1>
+        <p>Checking your login status...</p>
+        <div id="statusContent">
+            <div style="text-align: center;">
+                <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+
+    <script>
+        async function checkLoginStatus() {
+            try {
+                const response = await fetch('../test_scripts/test_session_debug.php', {
+                    credentials: 'include'
+                });
+                
+                const sessionInfo = await response.text();
+                const statusCard = document.getElementById('statusCard');
+                const statusContent = document.getElementById('statusContent');
+                
+                if (sessionInfo.includes('✅ User ID found')) {
+                    // User is logged in
+                    statusCard.className = 'status-card logged-in';
+                    statusContent.innerHTML = `
+                        <h2 style="color: #28a745;">✅ You are logged in!</h2>
+                        <p>Your session is active and valid.</p>
+                        <div class="session-info">${sessionInfo}</div>
+                        <a href="../pages/order_details.php" class="btn btn-success">
+                            📋 Go to Order Details
+                        </a>
+                        <button onclick="testOrderBackend()" class="btn btn-primary">
+                            🔧 Test Order Backend
+                        </button>
+                    `;
+                } else {
+                    // User is not logged in
+                    statusCard.className = 'status-card logged-out';
+                    statusContent.innerHTML = `
+                        <h2 style="color: #dc3545;">❌ You are not logged in</h2>
+                        <p>This is why the order details page shows empty responses.</p>
+                        <div class="session-info">${sessionInfo}</div>
+                        <a href="../pages/login.php" class="btn btn-primary">
+                            🔐 Login Now
+                        </a>
+                        <a href="../pages/create_account.php" class="btn btn-primary">
+                            📝 Create Account
+                        </a>
+                    `;
+                }
+            } catch (error) {
+                const statusContent = document.getElementById('statusContent');
+                statusContent.innerHTML = `
+                    <h2 style="color: #dc3545;">❌ Error checking status</h2>
+                    <p>Could not verify login status: ${error.message}</p>
+                    <a href="../pages/login.php" class="btn btn-primary">
+                        🔐 Try Login
+                    </a>
+                `;
+            }
+        }
+
+        async function testOrderBackend() {
+            try {
+                const response = await fetch('../includes/backend/order_backend.php?action=get_customer_orders', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                const responseText = await response.text();
+                
+                alert(`Backend Test Result:\n\nStatus: ${response.status}\nResponse Length: ${responseText.length} bytes\nContent: ${responseText.substring(0, 200)}${responseText.length > 200 ? '...' : ''}`);
+                
+            } catch (error) {
+                alert(`Backend test failed: ${error.message}`);
+            }
+        }
+
+        // Check status when page loads
+        document.addEventListener('DOMContentLoaded', checkLoginStatus);
+    </script>
+</body>
+</html>

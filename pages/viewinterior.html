@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mitsubishi Xpander</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom, #e0e0e0 0%, #6e0000 100%);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      padding: 1em;
+      font-size: 1.5em;
+    }
+
+    .title {
+      text-align: center;
+      font-size: 2em;
+      font-weight: bold;
+    }
+
+    .image-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 1em;
+    }
+
+    .image-container img {
+      width: 70%;
+      max-width: 500px;
+    }
+
+    .price {
+      text-align: center;
+      font-size: 2em;
+      color: white;
+      font-weight: bold;
+      margin-top: 0.5em;
+    }
+
+    .description, .performance, .features {
+      color: white;
+      padding: 1em 2em;
+    }
+
+    .color-options {
+      display: flex;
+      gap: 1em;
+      padding: 1em 2em;
+      align-items: center;
+    }
+
+    .color-box {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid white;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 1em;
+      margin: 1em;
+    }
+
+    .btn {
+      padding: 0.5em 1.5em;
+      background-color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      border-radius: 5px;
+    }
+
+    .view-btn {
+      margin: 1em auto;
+      display: block;
+      background-color: #555;
+      color: white;
+      padding: 0.75em 1.5em;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>&larr;</div>
+    <div>&#9776;</div>
+  </div>
+
+  <div class="title">Mitsubishi Xpander</div>
+
+  <div class="image-container">
+    <img id="carImage" src="Picture12.png" alt="Mitsubishi Xpander" />
+  </div>
+
+  <div class="price">₱925,000</div>
+
+  <div class="description">
+    <strong>2022 Xpander GLX 1.5 AT:</strong> Redefining the 7-Seater MPV Experience
+  </div>
+
+  <div class="color-options">
+    <span>Color:</span>
+    <div class="color-box" style="background-color: black" onclick="changeImage('Picture12.png')"></div>
+    <div class="color-box" style="background-color: white" onclick="changeImage('Picture11.png')"></div>
+    <div class="color-box" style="background-color: maroon" onclick="changeImage('Picture10.png')"></div>
+    <div class="color-box" style="background-color: silver" onclick="changeImage('Picture12.png')"></div>
+  </div>
+
+  <div class="controls">
+    <button class="btn">QUOTE</button>
+    <button class="btn">BOOK TEST DRIVE</button>
+    <button class="btn">INQUIRE</button>
+  </div>
+
+  <button class="view-btn" onclick="toggleView()" id="toggleBtn">VIEW INTERIOR</button>
+
+  <div class="performance">
+    <strong>Performance:</strong>
+    <ul>
+      <li>Power: 105 PS @ 6000 rpm.</li>
+      <li>Torque: 141 Nm @ 4000 rpm.</li>
+      <li>Suspension: MacPherson struts with coil spring (front), torsion beam (rear).</li>
+      <li>Fuel Efficiency: 10 km/l in the city, 22.5 km/l on the highway (estimated).</li>
+    </ul>
+  </div>
+
+  <div class="features">
+    <strong>Key Features:</strong>
+    <ul>
+      <li>Engine: 1.5L In-Line 4-Cylinder DOHC with MIVEC (4A91).</li>
+      <li>Transmission: 5-speed manual or 4-speed automatic.</li>
+      <li>Seating: 2+3+2 configuration.</li>
+      <li>Safety: Four-wheel ABS, EBD, dual front airbags.</li>
+      <li>Interior: Black fabric seats, tilt and telescopic steering adjustment.</li>
+      <li>Exterior: Dynamic Shield front fascia, 17-inch alloy wheels.</li>
+    </ul>
+  </div>
+
+  <script>
+    const images = ["Picture12.png", "Picture9.png", "Picture11.png"];
+    let viewIndex = 0;
+
+    function changeImage(src) {
+      document.getElementById("carImage").src = src;
+    }
+
+    function toggleView() {
+      viewIndex = (viewIndex + 1) % images.length;
+      document.getElementById("carImage").src = images[viewIndex];
+      const button = document.getElementById("toggleBtn");
+
+      if (viewIndex === 0) {
+        button.innerText = "VIEW INTERIOR";
+      } else if (viewIndex === 1) {
+        button.innerText = "NEXT INTERIOR";
+      } else {
+        button.innerText = "VIEW EXTERIOR";
+      }
+    }
+  </script>
+</body>
+</html>

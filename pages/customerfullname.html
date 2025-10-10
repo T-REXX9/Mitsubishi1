@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Account Profile</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(to bottom, #8b0000, #ffffff);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .account-container {
+      width: 95%;
+      max-width: 700px;
+      background-color: #f4eaea;
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .header {
+      background-color: #a00;
+      padding: 30px 20px 50px;
+      color: white;
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+      position: relative;
+      text-align: center;
+    }
+
+    .header .back-arrow {
+      position: absolute;
+      left: 20px;
+      top: 20px;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    .profile-pic {
+      width: 100px;
+      height: 100px;
+      background-color: white;
+      border: 5px solid white;
+      border-radius: 50%;
+      margin: 0 auto 10px;
+    }
+
+    .header h2 {
+      margin: 5px 0;
+    }
+
+    .header p {
+      font-size: 0.9em;
+    }
+
+    .info-section {
+      padding: 20px;
+      background-color: white;
+    }
+
+    .info-item {
+      margin-bottom: 15px;
+    }
+
+    .info-item strong {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 0.9em;
+    }
+
+    .info-item span {
+      font-weight: bold;
+    }
+
+    .email-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .email-line img {
+      width: 16px;
+      height: 16px;
+    }
+
+    .action-buttons {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .update-btn {
+      background-color: blue;
+      color: white;
+      padding: 12px 25px;
+      border: none;
+      border-radius: 20px;
+      font-size: 1em;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+
+    .delete-btn {
+      color: red;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1em;
+    }
+  </style>
+</head>
+<body>
+  <div class="account-container">
+    <div class="header">
+      <div class="back-arrow">←</div>
+      <div class="profile-pic">
+        <img src="https://img.icons8.com/ios-filled/100/user.png" alt="Profile Icon" style="width:100%; height:100%;" />
+      </div>
+      <h2>CUSTOMER FULL NAME</h2>
+      <p>+63(xxx - xxx - xxxx)</p>
+    </div>
+
+    <div class="info-section">
+      <div class="info-item">
+        <strong>Birthday</strong>
+        <span>Jul 1, 1995</span>
+      </div>
+      <div class="info-item">
+        <strong>Nationality</strong>
+        <span>FILIPINO</span>
+      </div>
+      <div class="info-item">
+        <strong>Email Address</strong>
+        <div class="email-line">
+          <span>gfwdsadfh@gmail.com</span>
+          <img src="https://img.icons8.com/color/48/verified-account.png" alt="Verified" />
+          <img src="https://img.icons8.com/material-rounded/24/pencil--v1.png" alt="Edit" />
+        </div>
+      </div>
+      <div class="info-item">
+        <strong>Current Address</strong>
+        <span>Sitio Tabag, Bucal, Quezon, Philippines, 4322</span>
+      </div>
+
+      <div class="action-buttons">
+        <button class="update-btn">Update Account Information</button><br />
+        <button class="delete-btn">Delete Account</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
