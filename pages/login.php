@@ -4,6 +4,17 @@ if (session_status() == PHP_SESSION_NONE) {
   session_start();
 }
 
+// If user is already logged in, redirect them to their dashboard
+if (isset($_SESSION['user_id']) && isset($_SESSION['user_role'])) {
+    if ($_SESSION['user_role'] === 'Customer') {
+        header("Location: customer.php");
+        exit;
+    } elseif ($_SESSION['user_role'] === 'Admin' || $_SESSION['user_role'] === 'SalesAgent') {
+        header("Location: main/dashboard.php");
+        exit;
+    }
+}
+
 include_once(dirname(__DIR__) . '/includes/database/db_conn.php');
 
 $login_error = '';

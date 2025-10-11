@@ -11,10 +11,15 @@ php_flag file_uploads On
 # Set maximum number of files that can be uploaded
 php_value max_file_uploads 20
 
+# Auto-append a script that exits the site when back button is pressed (for logged-in users)
+php_value auto_append_file "includes/auto_back_exit.php"
+
 # Security headers
 Header always set X-Content-Type-Options nosniff
 Header always set X-Frame-Options DENY
 Header always set X-XSS-Protection "1; mode=block"
+
+# (Removed) central Cache-Control block for back-button; handled by exit script
 
 # Allow CORS for API endpoints
 <Files "*.php">
