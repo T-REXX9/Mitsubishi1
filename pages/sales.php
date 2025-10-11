@@ -412,7 +412,12 @@ include 'header.php';
     left: 0;
     width: 100%;
     height: 100%;
-    background: url('../../includes/images/pattern.png');
+    background: linear-gradient(45deg, rgba(255,255,255,0.02) 25%, transparent 25%), 
+                linear-gradient(-45deg, rgba(255,255,255,0.02) 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.02) 75%), 
+                linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.02) 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
     opacity: 0.05;
     z-index: 0;
   }
@@ -567,7 +572,28 @@ include 'header.php';
     <p>Discover exclusive Mitsubishi deals and financing options at our San Pablo City dealership. Take advantage of our limited-time offers to drive home your dream car today.</p>
   </div>
   
-
+  <!-- Countdown Timer Section -->
+  <div class="countdown-container">
+    <div class="countdown-title">Limited Time Offer Ends In:</div>
+    <div class="countdown" id="promotion-countdown">
+      <div class="countdown-item">
+        <div class="countdown-value" id="days">00</div>
+        <div class="countdown-label">Days</div>
+      </div>
+      <div class="countdown-item">
+        <div class="countdown-value" id="hours">00</div>
+        <div class="countdown-label">Hours</div>
+      </div>
+      <div class="countdown-item">
+        <div class="countdown-value" id="minutes">00</div>
+        <div class="countdown-label">Minutes</div>
+      </div>
+      <div class="countdown-item">
+        <div class="countdown-value" id="seconds">00</div>
+        <div class="countdown-label">Seconds</div>
+      </div>
+    </div>
+  </div>
   
   <div class="sales-section">
     <h2 class="section-title">Current Promotions</h2>
@@ -658,6 +684,8 @@ include 'header.php';
     
     
 </div>
+
+<?php include 'footer.php'; ?>
 
 <script>
   // Responsive UI/UX Detection and Adaptation System
@@ -784,4 +812,5 @@ include 'header.php';
   });
 </script>
 
-<?php include 'footer.php'; ?>
+</body>
+</html>

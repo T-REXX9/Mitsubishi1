@@ -1,6 +1,6 @@
 <?php
 // Admin Dashboard Cards
-require_once __DIR__ . '/../database/db_conn.php';
+require_once __DIR__ . '/../../includes/database/db_conn.php';
 
 // Add Status column to customer_information table if it doesn't exist
 try {
@@ -488,7 +488,7 @@ $accountStats = getAccountStats($connect);
               <td class="table-actions">
                 <button class="btn btn-small btn-primary" onclick="reviewAccount('<?php echo $customer['cusID'] ?? ''; ?>', '<?php echo $customer['account_id']; ?>', <?php echo $profileComplete ? 'true' : 'false'; ?>)">Review</button>
                 <?php if ($profileComplete): ?>
-                  <button class="btn btn-small btn-outline" onclick="quickApproveAccount('<?php echo $customer['cusID']; ?>')">Approve</button>
+                  <button class="btn btn-small btn-outline" onclick="quickApproveAccount('<?php echo $customer['cusID'] ?? ''; ?>', '<?php echo $customer['account_id']; ?>')">Approve</button>
                   <button class="btn btn-small btn-danger" onclick="showRejectModal('<?php echo $customer['cusID'] ?? ''; ?>', '<?php echo $customer['account_id']; ?>')">Reject</button>
                 <?php else: ?>
                   <button class="btn btn-small btn-secondary" disabled title="Profile incomplete">Approve</button>
@@ -1730,11 +1730,12 @@ $accountStats = getAccountStats($connect);
     };
 
     // Function to quick approve a customer
-    window.quickApproveAccount = function(cusID) {
-      if (!cusID) {
+    window.quickApproveAccount = function(cusID, accountId) {
+      // Ensure we have at least one ID
+      if (!cusID && !accountId) {
         SwalError.fire({
           title: 'Error!',
-          text: 'Invalid customer ID'
+          text: 'Invalid customer or account ID'
         });
         return;
       }
@@ -1745,7 +1746,12 @@ $accountStats = getAccountStats($connect);
 
       // Create form data
       const formData = new FormData();
-      formData.append('customer_id', cusID);
+      if (cusID) {
+        formData.append('customer_id', cusID);
+      }
+      if (accountId) {
+        formData.append('account_id', accountId);
+      }
       formData.append('approval_comments', 'Quick approval from admin dashboard');
 
       // Show loading

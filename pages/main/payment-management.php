@@ -1,4 +1,14 @@
 <?php
+// Configure session settings for better AJAX compatibility
+ini_set('session.cookie_httponly', 1);
+ini_set('session.use_only_cookies', 1);
+ini_set('session.cookie_samesite', 'Lax');
+
+// Ensure session is started
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
 include_once(dirname(dirname(__DIR__)) . '/includes/init.php');
 
 // Check if user is Sales Agent or Admin
@@ -589,6 +599,9 @@ $agent_id = $_SESSION['user_id'] ?? null;
                     action: 'get_payment_stats'
                 },
                 dataType: 'json',
+                xhrFields: {
+                    withCredentials: true
+                },
                 success: function(response) {
                     if (response.success) {
                         const stats = response.data;
@@ -596,10 +609,24 @@ $agent_id = $_SESSION['user_id'] ?? null;
                         $('#confirmedCount').text(stats.confirmed || 0);
                         $('#failedCount').text(stats.rejected || 0);
                         $('#totalAmount').text('₱' + (stats.total_amount || 0).toLocaleString());
+                    } else {
+                        console.error('Backend error:', response.message);
+                        if (response.debug) {
+                            console.error('Debug info:', response.debug);
+                        }
                     }
                 },
-                error: function() {
-                    console.error('Failed to load payment statistics');
+                error: function(xhr, status, error) {
+                    console.error('Failed to load payment statistics:', xhr.responseText);
+                    console.error('Status:', status, 'Error:', error);
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        if (errorResponse.debug) {
+                            console.error('Debug info:', errorResponse.debug);
+                        }
+                    } catch (e) {
+                        // Ignore JSON parse errors
+                    }
                 }
             });
         }
@@ -622,16 +649,33 @@ $agent_id = $_SESSION['user_id'] ?? null;
                     ...filters
                 },
                 dataType: 'json',
+                xhrFields: {
+                    withCredentials: true
+                },
                 success: function(response) {
                     if (response.success) {
                         displayPayments(response.data.payments);
                         displayPagination(response.data.total, page);
                     } else {
                         displayEmptyState('No payment records found.');
+                        console.error('Backend error:', response.message);
+                        if (response.debug) {
+                            console.error('Debug info:', response.debug);
+                        }
                     }
                 },
-                error: function() {
+                error: function(xhr, status, error) {
                     displayEmptyState('Failed to load payment records.');
+                    console.error('Failed to load payment records:', xhr.responseText);
+                    console.error('Status:', status, 'Error:', error);
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        if (errorResponse.debug) {
+                            console.error('Debug info:', errorResponse.debug);
+                        }
+                    } catch (e) {
+                        // Ignore JSON parse errors
+                    }
                 }
             });
         }
@@ -649,10 +693,10 @@ $agent_id = $_SESSION['user_id'] ?? null;
                 const row = `
                     <tr>
                         <td><strong>${payment.payment_number}</strong></td>
-                        <td>Order #${payment.order_id}</td>
-                        <td>Customer #${payment.customer_id}</td>
-                        <td>N/A</td>
-                        <td><strong>₱${parseFloat(payment.amount).toLocaleString()}</strong></td>
+                        <td>${payment.order_number || 'Order #' + payment.order_id}</td>
+                        <td>${payment.customer_name || 'Customer #' + payment.customer_id}</td>
+                        <td>${payment.vehicle_model ? payment.vehicle_model + ' ' + (payment.vehicle_variant || '') : 'N/A'}</td>
+                        <td><strong>₱${parseFloat(payment.amount_paid).toLocaleString()}</strong></td>
                         <td>${payment.payment_type}</td>
                         <td>${payment.payment_method}</td>
                         <td><span class="status-badge status-${payment.status.toLowerCase()}">${payment.status}</span></td>
@@ -725,16 +769,33 @@ $agent_id = $_SESSION['user_id'] ?? null;
                     payment_id: paymentId
                 },
                 dataType: 'json',
+                xhrFields: {
+                    withCredentials: true
+                },
                 success: function(response) {
                     if (response.success) {
                         displayPaymentDetails(response.data);
                         $('#paymentDetailModal').show();
                     } else {
-                        alert('Failed to load payment details.');
+                        alert('Failed to load payment details: ' + (response.message || 'Unknown error'));
+                        console.error('Backend error:', response.message);
+                        if (response.debug) {
+                            console.error('Debug info:', response.debug);
+                        }
                     }
                 },
-                error: function() {
+                error: function(xhr, status, error) {
                     alert('Failed to load payment details.');
+                    console.error('AJAX error:', xhr.responseText);
+                    console.error('Status:', status, 'Error:', error);
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        if (errorResponse.debug) {
+                            console.error('Debug info:', errorResponse.debug);
+                        }
+                    } catch (e) {
+                        // Ignore JSON parse errors
+                    }
                 }
             });
         }
@@ -769,7 +830,7 @@ $agent_id = $_SESSION['user_id'] ?? null;
                     </div>
                     <div class="detail-group">
                         <div class="detail-label">Amount</div>
-                        <div class="detail-value"><strong>₱${parseFloat(payment.amount).toLocaleString()}</strong></div>
+                        <div class="detail-value"><strong>₱${parseFloat(payment.amount_paid).toLocaleString()}</strong></div>
                     </div>
                     <div class="detail-group">
                         <div class="detail-label">Payment Type</div>
@@ -875,6 +936,9 @@ $agent_id = $_SESSION['user_id'] ?? null;
                     rejection_reason: reason
                 },
                 dataType: 'json',
+                xhrFields: {
+                    withCredentials: true
+                },
                 success: function(response) {
                     if (response.success) {
                         alert(`Payment ${action}d successfully!`);
@@ -883,10 +947,24 @@ $agent_id = $_SESSION['user_id'] ?? null;
                         loadPayments(currentPage);
                     } else {
                         alert(response.message || `Failed to ${action} payment.`);
+                        console.error('Backend error:', response.message);
+                        if (response.debug) {
+                            console.error('Debug info:', response.debug);
+                        }
                     }
                 },
-                error: function() {
+                error: function(xhr, status, error) {
                     alert(`Failed to ${action} payment.`);
+                    console.error('AJAX error:', xhr.responseText);
+                    console.error('Status:', status, 'Error:', error);
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        if (errorResponse.debug) {
+                            console.error('Debug info:', errorResponse.debug);
+                        }
+                    } catch (e) {
+                        // Ignore JSON parse errors
+                    }
                 }
             });
         }

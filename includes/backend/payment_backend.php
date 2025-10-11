@@ -1,10 +1,32 @@
 <?php
+// Configure session settings for AJAX requests
+ini_set('session.cookie_httponly', 1);
+ini_set('session.use_only_cookies', 1);
+ini_set('session.cookie_samesite', 'Lax');
+
+// Ensure session is started
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
 include_once(dirname(dirname(__DIR__)) . '/includes/init.php');
+
+// Debug session information
+error_log("Payment Backend Debug - Session ID: " . session_id());
+error_log("Payment Backend Debug - Session data: " . print_r($_SESSION, true));
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized - No user_id in session']);
+    echo json_encode([
+        'success' => false, 
+        'message' => 'Unauthorized - No user_id in session',
+        'debug' => [
+            'session_id' => session_id(),
+            'session_keys' => array_keys($_SESSION),
+            'cookies' => array_keys($_COOKIE)
+        ]
+    ]);
     exit();
 }
 
@@ -20,7 +42,15 @@ $user_id = $_SESSION['user_id'];
 $user_role = $_SESSION['user_role'] ?? '';
 
 // Debug: Log the received data
-error_log("Payment Backend Debug - Action: " . $action . ", User ID: " . $user_id . ", User Role: " . $user_role);
+error_log("Payment Backend Debug - Action: '" . $action . "', User ID: " . $user_id . ", User Role: " . $user_role);
+error_log("Payment Backend Debug - POST data: " . print_r($_POST, true));
+
+// Check if action is empty
+if (empty($action)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'No action specified. Required actions: get_payment_stats, get_agent_payments, get_payment_details, process_payment']);
+    exit();
+}
 
 try {
     switch ($action) {
@@ -37,7 +67,7 @@ try {
             processPayment();
             break;
         default:
-            throw new Exception('Invalid action: ' . $action);
+            throw new Exception('Invalid action: "' . $action . '". Valid actions are: get_payment_stats, get_agent_payments, get_payment_details, process_payment');
     }
 } catch (Exception $e) {
     http_response_code(400);
@@ -52,16 +82,31 @@ function getPaymentStats()
     global $pdo, $user_id, $user_role;
     
     try {
-        // Simple query without joins first
-        $sql = "SELECT 
-                    COUNT(CASE WHEN status = 'Pending' THEN 1 END) as pending,
-                    COUNT(CASE WHEN status = 'Confirmed' THEN 1 END) as confirmed,
-                    COUNT(CASE WHEN status = 'Failed' THEN 1 END) as rejected,
-                    COALESCE(SUM(CASE WHEN status = 'Confirmed' THEN amount_paid END), 0) as total_amount
-                FROM payment_history";
+        // Filter payments by agent-assigned customers
+        if ($user_role === 'Admin') {
+            // Admin can see all payments
+            $sql = "SELECT 
+                        COUNT(CASE WHEN ph.status = 'Pending' THEN 1 END) as pending,
+                        COUNT(CASE WHEN ph.status = 'Confirmed' THEN 1 END) as confirmed,
+                        COUNT(CASE WHEN ph.status = 'Rejected' THEN 1 END) as rejected,
+                        COALESCE(SUM(CASE WHEN ph.status = 'Confirmed' THEN ph.amount_paid END), 0) as total_amount
+                    FROM payment_history ph";
+            $params = [];
+        } else {
+            // Sales agents can only see payments from their assigned customers
+            $sql = "SELECT 
+                        COUNT(CASE WHEN ph.status = 'Pending' THEN 1 END) as pending,
+                        COUNT(CASE WHEN ph.status = 'Confirmed' THEN 1 END) as confirmed,
+                        COUNT(CASE WHEN ph.status = 'Rejected' THEN 1 END) as rejected,
+                        COALESCE(SUM(CASE WHEN ph.status = 'Confirmed' THEN ph.amount_paid END), 0) as total_amount
+                    FROM payment_history ph
+                    INNER JOIN orders o ON ph.order_id = o.order_id
+                    WHERE o.sales_agent_id = ?";
+            $params = [$user_id];
+        }
         
         $stmt = $pdo->prepare($sql);
-        $stmt->execute();
+        $stmt->execute($params);
         
         $stats = $stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -101,11 +146,11 @@ function getAgentPayments()
         $whereConditions = [];
         $params = [];
         
-        // Role-based filtering - simplified for now
-        // if ($user_role !== 'Admin') {
-        //     $whereConditions[] = "o.sales_agent_id = ?";
-        //     $params[] = $user_id;
-        // }
+        // Role-based filtering - filter by agent's assigned customers
+        if ($user_role !== 'Admin') {
+            $whereConditions[] = "o.sales_agent_id = ?";
+            $params[] = $user_id;
+        }
         
         if (!empty($status)) {
             $whereConditions[] = "ph.status = ?";
@@ -129,33 +174,37 @@ function getAgentPayments()
         
         $whereClause = !empty($whereConditions) ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
         
-        // Get total count - simplified query
+        // Get total count - with proper joins for agent filtering
         $countSql = "SELECT COUNT(*) as total
                      FROM payment_history ph
+                     INNER JOIN orders o ON ph.order_id = o.order_id
                      $whereClause";
         
         $countStmt = $pdo->prepare($countSql);
         $countStmt->execute($params);
         $total = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
         
-        // Get paginated results - simplified query
+        // Get paginated results - with proper joins and customer information
         $sql = "SELECT 
                     ph.id,
                     ph.payment_number,
-                    ph.amount_paid as amount,
+                    ph.amount_paid,
                     ph.payment_method,
                     ph.payment_type,
                     ph.status,
                     ph.created_at,
                     ph.order_id,
-                    ph.customer_id
+                    ph.customer_id,
+                    o.order_number,
+                    o.vehicle_model,
+                    o.vehicle_variant,
+                    CONCAT(ci.firstname, ' ', ci.lastname) as customer_name
                 FROM payment_history ph
+                INNER JOIN orders o ON ph.order_id = o.order_id
+                LEFT JOIN customer_information ci ON ph.customer_id = ci.cusID
                 $whereClause
                 ORDER BY ph.created_at DESC
-                LIMIT ? OFFSET ?";
-        
-        $params[] = $limit;
-        $params[] = $offset;
+                LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
         
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
@@ -290,7 +339,6 @@ function processPayment()
         $updateSql = "UPDATE payment_history 
                       SET status = ?, 
                           processed_by = ?, 
-                          processed_at = NOW(),
                           rejection_reason = ?
                       WHERE id = ?";
         
@@ -298,7 +346,7 @@ function processPayment()
         $updateStmt->execute([
             $newStatus,
             $user_id,
-            $process_action === 'reject' ? $rejection_reason : null,
+            $rejection_reason,
             $payment_id
         ]);
         

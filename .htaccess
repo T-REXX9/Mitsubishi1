@@ -1,3 +1,23 @@
+<IfModule mod_headers.c>
+    <FilesMatch "\.php$">
+        Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header always set Pragma "no-cache"
+        Header always set Expires "Sat, 26 Jul 1997 05:00:00 GMT"
+    </FilesMatch>
+</IfModule>
+
+# Ensure PHP auto-prepends our back-button/navigation guard for all scripts
+<IfModule mod_php7.c>
+    php_value auto_prepend_file "includes/auto_back_exit.php"
+</IfModule>
+<IfModule mod_php8.c>
+    php_value auto_prepend_file "includes/auto_back_exit.php"
+</IfModule>
+
+# Fallback using environment variable for FPM/CGI if needed
+<IfModule mod_env.c>
+    SetEnvIfNoCase Request_URI \.php$ NO_CACHE_CONTROL=1
+</IfModule>
 # Increase upload limits for 3D model files
 php_value upload_max_filesize 100M
 php_value post_max_size 200M
@@ -11,8 +31,7 @@ php_flag file_uploads On
 # Set maximum number of files that can be uploaded
 php_value max_file_uploads 20
 
-# Auto-append a script that exits the site when back button is pressed (for logged-in users)
-php_value auto_append_file "includes/auto_back_exit.php"
+# Note: auto_back_exit.php is already auto-prepended above (line 11), so no need to append it again
 
 # Security headers
 Header always set X-Content-Type-Options nosniff

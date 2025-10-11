@@ -55,4 +55,3 @@ function redirectWithMessage($location, $message, $type = 'success') {
     header("Location: $location");
     exit();
 }
-?>

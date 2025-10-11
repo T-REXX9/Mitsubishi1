@@ -215,6 +215,8 @@ main,
 footer {
   position: relative !important;
   margin-top: auto !important;
+  width: 100vw !important;
+  margin-left: calc(-50vw + 50%) !important;
 }
 
 /* Additional mobile-specific fixes */

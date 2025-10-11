@@ -345,25 +345,89 @@ if (!$customerProfile) {
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.8);
+            overflow-y: auto;
+            padding: 1rem;
         }
 
         .modal-content {
             background: rgba(255, 255, 255, 0.1);
-            margin: 5% auto;
-            padding: 30px;
+            margin: 2rem auto;
+            padding: 2rem;
             border-radius: 20px;
-            width: 90%;
+            width: 100%;
             max-width: 600px;
+            min-height: auto;
+            max-height: calc(100vh - 4rem);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 215, 0, 0.1);
+            overflow-y: auto;
+            position: relative;
         }
 
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
+        /* Responsive Modal Styles */
+        @media (max-width: 768px) {
+            .modal {
+                padding: 0.5rem;
+            }
+            
+            .modal-content {
+                margin: 1rem auto;
+                padding: 1.5rem;
+                max-height: calc(100vh - 2rem);
+                border-radius: 15px;
+            }
         }
+
+        @media (max-width: 480px) {
+            .modal {
+                padding: 0.25rem;
+            }
+            
+            .modal-content {
+                margin: 0.5rem auto;
+                padding: 1rem;
+                max-height: calc(100vh - 1rem);
+                border-radius: 10px;
+            }
+        }
+
+        @media (max-height: 600px) {
+             .modal-content {
+                 margin: 0.5rem auto;
+                 max-height: calc(100vh - 1rem);
+             }
+         }
+
+         .modal-header {
+             display: flex;
+             justify-content: space-between;
+             align-items: center;
+             margin-bottom: 1.25rem;
+             flex-shrink: 0;
+         }
+
+         .modal-footer {
+             display: flex;
+             gap: 1rem;
+             justify-content: flex-end;
+             margin-top: 1.5rem;
+             padding-top: 1rem;
+             border-top: 1px solid rgba(255, 215, 0, 0.2);
+             flex-shrink: 0;
+         }
+
+         /* Responsive Modal Footer */
+         @media (max-width: 480px) {
+             .modal-footer {
+                 flex-direction: column-reverse;
+                 gap: 0.75rem;
+             }
+             
+             .modal-footer .btn {
+                 width: 100%;
+                 justify-content: center;
+             }
+         }
 
         .modal-title {
             color: #ffd700;
@@ -382,25 +446,50 @@ if (!$customerProfile) {
             color: #ffd700;
         }
 
+        /* Responsive Close Button */
+        @media (max-width: 480px) {
+            .close {
+                font-size: 24px;
+                padding: 0.25rem;
+            }
+            
+            .modal-title {
+                font-size: 1.25rem;
+            }
+        }
+
+        /* Ensure proper touch targets on mobile */
+        @media (max-width: 768px) {
+            .close {
+                min-width: 44px;
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 1.25rem;
         }
 
         .form-label {
             color: #ffd700;
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 0.5rem;
             font-weight: 600;
+            font-size: 0.9rem;
         }
 
         .form-input {
             width: 100%;
-            padding: 12px;
+            padding: 0.75rem;
             border: 1px solid rgba(255, 215, 0, 0.3);
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.1);
             color: white;
             font-size: 1rem;
+            box-sizing: border-box;
         }
 
         .form-input:focus {
@@ -411,17 +500,18 @@ if (!$customerProfile) {
 
         .form-select {
             width: 100%;
-            padding: 12px;
+            padding: 0.75rem;
             border: 1px solid rgba(255, 215, 0, 0.3);
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.1);
             color: white;
             font-size: 1rem;
+            box-sizing: border-box;
         }
 
         .form-textarea {
             width: 100%;
-            padding: 12px;
+            padding: 0.75rem;
             border: 1px solid rgba(255, 215, 0, 0.3);
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.1);
@@ -429,6 +519,54 @@ if (!$customerProfile) {
             font-size: 1rem;
             resize: vertical;
             min-height: 100px;
+            box-sizing: border-box;
+        }
+
+        .form-help {
+            color: #ccc;
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+            display: block;
+        }
+
+        /* Responsive Form Styles */
+        @media (max-width: 768px) {
+            .form-group {
+                margin-bottom: 1rem;
+            }
+            
+            .form-label {
+                font-size: 0.85rem;
+                margin-bottom: 0.4rem;
+            }
+            
+            .form-input,
+            .form-select,
+            .form-textarea {
+                padding: 0.6rem;
+                font-size: 0.9rem;
+            }
+            
+            .form-help {
+                font-size: 0.75rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .form-group {
+                margin-bottom: 0.8rem;
+            }
+            
+            .form-input,
+            .form-select,
+            .form-textarea {
+                padding: 0.5rem;
+                font-size: 0.85rem;
+            }
+            
+            .form-textarea {
+                min-height: 80px;
+            }
         }
 
         /* Expanded Details Styles */
@@ -759,7 +897,7 @@ if (!$customerProfile) {
                     <label class="form-label">Notes</label>
                     <textarea id="paymentNotes" name="notes" class="form-textarea" placeholder="Additional notes..."></textarea>
                 </div>
-                <div style="display: flex; gap: 15px; justify-content: flex-end;">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closePaymentModal()">Cancel</button>
                     <button type="submit" class="btn btn-primary">Submit Payment</button>
                 </div>

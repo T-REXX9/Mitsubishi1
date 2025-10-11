@@ -366,7 +366,18 @@ $stmt = $connect->prepare("SELECT * FROM vehicles WHERE availability_status = 'a
                 if (strpos($car['main_image'], 'uploads') !== false || strpos($car['main_image'], '.png') !== false || strpos($car['main_image'], '.jpg') !== false || strpos($car['main_image'], '.jpeg') !== false) {
                     // It's a file path - convert to web path
                     $webPath = str_replace('\\', '/', $car['main_image']);
-                    $webPath = preg_replace('/^.*\/htdocs\//', '/', $webPath);
+                    
+                    // If it starts with 'uploads/', it's already a relative path from project root
+                    if (strpos($webPath, 'uploads/') === 0) {
+                        // Just add ../ to go up from pages/ directory to project root
+                        $webPath = '../' . $webPath;
+                    } else if (strpos($webPath, 'htdocs/Mitsubishi/') !== false) {
+                        // Handle full system paths
+                        $webPath = preg_replace('/^.*\/htdocs\/Mitsubishi\//', '../', $webPath);
+                    } else {
+                        // If it's just a filename, assume it's in uploads/vehicle_images/main/
+                        $webPath = '../uploads/vehicle_images/main/' . basename($webPath);
+                    }
                     echo htmlspecialchars($webPath);
                 } else if (preg_match('/^[A-Za-z0-9+\/=]+$/', $car['main_image']) && strlen($car['main_image']) > 100) {
                     // It's base64 data
@@ -376,7 +387,7 @@ $stmt = $connect->prepare("SELECT * FROM vehicles WHERE availability_status = 'a
                     echo 'data:image/jpeg;base64,' . base64_encode($car['main_image']);
                 }
             } else {
-                echo '../../includes/images/default-car.svg';
+                echo '../includes/images/default-car.svg';
             }
             ?>')"></div>
             <?php 
