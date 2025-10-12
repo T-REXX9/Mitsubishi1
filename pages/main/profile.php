@@ -835,6 +835,21 @@ if (!empty($user_data['ProfileImage'])) {
 
   <script src="../../includes/js/common-scripts.js"></script>
   <script>
+    // Define reset functions in global scope so they can be called by inline onclick handlers
+    function resetProfileForm() {
+      document.getElementById('profileForm').reset();
+      // Restore original values
+      location.reload();
+    }
+
+    function resetPasswordForm() {
+      document.getElementById('passwordForm').reset();
+    }
+
+    function resetAgentForm() {
+      location.reload();
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
       // Show initial response if any
       <?php if (!empty($response['message'])): ?>
@@ -1030,22 +1045,7 @@ if (!empty($user_data['ProfileImage'])) {
           submitBtn.disabled = false;
         });
       });
-      
-      function resetAgentForm() {
-        location.reload();
-      }
       <?php endif; ?>
-
-      // Reset functions
-      function resetProfileForm() {
-        document.getElementById('profileForm').reset();
-        // Restore original values
-        location.reload();
-      }
-
-      function resetPasswordForm() {
-        document.getElementById('passwordForm').reset();
-      }
 
       // Avatar upload handling
       const avatarUploadButton = document.querySelector('.avatar-upload');
