@@ -225,7 +225,7 @@ function updateRequestStatus() {
         throw new Exception('Request ID and status are required');
     }
     
-    $validStatuses = ['Pending', 'Approved', 'Rejected', 'Completed', 'No Show', 'Cancelled'];
+    $validStatuses = ['Pending', 'Approved', 'Rejected', 'Completed'];
     if (!in_array($status, $validStatuses)) {
         throw new Exception('Invalid status');
     }

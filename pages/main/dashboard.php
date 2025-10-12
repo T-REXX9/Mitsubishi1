@@ -182,9 +182,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $request_id = intval($_POST['request_id'] ?? 0);
         $no_show_notes = $_POST['no_show_notes'] ?? '';
 
+        // Store as 'Rejected' with [NO_SHOW] prefix in notes to differentiate
         $sql = "UPDATE test_drive_requests 
-                        SET status = 'No Show', 
-                            notes = CONCAT(COALESCE(notes, ''), '\nNo Show: ', ?) 
+                        SET status = 'Rejected', 
+                            notes = CONCAT('[NO_SHOW] ', ?, '\n---\n', COALESCE(notes, '')) 
                         WHERE id = ?";
 
         $stmt = $pdo->prepare($sql);
@@ -208,9 +209,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $request_id = intval($_POST['request_id'] ?? 0);
         $cancel_reason = $_POST['cancel_reason'] ?? '';
 
+        // Store as 'Rejected' with [CANCELLED] prefix in notes to differentiate
         $sql = "UPDATE test_drive_requests 
-                        SET status = 'Cancelled', 
-                            notes = CONCAT(COALESCE(notes, ''), '\nCancelled: ', ?) 
+                        SET status = 'Rejected', 
+                            notes = CONCAT('[CANCELLED] ', ?, '\n---\n', COALESCE(notes, '')) 
                         WHERE id = ?";
 
         $stmt = $pdo->prepare($sql);
@@ -234,10 +236,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $request_id = intval($_POST['request_id'] ?? 0);
         $reschedule_notes = $_POST['reschedule_notes'] ?? '';
 
+        // Only reschedule if notes start with [NO_SHOW]
         $sql = "UPDATE test_drive_requests 
                         SET status = 'Pending', 
-                            notes = CONCAT(COALESCE(notes, ''), '\nRescheduled: ', ?) 
-                        WHERE id = ? AND status = 'No Show'";
+                            notes = CONCAT('[RESCHEDULED] ', ?, '\n---\n', COALESCE(notes, '')) 
+                        WHERE id = ? AND status = 'Rejected' AND notes LIKE '[NO_SHOW]%'";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute([$reschedule_notes, $request_id]);

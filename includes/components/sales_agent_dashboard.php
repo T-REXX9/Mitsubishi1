@@ -113,7 +113,7 @@ if (isset($pdo) && $pdo) {
     $stmt->execute([$agentId]);
     $completed_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Fetch rejected requests
+    // Fetch rejected requests (excluding no show and cancelled)
     $stmt = $pdo->prepare("
             SELECT tdr.*, a.FirstName, a.LastName, a.Email 
             FROM test_drive_requests tdr 
@@ -121,32 +121,37 @@ if (isset($pdo) && $pdo) {
             LEFT JOIN customer_information ci ON tdr.account_id = ci.account_id
             WHERE tdr.status = 'Rejected' 
               AND ci.agent_id = ?
+              AND (tdr.notes IS NULL OR (tdr.notes NOT LIKE '[NO_SHOW]%' AND tdr.notes NOT LIKE '[CANCELLED]%'))
             ORDER BY tdr.requested_at DESC
         ");
     $stmt->execute([$agentId]);
     $rejected_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Fetch no show requests
+    // Fetch no show requests (Rejected status with [NO_SHOW] prefix)
     $stmt = $pdo->prepare("
             SELECT tdr.*, a.FirstName, a.LastName, a.Email 
             FROM test_drive_requests tdr 
             LEFT JOIN accounts a ON tdr.account_id = a.Id 
             LEFT JOIN customer_information ci ON tdr.account_id = ci.account_id
-            WHERE tdr.status = 'No Show' 
+            WHERE tdr.status = 'Rejected' 
               AND ci.agent_id = ?
+              AND tdr.notes IS NOT NULL
+              AND tdr.notes LIKE '[NO_SHOW]%'
             ORDER BY tdr.selected_date DESC
         ");
     $stmt->execute([$agentId]);
     $no_show_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Fetch cancelled requests
+    // Fetch cancelled requests (Rejected status with [CANCELLED] prefix)
     $stmt = $pdo->prepare("
             SELECT tdr.*, a.FirstName, a.LastName, a.Email 
             FROM test_drive_requests tdr 
             LEFT JOIN accounts a ON tdr.account_id = a.Id 
             LEFT JOIN customer_information ci ON tdr.account_id = ci.account_id
-            WHERE tdr.status = 'Cancelled' 
+            WHERE tdr.status = 'Rejected' 
               AND ci.agent_id = ?
+              AND tdr.notes IS NOT NULL
+              AND tdr.notes LIKE '[CANCELLED]%'
             ORDER BY tdr.requested_at DESC
         ");
     $stmt->execute([$agentId]);
@@ -525,13 +530,18 @@ foreach ($new_inquiries as $inquiry) {
                 ? $request['FirstName'] . ' ' . $request['LastName']
                 : $request['customer_name'];
               $notes = $request['notes'] ?? 'No notes provided';
-              $displayNotes = strlen($notes) > 50 ? substr($notes, 0, 50) . '...' : $notes;
-              $statusClass = $request['status'] == 'No Show' ? 'status-badge no-show' : 'status-badge cancelled';
+              // Remove the prefix from display notes
+              $displayNotes = preg_replace('/^\[(NO_SHOW|CANCELLED)\]\s*/', '', $notes);
+              $displayNotes = strlen($displayNotes) > 50 ? substr($displayNotes, 0, 50) . '...' : $displayNotes;
+              // Determine status from notes prefix
+              $isNoShow = strpos($notes, '[NO_SHOW]') === 0;
+              $statusClass = $isNoShow ? 'status-badge no-show' : 'status-badge cancelled';
+              $statusLabel = $isNoShow ? 'No Show' : 'Cancelled';
             ?>
               <tr>
                 <td>
                   TD-<?php echo str_pad($request['id'], 4, '0', STR_PAD_LEFT); ?>
-                  <br><span class="<?php echo $statusClass; ?>"><?php echo $request['status']; ?></span>
+                  <br><span class="<?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span>
                 </td>
                 <td><?php echo htmlspecialchars($customerName); ?><br><small><?php echo htmlspecialchars($request['Email'] ?? 'N/A'); ?></small></td>
                 <td><?php echo htmlspecialchars($request['mobile_number']); ?></td>
@@ -543,7 +553,7 @@ foreach ($new_inquiries as $inquiry) {
                   <button class="btn btn-small btn-info" onclick="viewTestDriveDetails(<?php echo $request['id']; ?>)">
                     <i class="fas fa-info-circle"></i> View
                   </button>
-                  <?php if ($request['status'] == 'No Show'): ?>
+                  <?php if ($isNoShow): ?>
                     <button class="btn btn-small btn-primary" onclick="rescheduleTestDrive(<?php echo $request['id']; ?>)">
                       <i class="fas fa-redo"></i> Reschedule
                     </button>
