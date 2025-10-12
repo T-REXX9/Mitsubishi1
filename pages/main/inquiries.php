@@ -38,10 +38,13 @@ function getInquiriesWithAccounts($pdo) {
         a.Username,
         a.FirstName,
         a.LastName,
-        a.Status as AccountStatus
+        a.Status as AccountStatus,
+        agent_acc.FirstName as AgentFirstName,
+        agent_acc.LastName as AgentLastName
     FROM inquiries i
     LEFT JOIN accounts a ON i.AccountId = a.Id
-    LEFT JOIN customer_information ci ON i.AccountId = ci.account_id";
+    LEFT JOIN customer_information ci ON i.AccountId = ci.account_id
+    LEFT JOIN accounts agent_acc ON ci.agent_id = agent_acc.Id";
     // Apply SalesAgent filter
     if (($_SESSION['user_role'] ?? '') === 'SalesAgent') {
       $query .= " WHERE (ci.agent_id = :agent_id OR i.CreatedBy = :agent_id)";
@@ -342,9 +345,11 @@ $stats = getInquiryStats($pdo);
           <i class="fas fa-question-circle icon-gradient"></i>
           Vehicle Inquiries Management
         </h1>
+        <?php if ($role === 'SalesAgent'): ?>
         <button class="add-order-btn" id="addNewInquiryBtn" style="padding: 12px 24px; font-size: 1rem;">
           <i class="fas fa-plus-circle"></i> Add New Inquiry
         </button>
+        <?php endif; ?>
       </div>
 
       <!-- Inquiry Statistics -->
@@ -456,6 +461,7 @@ $stats = getInquiryStats($pdo);
                 <th>Customer Information</th>
                 <th>Vehicle Interest</th>
                 <th>Type</th>
+                <th>Agent Name</th>
                 <th>Comments Preview</th>
                 <th>Actions</th>
               </tr>
@@ -507,6 +513,17 @@ $stats = getInquiryStats($pdo);
                   </span>
                 </td>
                 <td>
+                  <div class="agent-info">
+                    <?php 
+                    if (!empty($inquiry['AgentFirstName']) || !empty($inquiry['AgentLastName'])) {
+                      echo htmlspecialchars(trim($inquiry['AgentFirstName'] . ' ' . $inquiry['AgentLastName']));
+                    } else {
+                      echo '<span style="color: #999; font-style: italic;">Unassigned</span>';
+                    }
+                    ?>
+                  </div>
+                </td>
+                <td>
                   <div class="message-preview" title="<?php echo htmlspecialchars($inquiry['Comments']); ?>">
                     <?php echo htmlspecialchars(substr($inquiry['Comments'], 0, 50)) . (strlen($inquiry['Comments']) > 50 ? '...' : ''); ?>
                   </div>
@@ -516,9 +533,11 @@ $stats = getInquiryStats($pdo);
                     <button class="btn-small btn-view" title="View Details" onclick="viewInquiryDetails(<?php echo $inquiry['Id']; ?>)">
                       <i class="fas fa-eye"></i>
                     </button>
+                    <?php if ($role === 'SalesAgent'): ?>
                     <button class="btn-small btn-edit" title="Respond" onclick="respondToInquiry(<?php echo $inquiry['Id']; ?>)">
                       <i class="fas fa-reply"></i>
                     </button>
+                    <?php endif; ?>
                     <button class="btn-small btn-danger" title="Delete" onclick="deleteInquiry(<?php echo $inquiry['Id']; ?>)">
                       <i class="fas fa-trash"></i>
                     </button>
@@ -547,7 +566,9 @@ $stats = getInquiryStats($pdo);
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="closeInquiryDetailsModal()">Close</button>
+        <?php if ($role === 'SalesAgent'): ?>
         <button type="button" class="btn btn-primary" onclick="respondToCurrentInquiry()">Respond to Inquiry</button>
+        <?php endif; ?>
       </div>
     </div>
   </div>

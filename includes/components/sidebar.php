@@ -162,7 +162,7 @@ $user_role = isset($_SESSION['user_role']) ? $_SESSION['user_role'] : 'SalesAgen
         <div class="menu-group-label">Customer Inquiries</div>
         <a href="inquiries.php" class="menu-item <?php echo $current_page == 'inquiries' ? 'active' : ''; ?>">
           <i class="fas fa-question-circle"></i>
-          <span>Vehicle Inquiries</span>
+          <span>Inquiry Records</span>
         </a>
         <!-- <a href="inquiry-reports.php" class="menu-item <?php echo $current_page == 'inquiry-reports' ? 'active' : ''; ?>">
           <i class="fas fa-chart-pie"></i>
