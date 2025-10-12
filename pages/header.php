@@ -52,10 +52,18 @@
       font-size: 0.85rem;
       font-weight: 500;
     }
+
+    .nav-container {
+      display: flex;
+      align-items: center;
+      gap: 40px; /* Space between menu and login */
+    }
+
     nav {
       display: flex;
       gap: 28px;
     }
+    
     nav a {
       color: #fff;
       text-decoration: none;
@@ -74,6 +82,8 @@
       flex-direction: column;
       cursor: pointer;
       padding: 5px;
+      margin-left: auto;
+
     }
     .menu-toggle span {
       width: 25px;
@@ -116,7 +126,7 @@
     }
     
     /* Mobile Responsive */
-    @media (max-width: 767px) {
+    @media (max-width: 1024px) {
       .mobile-login {
         display: block;
         color: #ffd700;
@@ -129,11 +139,15 @@
       }
       header {
         position: relative;
-        padding: 12px 15px;
+        padding: 12px 20px;
       }
       .menu-toggle {
         display: flex;
+        margin-left: auto;
+        cursor: pointer;
+        flex-direction: column;
       }
+
       nav {
         display: none;
         position: absolute;
@@ -153,6 +167,7 @@
         border-bottom: 1px solid #333;
         text-align: center;
       }
+
       .user-section {
         display: none;
       }
@@ -200,6 +215,8 @@
       <span></span>
       <span></span>
     </div>
+    
+  <div class="nav-container">
     <nav id="navMenu">
       <a href="../pages/cars.php">CARS</a>
       <a href="../pages/sales.php">SALES</a>
@@ -210,6 +227,7 @@
     <div class="user-section">
       <a href="../pages/login.php">LOG IN</a>
     </div>
+  </div>
   </header>
 
   <script>
