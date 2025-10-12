@@ -279,6 +279,10 @@ foreach ($new_inquiries as $inquiry) {
     <i class="fas fa-credit-card"></i>
     Payment Transactions
   </button>
+  <button class="action-btn" id="amortizationBtn">
+    <i class="fas fa-calendar-check"></i>
+    Amortization Management
+  </button>
   <button class="action-btn" id="inquiryBtn">
     <i class="fas fa-question-circle"></i>
     Inquiry Management
@@ -632,82 +636,135 @@ foreach ($new_inquiries as $inquiry) {
 <div class="interface-container" id="amortizationInterface">
   <div class="interface-header">
     <h2 class="interface-title">
-      <i class="fas fa-calculator"></i>
-      Amortization Management
+      <i class="fas fa-calendar-check"></i>
+      Amortization Payment Management
     </h2>
     <button class="interface-close" id="closeAmortization">&times;</button>
   </div>
 
   <div class="tab-navigation">
-    <button class="tab-button active" data-tab="amortization-setup">Setup Plans</button>
-    <button class="tab-button" data-tab="amortization-current">Current Plans</button>
+    <button class="tab-button active" data-tab="amortization-upcoming">Upcoming Payments</button>
+    <button class="tab-button" data-tab="amortization-overdue">Overdue Payments</button>
+    <button class="tab-button" data-tab="amortization-recent">Recent Confirmations</button>
   </div>
 
-  <div class="tab-content active" id="amortization-setup">
-    <h3 class="section-heading">Create New Amortization Plan</h3>
-    <form id="amortizationSetupForm">
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Customer Name</label>
-          <select class="form-select" required>
-            <option value="">Select customer</option>
-            <option value="john-doe">John Doe</option>
-            <option value="maria-santos">Maria Santos</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Vehicle Model</label>
-          <select class="form-select" required>
-            <option value="">Select vehicle</option>
-            <option value="montero-sport">Montero Sport GLS Premium 2024</option>
-            <option value="xpander">Xpander GLX AT 2024</option>
-          </select>
-        </div>
+  <!-- Upcoming Payments Tab -->
+  <div class="tab-content active" id="amortization-upcoming">
+    <div class="info-cards">
+      <div class="info-card">
+        <div class="info-card-title">Total Upcoming</div>
+        <div class="info-card-value" id="amortUpcomingCount">0</div>
       </div>
+      <div class="info-card">
+        <div class="info-card-title">Total Amount</div>
+        <div class="info-card-value" id="amortUpcomingAmount">₱0.00</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-title">Due This Week</div>
+        <div class="info-card-value" id="amortDueThisWeek">0</div>
+      </div>
+    </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Vehicle Price (₱)</label>
-          <input type="number" class="form-input" placeholder="Enter vehicle price" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Down Payment (₱)</label>
-          <input type="number" class="form-input" placeholder="Enter down payment amount" required>
-        </div>
-      </div>
-
-      <div class="action-area">
-        <button type="submit" class="btn btn-primary">Create Plan</button>
-        <button type="button" class="btn btn-secondary">Calculate Preview</button>
-      </div>
-    </form>
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Order #</th>
+            <th>Customer Name</th>
+            <th>Vehicle</th>
+            <th>Payment #</th>
+            <th>Amount Due</th>
+            <th>Due Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="amortUpcomingTable">
+          <tr>
+            <td colspan="8" class="text-center">Loading upcoming payments...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <div class="tab-content" id="amortization-current">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Plan ID</th>
-          <th>Customer</th>
-          <th>Vehicle</th>
-          <th>Monthly Payment</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>AMP-2024-001</td>
-          <td>John Doe</td>
-          <td>Montero Sport 2024</td>
-          <td>₱45,800</td>
-          <td><span class="status approved">Active</span></td>
-          <td class="table-actions">
-            <button class="btn btn-small btn-outline">View Details</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <!-- Overdue Payments Tab -->
+  <div class="tab-content" id="amortization-overdue">
+    <div class="info-cards">
+      <div class="info-card">
+        <div class="info-card-title">Total Overdue</div>
+        <div class="info-card-value" id="amortOverdueCount">0</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-title">Total Amount</div>
+        <div class="info-card-value" id="amortOverdueAmount">₱0.00</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-title">Critical (>30 days)</div>
+        <div class="info-card-value" id="amortCriticalCount">0</div>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Order #</th>
+            <th>Customer Name</th>
+            <th>Vehicle</th>
+            <th>Payment #</th>
+            <th>Amount Due</th>
+            <th>Due Date</th>
+            <th>Days Overdue</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="amortOverdueTable">
+          <tr>
+            <td colspan="8" class="text-center">Loading overdue payments...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent Confirmations Tab -->
+  <div class="tab-content" id="amortization-recent">
+    <div class="info-cards">
+      <div class="info-card">
+        <div class="info-card-title">Today's Confirmations</div>
+        <div class="info-card-value" id="amortTodayCount">0</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-title">This Week</div>
+        <div class="info-card-value" id="amortWeekCount">0</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-title">Total Amount</div>
+        <div class="info-card-value" id="amortRecentAmount">₱0.00</div>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Payment Ref</th>
+            <th>Customer Name</th>
+            <th>Vehicle</th>
+            <th>Amount</th>
+            <th>Payment Date</th>
+            <th>Processed By</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="amortRecentTable">
+          <tr>
+            <td colspan="7" class="text-center">Loading recent confirmations...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -933,20 +990,24 @@ foreach ($new_inquiries as $inquiry) {
     // Interface toggle buttons
     const testDriveBtn = document.getElementById('testDriveBtn');
     const paymentTransactionBtn = document.getElementById('paymentTransactionBtn');
+    const amortizationBtn = document.getElementById('amortizationBtn');
     const inquiryBtn = document.getElementById('inquiryBtn');
 
     const testDriveInterface = document.getElementById('testDriveInterface');
     const paymentTransactionInterface = document.getElementById('paymentTransactionInterface');
+    const amortizationInterface = document.getElementById('amortizationInterface');
     const inquiryInterface = document.getElementById('inquiryInterface');
 
     const closeTestDrive = document.getElementById('closeTestDrive');
     const closePaymentTransaction = document.getElementById('closePaymentTransaction');
+    const closeAmortization = document.getElementById('closeAmortization');
     const closeInquiry = document.getElementById('closeInquiry');
 
     // Hide all interfaces
     function hideAllInterfaces() {
       if (testDriveInterface) testDriveInterface.style.display = 'none';
       if (paymentTransactionInterface) paymentTransactionInterface.style.display = 'none';
+      if (amortizationInterface) amortizationInterface.style.display = 'none';
       if (inquiryInterface) inquiryInterface.style.display = 'none';
     }
 
@@ -971,6 +1032,19 @@ foreach ($new_inquiries as $inquiry) {
       });
     }
 
+    if (amortizationBtn) {
+      amortizationBtn.addEventListener('click', function() {
+        hideAllInterfaces();
+        amortizationInterface.style.display = 'block';
+        // Load amortization data when opening interface
+        setTimeout(() => {
+          loadUpcomingPayments();
+          loadOverduePayments();
+          loadRecentConfirmations();
+        }, 100);
+      });
+    }
+
     if (inquiryBtn) {
       inquiryBtn.addEventListener('click', function() {
         hideAllInterfaces();
@@ -991,6 +1065,12 @@ foreach ($new_inquiries as $inquiry) {
       });
     }
 
+    if (closeAmortization) {
+      closeAmortization.addEventListener('click', function() {
+        amortizationInterface.style.display = 'none';
+      });
+    }
+
     if (closeInquiry) {
       closeInquiry.addEventListener('click', function() {
         inquiryInterface.style.display = 'none';
@@ -1008,6 +1088,21 @@ foreach ($new_inquiries as $inquiry) {
           loadAgentVerifiedPayments();
         } else if (tabId === 'payment-customers') {
           loadAgentLoanCustomers();
+        }
+      });
+    });
+
+    // Handle amortization tab switching
+    const amortizationTabs = document.querySelectorAll('#amortizationInterface .tab-button');
+    amortizationTabs.forEach(tab => {
+      tab.addEventListener('click', function() {
+        const tabId = this.getAttribute('data-tab');
+        if (tabId === 'amortization-upcoming') {
+          loadUpcomingPayments();
+        } else if (tabId === 'amortization-overdue') {
+          loadOverduePayments();
+        } else if (tabId === 'amortization-recent') {
+          loadRecentConfirmations();
         }
       });
     });
@@ -2059,6 +2154,246 @@ document.head.appendChild(modalInspiredStyle);
         confirmButtonColor: '#dc143c'
       });
       // TODO: Implement full loan details view with payment schedule
+    };
+
+    // Amortization Management Functions
+    window.loadUpcomingPayments = function() {
+      fetch('../../includes/api/amortization_api.php?action=getUpcomingPayments')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            displayUpcomingPayments(data.data);
+            updateUpcomingStats(data.stats);
+          } else {
+            console.error('Error loading upcoming payments:', data.error);
+            document.getElementById('amortUpcomingTable').innerHTML = 
+              '<tr><td colspan="8" class="text-center">Error loading payments</td></tr>';
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          document.getElementById('amortUpcomingTable').innerHTML = 
+            '<tr><td colspan="8" class="text-center">Error loading payments</td></tr>';
+        });
+    };
+
+    function displayUpcomingPayments(payments) {
+      const tbody = document.getElementById('amortUpcomingTable');
+      
+      if (payments.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center">No upcoming payments in the next 30 days</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = payments.map(payment => {
+        const daysUntilDue = parseInt(payment.days_until_due);
+        let statusClass = 'status approved';
+        let statusText = 'Upcoming';
+        
+        if (daysUntilDue <= 3) {
+          statusClass = 'status urgent';
+          statusText = 'Due Soon';
+        } else if (payment.status === 'Partial') {
+          statusClass = 'status pending';
+          statusText = 'Partial';
+        }
+        
+        return `
+          <tr>
+            <td>${payment.order_number}</td>
+            <td>${payment.customer_name}<br><small>${payment.customer_email || ''}</small></td>
+            <td>${payment.vehicle_model} ${payment.vehicle_variant || ''}</td>
+            <td>${payment.payment_number} of ${payment.total_payments}</td>
+            <td>₱${parseFloat(payment.amount_due).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            <td>${new Date(payment.due_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}</td>
+            <td><span class="${statusClass}">${statusText}</span></td>
+            <td class="table-actions">
+              <button class="btn btn-small btn-success" onclick="confirmAmortPayment(${payment.schedule_id}, '${payment.order_number}', '${payment.customer_name}', ${payment.amount_due}, '${payment.due_date}', ${payment.payment_number}, ${payment.total_payments})" title="Confirm Payment">
+                <i class="fas fa-check"></i> Confirm
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function updateUpcomingStats(stats) {
+      document.getElementById('amortUpcomingCount').textContent = stats.total_upcoming;
+      document.getElementById('amortUpcomingAmount').textContent = '₱' + parseFloat(stats.total_amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      document.getElementById('amortDueThisWeek').textContent = stats.due_this_week;
+    }
+
+    window.loadOverduePayments = function() {
+      fetch('../../includes/api/amortization_api.php?action=getOverduePayments')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            displayOverduePayments(data.data);
+            updateOverdueStats(data.stats);
+          } else {
+            console.error('Error loading overdue payments:', data.error);
+            document.getElementById('amortOverdueTable').innerHTML = 
+              '<tr><td colspan="8" class="text-center">Error loading payments</td></tr>';
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          document.getElementById('amortOverdueTable').innerHTML = 
+            '<tr><td colspan="8" class="text-center">Error loading payments</td></tr>';
+        });
+    };
+
+    function displayOverduePayments(payments) {
+      const tbody = document.getElementById('amortOverdueTable');
+      
+      if (payments.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center">No overdue payments</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = payments.map(payment => {
+        const daysOverdue = parseInt(payment.days_overdue);
+        const statusClass = daysOverdue > 30 ? 'status rejected' : 'status overdue';
+        
+        return `
+          <tr>
+            <td>${payment.order_number}</td>
+            <td>${payment.customer_name}<br><small>${payment.customer_email || ''}</small></td>
+            <td>${payment.vehicle_model} ${payment.vehicle_variant || ''}</td>
+            <td>${payment.payment_number} of ${payment.total_payments}</td>
+            <td>₱${parseFloat(payment.amount_due).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            <td>${new Date(payment.due_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}</td>
+            <td><span class="${statusClass}">${daysOverdue} days</span></td>
+            <td class="table-actions">
+              <button class="btn btn-small btn-success" onclick="confirmAmortPayment(${payment.schedule_id}, '${payment.order_number}', '${payment.customer_name}', ${payment.amount_due}, '${payment.due_date}', ${payment.payment_number}, ${payment.total_payments})" title="Confirm Payment">
+                <i class="fas fa-check"></i> Confirm
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function updateOverdueStats(stats) {
+      document.getElementById('amortOverdueCount').textContent = stats.total_overdue;
+      document.getElementById('amortOverdueAmount').textContent = '₱' + parseFloat(stats.total_amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      document.getElementById('amortCriticalCount').textContent = stats.critical;
+    }
+
+    window.loadRecentConfirmations = function() {
+      fetch('../../includes/api/amortization_api.php?action=getRecentConfirmations')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            displayRecentConfirmations(data.data);
+            updateRecentStats(data.stats);
+          } else {
+            console.error('Error loading recent confirmations:', data.error);
+            document.getElementById('amortRecentTable').innerHTML = 
+              '<tr><td colspan="7" class="text-center">Error loading confirmations</td></tr>';
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          document.getElementById('amortRecentTable').innerHTML = 
+            '<tr><td colspan="7" class="text-center">Error loading confirmations</td></tr>';
+        });
+    };
+
+    function displayRecentConfirmations(confirmations) {
+      const tbody = document.getElementById('amortRecentTable');
+      
+      if (confirmations.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No recent confirmations in the last 30 days</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = confirmations.map(conf => `
+        <tr>
+          <td>${conf.payment_ref}</td>
+          <td>${conf.customer_name}<br><small>${conf.customer_email || ''}</small></td>
+          <td>${conf.vehicle_model} ${conf.vehicle_variant || ''}</td>
+          <td>₱${parseFloat(conf.amount_paid).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+          <td>${new Date(conf.payment_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}</td>
+          <td>${conf.processed_by_name || 'N/A'}</td>
+          <td><span class="status approved">${conf.status}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    function updateRecentStats(stats) {
+      document.getElementById('amortTodayCount').textContent = stats.today_confirmations;
+      document.getElementById('amortWeekCount').textContent = stats.week_confirmations;
+      document.getElementById('amortRecentAmount').textContent = '₱' + parseFloat(stats.total_amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+
+    window.confirmAmortPayment = function(scheduleId, orderNumber, customerName, amount, dueDate, paymentNum, totalPayments) {
+      Swal.fire({
+        title: 'Confirm Payment',
+        html: `
+          <div style="text-align: left; padding: 0 1.25rem;">
+            <p style="margin-bottom: 0.75rem;"><strong>Order:</strong> ${orderNumber}</p>
+            <p style="margin-bottom: 0.75rem;"><strong>Customer:</strong> ${customerName}</p>
+            <p style="margin-bottom: 0.75rem;"><strong>Payment:</strong> ${paymentNum} of ${totalPayments}</p>
+            <p style="margin-bottom: 0.75rem;"><strong>Amount:</strong> ₱${parseFloat(amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+            <p style="margin-bottom: 0.75rem;"><strong>Due Date:</strong> ${new Date(dueDate).toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric'})}</p>
+            <div style="background: #fff3cd; padding: 0.75rem; border-radius: 0.25rem; margin-top: 1rem; border-left: 0.25rem solid #ffc107;">
+              <p style="margin: 0; font-size: 0.875rem; color: #856404;">
+                <i class="fas fa-info-circle"></i> This will mark the payment as received and record it in the payment history.
+              </p>
+            </div>
+          </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="fas fa-check"></i> Confirm Payment',
+        cancelButtonText: 'Cancel'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const formData = new FormData();
+          formData.append('action', 'confirmPayment');
+          formData.append('schedule_id', scheduleId);
+          
+          fetch('../../includes/api/amortization_api.php', {
+            method: 'POST',
+            body: formData
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              Swal.fire({
+                title: 'Success!',
+                text: 'Payment confirmed successfully',
+                icon: 'success',
+                confirmButtonColor: '#28a745'
+              }).then(() => {
+                // Reload all payment data
+                loadUpcomingPayments();
+                loadOverduePayments();
+                loadRecentConfirmations();
+              });
+            } else {
+              Swal.fire({
+                title: 'Error!',
+                text: data.error || 'Failed to confirm payment',
+                icon: 'error',
+                confirmButtonColor: '#dc3545'
+              });
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+              title: 'Error!',
+              text: 'Network error occurred',
+              icon: 'error',
+              confirmButtonColor: '#dc3545'
+            });
+          });
+        }
+      });
     };
 
 </script>
