@@ -155,7 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         body {
-            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 25%, #2d1b1b 50%, #8b0000 75%, #b80000 100%);
+            background: #ffffff;
             min-height: 100vh;
             color: white;
             overflow: visible !important;
@@ -164,7 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .header {
-            background: rgba(0, 0, 0, 0.4);
+            background: #000000;
             padding: 20px 30px;
             display: flex;
             justify-content: space-between;
@@ -228,7 +228,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .page-header h1 {
             font-size: 3rem;
-            background: linear-gradient(45deg, #ffd700, #ffed4e, #fff);
+            background: #E60012;
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -236,11 +236,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .test-drive-form {
-            background: rgba(255, 255, 255, 0.08);
+            background: #ffffff;
+            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.5);
             border-radius: 20px;
             padding: 40px;
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 215, 0, 0.1);
+            border: 2px solid rgba(255, 215, 0, 0.1);
             height: auto !important;
             max-height: none !important;
             overflow-y: visible !important;
@@ -251,7 +252,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .section-title {
-            color: #ffd700;
+            color: #000000;
             font-size: 1.5rem;
             margin-bottom: 20px;
             display: flex;
@@ -268,18 +269,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
              border: 2px solid rgba(255, 215, 0, 0.3);
              border-radius: 15px;
              padding: 25px;
-             text-align: center;
+             text-align: center;i
          }
 
          .vehicle-display h3 {
-             color: #ffd700;
+             color: #E50013E5;
              font-size: 1.8rem;
              margin-bottom: 10px;
              font-weight: 700;
          }
 
          .vehicle-variant {
-             color: rgba(255, 255, 255, 0.8);
+             color: rgba(2, 2, 2, 1);
              font-size: 1.1rem;
              margin: 0;
          }
@@ -306,10 +307,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .form-group textarea {
             width: 100%;
             padding: 12px 16px;
-            border: 2px solid rgba(255, 215, 0, 0.3);
+            border: 2px solid rgba(0, 0, 0, 0.3);
             border-radius: 12px;
             background: rgba(255, 255, 255, 0.08);
-            color: white;
+            color: #000000;
             font-size: 1rem;
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
@@ -328,7 +329,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             -moz-appearance: none;
             background: rgba(255, 255, 255, 0.08);
             padding-right: 45px;
-            border: 2px solid rgba(255, 215, 0, 0.3);
+            border: 2px solid rgba(0, 0, 0, 0.3);
             border-radius: 12px;
             box-sizing: border-box;
             width: 100%;
@@ -343,7 +344,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             right: 15px;
             top: 50%;
             transform: translateY(-50%);
-            color: #ffd700;
+            color: #000000ff;
             pointer-events: none;
             font-size: 1rem;
             transition: transform 0.3s ease;
@@ -361,7 +362,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
-            border-color: #ffd700;
+            border-color: #000000ff;
             box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
             background: rgba(255, 255, 255, 0.12);
             transform: translateY(-2px);
@@ -369,7 +370,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .form-group input::placeholder,
         .form-group textarea::placeholder {
-            color: rgba(255, 255, 255, 0.6);
+            color: rgba(0, 0, 0, 1);
         }
 
         .form-group select option {
@@ -408,7 +409,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #ffd700;
+            color: #e50013e5;
             font-size: 0.95rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -436,9 +437,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             gap: 10px;
             padding: 15px 20px;
             background: rgba(255, 255, 255, 0.08);
-            border: 2px solid rgba(255, 215, 0, 0.3);
+            border: 2px solid rgba(0, 0, 0, 0.3);
             border-radius: 12px;
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(0, 0, 0, 0.8);
             font-size: 0.95rem;
             transition: all 0.3s ease;
             cursor: pointer;
@@ -449,11 +450,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: rgba(255, 255, 255, 0.12);
             border-color: #ffd700;
             transform: translateY(-2px);
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+            box-shadow: 0 0 20px rgba(255, 8, 0, 0.4);
         }
 
         .file-upload-display i {
-            color: #ffd700;
+            color: #e60013c0;
             font-size: 1.2rem;
         }
 
@@ -462,7 +463,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .file-upload-wrapper input[type="file"]:focus + .file-upload-display {
-            border-color: #ffd700;
+            border-color: #000000ff;
             box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
             background: rgba(255, 255, 255, 0.12);
         }
@@ -498,15 +499,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .info-box {
-            background: rgba(255, 215, 0, 0.1);
+            background: rgba(223, 200, 71, 0.73);
             border: 1px solid rgba(255, 215, 0, 0.3);
             border-radius: 10px;
             padding: 20px;
             margin-bottom: 30px;
+            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.3);
         }
 
         .info-box h3 {
-            color: #ffd700;
+            color: #000000;
             margin-bottom: 10px;
         }
 
@@ -516,13 +518,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .info-box li {
+            color: #000000;
             padding: 5px 0;
             opacity: 0.9;
         }
 
         .info-box li:before {
             content: "✓ ";
-            color: #ffd700;
+            color: #E60012;
             font-weight: bold;
         }
 
@@ -612,7 +615,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="container">
         <div class="page-header">
             <h1>Schedule a Test Drive</h1>
-            <p>Experience the performance and comfort of Mitsubishi vehicles</p>
+            <p style = "color: #000000;" >Experience the performance and comfort of Mitsubishi vehicles</p>
         </div>
 
         <div class="info-box">

@@ -3,14 +3,14 @@
   footer {
     background: #1a1a1a;
     color: #ccc;
-    padding: 30px 0 15px;
+    padding: 30px 32px 15px;
     border-top: 1px solid #333;
   }
   
 
   .footer-content {
-    width: 100%;
-    padding: 0 32px;
+    max-width: 1200px;
+    margin: 0 auto;
     display: grid;
     grid-template-columns: 2fr 1fr 1fr;
     gap: 30px;
@@ -95,14 +95,13 @@
   /* Mobile Responsive */
   @media (max-width: 768px) {
     footer {
-      padding: 25px 0 15px;
+      padding: 25px 20px 15px;
     }
     
     .footer-content {
       grid-template-columns: 1fr;
       gap: 20px;
       text-align: center;
-      padding: 0 20px;
     }
     
     .social-links {
@@ -112,12 +111,11 @@
 
   @media (max-width: 575px) {
     footer {
-      padding: 20px 0 15px;
+      padding: 20px 10px 15px;
     }
     
     .footer-content {
       gap: 15px;
-      padding: 0 10px;
     }
   }
 </style>
