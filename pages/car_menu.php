@@ -914,7 +914,7 @@ try {
                     nextEl: '.swiper-button-next',
                     prevEl: '.swiper-button-prev',
                 },
-                loop: false,
+                loop: true,
                 loopAdditionalSlides: 0,
                 autoplay: false,
                 touchRatio: slideCount <= 4 ? 2 : 1,
