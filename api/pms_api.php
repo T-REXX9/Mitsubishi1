@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json');
-require_once dirname(dirname(__DIR__)) . '/includes/init.php';
-require_once dirname(dirname(__DIR__)) . '/includes/handlers/pms_handler.php';
+require_once dirname(__DIR__) . '/includes/init.php';
+require_once dirname(__DIR__) . '/includes/handlers/pms_handler.php';
 
 // Check if user is logged in and has proper role
 if (!isset($_SESSION['user_id']) || !in_array($_SESSION['user_role'], ['Admin', 'SalesAgent'])) {
@@ -137,6 +137,47 @@ try {
             echo json_encode(['success' => true, 'data' => $agents]);
             break;
             
+        case 'get_record':
+            $pmsId = $_GET['pms_id'] ?? 0;
+            if (!$pmsId) {
+                throw new Exception('PMS ID is required');
+            }
+            
+            $result = $pmsHandler->getPMSRecordById($pmsId);
+            echo json_encode($result);
+            break;
+            
+        case 'update_record':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('POST method required');
+            }
+            
+            $pmsId = $_POST['pms_id'] ?? 0;
+            if (!$pmsId) {
+                throw new Exception('PMS ID is required');
+            }
+            
+            $data = [
+                'pms_info' => $_POST['pms_info'] ?? null,
+                'pms_date' => $_POST['pms_date'] ?? null,
+                'current_odometer' => $_POST['current_odometer'] ?? null,
+                'service_notes_findings' => $_POST['service_notes_findings'] ?? null,
+                'next_pms_due' => $_POST['next_pms_due'] ?? null,
+                'model' => $_POST['model'] ?? null,
+                'plate_number' => $_POST['plate_number'] ?? null,
+                'color' => $_POST['color'] ?? null,
+                'transmission' => $_POST['transmission'] ?? null
+            ];
+            
+            // Remove null values
+            $data = array_filter($data, function($value) {
+                return $value !== null;
+            });
+            
+            $result = $pmsHandler->updatePMSRecord($pmsId, $data);
+            echo json_encode($result);
+            break;
+            
         default:
             throw new Exception('Invalid action specified');
     }
@@ -147,3 +188,4 @@ try {
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 ?>
+

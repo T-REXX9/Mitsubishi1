@@ -99,7 +99,7 @@ $customers = $pmsHandler->getCustomers();
         <div class="filter-row">
           <div class="filter-group">
             <label for="client-search">Search Client/Vehicle</label>
-            <input type="text" id="client-search" class="filter-input" placeholder="Client name or plate number">
+            <input type="text" id="client-search" class="filter-input" placeholder="Search by client name, vehicle model, or plate number">
           </div>
           <div class="filter-group">
             <label for="pms-type">PMS Type</label>
@@ -223,7 +223,7 @@ $customers = $pmsHandler->getCustomers();
                           </button>
                         <?php endif; ?>
                         
-                        <?php if (($record['request_status'] ?? '') === 'Pending'): ?>
+                        <?php if (($_SESSION['user_role'] ?? '') === 'SalesAgent' && ($record['request_status'] ?? '') === 'Pending'): ?>
                           <button class="btn-small btn-view" title="Approve" onclick="updateStatus(<?php echo $record['pms_id'] ?? 0; ?>, 'Approved')" style="background: #27ae60;">
                             <i class="fas fa-check"></i>
                           </button>
@@ -291,7 +291,7 @@ $customers = $pmsHandler->getCustomers();
 
   <!-- Edit PMS Record Modal -->
   <div class="modal-overlay" id="editPMSModal">
-    <div class="modal">
+    <div class="modal modal-large">
       <div class="modal-header">
         <h3>Edit PMS Record</h3>
         <button class="modal-close" onclick="closeEditPMSModal()">
@@ -299,11 +299,80 @@ $customers = $pmsHandler->getCustomers();
         </button>
       </div>
       <div class="modal-body">
-        <p>Edit functionality will be implemented in future updates.</p>
-        <p>For now, you can view the PMS history and update status through the available actions.</p>
+        <form id="editPMSForm">
+          <input type="hidden" id="edit_pms_id" name="pms_id">
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit_model">Vehicle Model</label>
+              <input type="text" id="edit_model" name="model" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label for="edit_plate_number">Plate Number</label>
+              <input type="text" id="edit_plate_number" name="plate_number" class="form-input" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit_color">Color</label>
+              <input type="text" id="edit_color" name="color" class="form-input">
+            </div>
+            <div class="form-group">
+              <label for="edit_transmission">Transmission</label>
+              <select id="edit_transmission" name="transmission" class="form-select">
+                <option value="Automatic">Automatic</option>
+                <option value="Manual">Manual</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit_pms_info">PMS Type</label>
+              <select id="edit_pms_info" name="pms_info" class="form-select" required>
+                <option value="First 1K KM">First 1K KM</option>
+                <option value="5K KM">5K KM</option>
+                <option value="10K KM">10K KM</option>
+                <option value="15K KM">15K KM</option>
+                <option value="20K KM">20K KM</option>
+                <option value="40K KM">40K KM</option>
+                <option value="60K KM">60K KM</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="edit_current_odometer">Current Odometer (KM)</label>
+              <input type="number" id="edit_current_odometer" name="current_odometer" class="form-input" min="0" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit_pms_date">Service Date</label>
+              <input type="date" id="edit_pms_date" name="pms_date" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label for="edit_next_pms_due">Next PMS Due</label>
+              <input type="text" id="edit_next_pms_due" name="next_pms_due" class="form-input" placeholder="e.g., 20K KM or Date">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="edit_service_notes">Service Notes / Findings</label>
+            <textarea id="edit_service_notes" name="service_notes_findings" class="form-textarea" rows="4" placeholder="Enter service notes and findings..."></textarea>
+          </div>
+
+          <div class="edit-loading" id="editLoading" style="display: none; text-align: center; padding: 20px;">
+            <i class="fas fa-spinner fa-spin fa-2x"></i>
+            <p style="margin-top: 10px;">Loading record...</p>
+          </div>
+        </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" onclick="closeEditPMSModal()">Close</button>
+        <button type="button" class="btn btn-secondary" onclick="closeEditPMSModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveEditPMSRecord()">
+          <i class="fas fa-save"></i> Save Changes
+        </button>
       </div>
     </div>
   </div>
@@ -381,6 +450,7 @@ $customers = $pmsHandler->getCustomers();
   <script>
     // Store customers data for reference
     const customers = <?php echo json_encode($customers); ?>;
+    const userRole = '<?php echo $_SESSION['user_role'] ?? ''; ?>';
     
     // Function to view PMS history
     function viewPMSHistory(customerId) {
@@ -395,7 +465,7 @@ $customers = $pmsHandler->getCustomers();
       document.getElementById('pmsHistoryModal').classList.add('active');
       
       // Fetch history data
-      fetch(`pms_api.php?action=get_customer_history&customer_id=${customerId}`)
+      fetch(`../../api/pms_api.php?action=get_customer_history&customer_id=${customerId}`)
         .then(response => response.json())
         .then(data => {
           if (data.success) {
@@ -473,7 +543,7 @@ $customers = $pmsHandler->getCustomers();
       formData.append('pms_id', pmsId);
       formData.append('status', status);
       
-      fetch('pms_api.php?action=update_status', {
+      fetch('../../api/pms_api.php?action=update_status', {
         method: 'POST',
         body: formData
       })
@@ -502,7 +572,7 @@ $customers = $pmsHandler->getCustomers();
       
       const params = new URLSearchParams(filters);
       
-      fetch(`pms_api.php?action=get_pms_records&${params}`)
+      fetch(`../../api/pms_api.php?action=get_pms_records&${params}`)
         .then(response => response.json())
         .then(data => {
           if (data.success) {
@@ -542,14 +612,14 @@ $customers = $pmsHandler->getCustomers();
           // Receipt button for records with receipts
           if (record.has_receipt) {
             actionButtons += `
-              <button class="btn-small btn-view" title="View Receipt" onclick="viewReceipt(${record.pms_id})" style="background: #17ae60;">
+              <button class="btn-small btn-view" title="View Receipt" onclick="viewReceipt(${record.pms_id})" style="background: #17a2b8;">
                 <i class="fas fa-receipt"></i>
               </button>
             `;
           }
           
-          // Approve button for pending records
-          if (isPending) {
+          // Approve button for pending records (only for sales agents)
+          if (isPending && userRole === 'SalesAgent') {
             actionButtons += `
               <button class="btn-small btn-view" title="Approve" onclick="updateStatus(${record.pms_id || 0}, 'Approved')" style="background: #27ae60;">
                 <i class="fas fa-check"></i>
@@ -701,8 +771,93 @@ $customers = $pmsHandler->getCustomers();
       document.getElementById('statusUpdateModal').classList.remove('active');
     }
 
+    function editPMSRecord(pmsId) {
+      if (!pmsId) {
+        showNotification('Error: Invalid PMS ID', 'error');
+        return;
+      }
+      
+      // Show modal and loading state
+      document.getElementById('editPMSModal').classList.add('active');
+      document.getElementById('editPMSForm').style.display = 'none';
+      document.getElementById('editLoading').style.display = 'block';
+      
+      // Fetch record data
+      fetch(`../../api/pms_api.php?action=get_record&pms_id=${pmsId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            populateEditForm(data.data);
+            document.getElementById('editLoading').style.display = 'none';
+            document.getElementById('editPMSForm').style.display = 'block';
+          } else {
+            throw new Error(data.message || 'Failed to load record');
+          }
+        })
+        .catch(error => {
+          console.error('Error loading record:', error);
+          showNotification('Failed to load record: ' + error.message, 'error');
+          closeEditPMSModal();
+        });
+    }
+
+    function populateEditForm(record) {
+      document.getElementById('edit_pms_id').value = record.pms_id || '';
+      document.getElementById('edit_model').value = record.model || '';
+      document.getElementById('edit_plate_number').value = record.plate_number || '';
+      document.getElementById('edit_color').value = record.color || '';
+      document.getElementById('edit_transmission').value = record.transmission || 'Automatic';
+      document.getElementById('edit_pms_info').value = record.pms_info || '';
+      document.getElementById('edit_current_odometer').value = record.current_odometer || 0;
+      document.getElementById('edit_pms_date').value = record.pms_date || '';
+      document.getElementById('edit_next_pms_due').value = record.next_pms_due || '';
+      document.getElementById('edit_service_notes').value = record.service_notes_findings || '';
+    }
+
+    function saveEditPMSRecord() {
+      const form = document.getElementById('editPMSForm');
+      
+      // Basic validation
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+      
+      const formData = new FormData(form);
+      
+      // Disable save button to prevent double submission
+      const saveBtn = event.target;
+      const originalText = saveBtn.innerHTML;
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+      
+      fetch('../../api/pms_api.php?action=update_record', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showNotification('PMS record updated successfully!', 'success');
+          closeEditPMSModal();
+          // Reload the table to show updated data
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          throw new Error(data.message);
+        }
+      })
+      .catch(error => {
+        showNotification('Failed to update record: ' + error.message, 'error');
+      })
+      .finally(() => {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalText;
+      });
+    }
+
     function closeEditPMSModal() {
       document.getElementById('editPMSModal').classList.remove('active');
+      document.getElementById('editPMSForm').reset();
     }
 
     function closeExportHistoryModal() {
@@ -745,6 +900,19 @@ $customers = $pmsHandler->getCustomers();
       }
     }
 
+    // Debounce function to limit API calls
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+
     // Initialize page
     document.addEventListener('DOMContentLoaded', function() {
       // Add click outside modal to close functionality
@@ -755,6 +923,19 @@ $customers = $pmsHandler->getCustomers();
           }
         });
       });
+
+      // Real-time search functionality with debounce
+      const searchInput = document.getElementById('client-search');
+      const debouncedSearch = debounce(applyFilters, 500);
+      
+      searchInput.addEventListener('input', function() {
+        debouncedSearch();
+      });
+
+      // Also trigger filter when other dropdowns change
+      document.getElementById('pms-type').addEventListener('change', applyFilters);
+      document.getElementById('completion-period').addEventListener('change', applyFilters);
+      document.getElementById('status-filter').addEventListener('change', applyFilters);
     });
   </script>
 
@@ -987,19 +1168,47 @@ $customers = $pmsHandler->getCustomers();
       color: #2c3e50;
     }
 
-    .form-select {
-      width: 100%;
-      padding: 10px 15px;
-      border: 2px solid #e1e8ed;
-      border-radius: 8px;
-      font-size: 1rem;
-      transition: border-color 0.3s ease;
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin-bottom: 1rem;
     }
 
-    .form-select:focus {
+    @media (max-width: 768px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-select,
+    .form-input,
+    .form-textarea {
+      width: 100%;
+      padding: 0.625rem 0.9375rem;
+      border: 2px solid #e1e8ed;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+      font-family: inherit;
+    }
+
+    .form-select:focus,
+    .form-input:focus,
+    .form-textarea:focus {
       outline: none;
       border-color: #667eea;
       box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 6.25rem;
+    }
+
+    .form-input[type="number"]::-webkit-inner-spin-button,
+    .form-input[type="number"]::-webkit-outer-spin-button {
+      opacity: 1;
     }
 
     /* Notification Styles */

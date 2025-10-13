@@ -340,5 +340,117 @@ class PMSHandler {
             return [];
         }
     }
+    
+    /**
+     * Update PMS record details
+     */
+    public function updatePMSRecord($pmsId, $data) {
+        try {
+            $updateFields = [];
+            $params = ['pms_id' => $pmsId];
+            
+            // Only allow updating specific fields (not approval fields)
+            if (isset($data['pms_info'])) {
+                $updateFields[] = 'pms_info = :pms_info';
+                $params['pms_info'] = $data['pms_info'];
+            }
+            
+            if (isset($data['pms_date'])) {
+                $updateFields[] = 'pms_date = :pms_date';
+                $params['pms_date'] = $data['pms_date'];
+            }
+            
+            if (isset($data['current_odometer'])) {
+                $updateFields[] = 'current_odometer = :current_odometer';
+                $params['current_odometer'] = $data['current_odometer'];
+            }
+            
+            if (isset($data['service_notes_findings'])) {
+                $updateFields[] = 'service_notes_findings = :service_notes_findings';
+                $params['service_notes_findings'] = $data['service_notes_findings'];
+            }
+            
+            if (isset($data['next_pms_due'])) {
+                $updateFields[] = 'next_pms_due = :next_pms_due';
+                $params['next_pms_due'] = $data['next_pms_due'];
+            }
+            
+            if (isset($data['model'])) {
+                $updateFields[] = 'model = :model';
+                $params['model'] = $data['model'];
+            }
+            
+            if (isset($data['plate_number'])) {
+                $updateFields[] = 'plate_number = :plate_number';
+                $params['plate_number'] = $data['plate_number'];
+            }
+            
+            if (isset($data['color'])) {
+                $updateFields[] = 'color = :color';
+                $params['color'] = $data['color'];
+            }
+            
+            if (isset($data['transmission'])) {
+                $updateFields[] = 'transmission = :transmission';
+                $params['transmission'] = $data['transmission'];
+            }
+            
+            if (empty($updateFields)) {
+                throw new Exception('No fields to update');
+            }
+            
+            // Always update the updated_at timestamp
+            $updateFields[] = 'updated_at = NOW()';
+            
+            $query = "UPDATE car_pms_records SET " . implode(', ', $updateFields) . " WHERE pms_id = :pms_id";
+            
+            $stmt = $this->pdo->prepare($query);
+            $result = $stmt->execute($params);
+            
+            if ($result) {
+                return ['success' => true, 'message' => 'PMS record updated successfully'];
+            } else {
+                throw new Exception('Failed to update PMS record');
+            }
+        } catch (Exception $e) {
+            error_log("Error updating PMS record: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error updating PMS record: ' . $e->getMessage()];
+        }
+    }
+    
+    /**
+     * Get single PMS record by ID
+     */
+    public function getPMSRecordById($pmsId) {
+        try {
+            $query = "SELECT 
+                        p.*,
+                        CASE WHEN p.uploaded_receipt IS NOT NULL THEN 1 ELSE 0 END as has_receipt,
+                        c.firstname,
+                        c.lastname,
+                        c.middlename,
+                        c.mobile_number,
+                        CONCAT(c.firstname, ' ', IFNULL(c.middlename, ''), ' ', c.lastname) as full_name,
+                        COALESCE(sa.display_name, sa.agent_id_number, 'N/A') as approved_by_name
+                      FROM car_pms_records p
+                      LEFT JOIN customer_information c ON p.customer_id = c.cusID
+                      LEFT JOIN sales_agent_profiles sa ON p.approved_by = sa.agent_profile_id
+                      WHERE p.pms_id = :pms_id";
+            
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute(['pms_id' => $pmsId]);
+            
+            $record = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($record) {
+                return ['success' => true, 'data' => $record];
+            } else {
+                return ['success' => false, 'message' => 'PMS record not found'];
+            }
+        } catch (PDOException $e) {
+            error_log("Error getting PMS record: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error getting PMS record'];
+        }
+    }
 }
 ?>
