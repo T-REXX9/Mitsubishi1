@@ -984,15 +984,17 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
                         filePath && (String(filePath).toLowerCase().endsWith('.glb') || String(filePath).toLowerCase().endsWith('.gltf'))
                     );
 
-                    // Render color picker UI
+                    // Render color picker UI (only shows colors with available models)
                     renderColorPicker();
 
-                    // Prefer a color with explicit model mapping
-                    const firstColorWithModel = normalizedColors.find(nc => colorModels[nc]);
-                    if (firstColorWithModel) {
-                        selectedColor = firstColorWithModel;
+                    // Auto-load first available model
+                    const availableColors = Object.keys(colorModels);
+                    if (availableColors.length > 0) {
+                        const firstColor = availableColors[0];
+                        selectedColor = firstColor;
                         setActiveColorUI(selectedColor);
-                        await loadModelFromPath(colorModels[selectedColor]);
+                        console.log('Auto-loading first available color:', firstColor);
+                        await loadModelFromPath(colorModels[firstColor]);
                         return;
                     }
 
@@ -1081,18 +1083,39 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
             const container = document.getElementById('colorPicker');
             if (!container) return;
             container.innerHTML = '';
-            if (!colorOptions || colorOptions.length === 0) return;
             
-            colorOptions.forEach(color => {
-                const key = normalizeColorKey(color);
+            // Only show colors that have actual 3D models available
+            const availableColors = Object.keys(colorModels);
+            
+            // Hide the entire color control group if no models
+            const colorControlGroup = container.closest('.control-group');
+            
+            if (!availableColors || availableColors.length === 0) {
+                console.log('No 3D models available, hiding color picker');
+                container.style.display = 'none';
+                if (colorControlGroup) colorControlGroup.style.display = 'none';
+                return;
+            }
+            
+            console.log('Rendering color picker with available colors:', availableColors);
+            container.style.display = 'flex';
+            if (colorControlGroup) colorControlGroup.style.display = 'flex';
+            
+            availableColors.forEach(colorKey => {
+                // Convert normalized key back to display name (capitalize first letter of each word)
+                const displayName = colorKey
+                    .split(' ')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+                
                 const swatch = document.createElement('button');
                 swatch.type = 'button';
                 swatch.className = 'color-swatch';
-                swatch.title = color;
-                swatch.setAttribute('aria-label', `Select ${color} color`);
+                swatch.title = displayName;
+                swatch.setAttribute('aria-label', `Select ${displayName} color`);
                 
                 // Get proper color value for display
-                const colorValue = getColorValue(color);
+                const colorValue = getColorValue(colorKey);
                 if (colorValue) {
                     swatch.style.background = colorValue;
                 } else {
@@ -1104,11 +1127,11 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
                     swatch.style.textAlign = 'center';
                     swatch.style.lineHeight = '1';
                     swatch.style.padding = '0.125rem';
-                    swatch.textContent = color.substring(0, 3).toUpperCase();
+                    swatch.textContent = displayName.substring(0, 3).toUpperCase();
                 }
                 
-                swatch.dataset.colorKey = key;
-                swatch.addEventListener('click', () => selectColor(key));
+                swatch.dataset.colorKey = colorKey;
+                swatch.addEventListener('click', () => selectColor(colorKey));
                 container.appendChild(swatch);
             });
         }
@@ -1213,19 +1236,19 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
 
         async function selectColor(colorKey) {
             console.log('Color selected:', colorKey);
-            console.log('Available models:', colorModels);
-            console.log('Model for this color:', colorModels[colorKey]);
             
             selectedColor = colorKey;
             setActiveColorUI(colorKey);
+            
+            // Get model for this color (will always exist since picker only shows available colors)
             const model = colorModels[colorKey];
+            
             if (model) {
                 console.log('Loading model:', model);
                 await loadModelFromPath(model);
             } else {
-                // No model for this color, show fallback message
-                console.warn('No 3D model available for color:', colorKey);
-                console.warn('Available color-model mappings:', Object.keys(colorModels));
+                // This shouldn't happen since we only show available colors
+                console.error('Unexpected error: Model not found for color:', colorKey);
                 showFallbackMessage();
             }
         }
