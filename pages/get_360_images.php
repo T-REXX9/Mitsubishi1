@@ -1,5 +1,6 @@
 <?php
-require_once '../includes/config.php';
+// Include the init file which sets up database connection
+require_once '../includes/init.php';
 
 header('Content-Type: application/json');
 
@@ -9,6 +10,15 @@ if (!isset($_GET['vehicle_id'])) {
 }
 
 $vehicle_id = intval($_GET['vehicle_id']);
+
+// Get PDO connection from globals (set by init.php)
+$pdo = $GLOBALS['pdo'] ?? null;
+
+if (!$pdo) {
+    error_log("get_360_images.php: Database connection not available");
+    echo json_encode(['success' => false, 'message' => 'Database connection error']);
+    exit;
+}
 
 try {
     $stmt = $pdo->prepare("SELECT view_360_images FROM vehicles WHERE id = ?");
@@ -27,19 +37,59 @@ try {
         exit;
     }
     
-    // Check if data is JSON (new format with color-model mappings)
+    // Try to decode as JSON first (new formats)
     $json_data = @json_decode($view_360_images, true);
+    
     if (json_last_error() === JSON_ERROR_NONE && is_array($json_data)) {
-        // This is the new format with color-model mappings, not actual 360 images
-        echo json_encode(['success' => false, 'message' => 'Vehicle uses 3D models, not 360 images']);
-        exit;
+        // Check if this is color-model mapping format
+        $hasColorModelMapping = false;
+        foreach ($json_data as $item) {
+            if (is_array($item) && isset($item['color']) && isset($item['model'])) {
+                $hasColorModelMapping = true;
+                break;
+            }
+        }
+        
+        if ($hasColorModelMapping) {
+            // This is color-model mapping format - these are 3D models, not 360 images
+            echo json_encode(['success' => false, 'message' => 'Vehicle uses 3D models, not 360 images']);
+            exit;
+        }
+        
+        // Check if array contains file paths (new format for images)
+        $hasImagePaths = false;
+        foreach ($json_data as $item) {
+            if (is_string($item) && preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $item)) {
+                $hasImagePaths = true;
+                break;
+            }
+        }
+        
+        if ($hasImagePaths) {
+            // Return the image paths directly - frontend will convert to full URLs
+            echo json_encode([
+                'success' => true,
+                'images' => $json_data,
+                'format' => 'paths',
+                'count' => count($json_data)
+            ]);
+            exit;
+        }
+        
+        // Check if array contains 3D model paths
+        foreach ($json_data as $item) {
+            if (is_string($item) && preg_match('/\.(glb|gltf)$/i', $item)) {
+                echo json_encode(['success' => false, 'message' => 'Vehicle uses 3D models, not 360 images']);
+                exit;
+            }
+        }
     }
     
-    // Try to unserialize the data (old format)
+    // Try to unserialize the data (legacy format with binary/serialized data)
     $images = @unserialize($view_360_images);
     
     if ($images === false) {
-        // If unserialize fails, try to handle as base64 encoded data
+        // If unserialize fails, try to handle as raw base64 or binary data
         $images = [base64_encode($view_360_images)];
     }
     
@@ -48,12 +98,12 @@ try {
         $images = [$images];
     }
     
-    // Convert binary data to base64 if needed
+    // Convert binary data to base64 if needed (legacy format)
     $base64_images = [];
     foreach ($images as $image) {
         if (is_string($image)) {
             // Check if it's already base64 encoded
-            if (base64_decode($image, true) !== false) {
+            if (base64_decode($image, true) !== false && !preg_match('/[^A-Za-z0-9+\/=]/', $image)) {
                 $base64_images[] = $image;
             } else {
                 // Convert binary to base64
@@ -62,9 +112,15 @@ try {
         }
     }
     
+    if (empty($base64_images)) {
+        echo json_encode(['success' => false, 'message' => 'No valid images found']);
+        exit;
+    }
+    
     echo json_encode([
         'success' => true,
         'images' => $base64_images,
+        'format' => 'base64',
         'count' => count($base64_images)
     ]);
     

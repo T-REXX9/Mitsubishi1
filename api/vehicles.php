@@ -393,8 +393,10 @@ function handleFileUpload($file, $uploadDir, $filePrefix) {
     
     // Move uploaded file to destination
     if (move_uploaded_file($file['tmp_name'], $filePath)) {
-        // Return absolute path for database storage
-        return realpath($filePath);
+        // Return relative web path (not absolute filesystem path) for database storage
+        // Convert to relative path from project root
+        $relativePath = str_replace('../', '', $uploadDir) . $fileName;
+        return $relativePath;
     }
     
     return false;
@@ -474,7 +476,32 @@ function createVehicle($pdo) {
                 $additionalImages = json_encode(array_map('base64_encode', $images));
             }
         }
-        // Handle color-specific 3D models (optional)
+        // Handle 360/3D images upload (direct upload without color mapping)
+        $view360ImagesPaths = [];
+        if (isset($_FILES['view_360_images']) && is_array($_FILES['view_360_images']['tmp_name'])) {
+            foreach ($_FILES['view_360_images']['tmp_name'] as $key => $tmpName) {
+                if ($_FILES['view_360_images']['error'][$key] === UPLOAD_ERR_OK) {
+                    $file = [
+                        'tmp_name' => $tmpName,
+                        'name' => $_FILES['view_360_images']['name'][$key],
+                        'type' => $_FILES['view_360_images']['type'][$key],
+                        'size' => $_FILES['view_360_images']['size'][$key]
+                    ];
+                    // Determine upload directory based on file type
+                    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                    $uploadDir = ($ext === 'glb' || $ext === 'gltf') 
+                        ? '../uploads/3d_models/' 
+                        : '../uploads/vehicle_images/360/';
+                    $prefix = 'vehicle_new_360_' . $key;
+                    $path = handleFileUpload($file, $uploadDir, $prefix);
+                    if ($path) {
+                        $view360ImagesPaths[] = $path;
+                    }
+                }
+            }
+        }
+        
+        // Handle color-specific 3D models (optional - takes precedence over generic uploads)
         $colorModelMap = [];
         if (isset($_FILES['color_model_files']) && is_array($_FILES['color_model_files']['tmp_name'])) {
             $colors = isset($_POST['color_model_colors']) && is_array($_POST['color_model_colors']) ? $_POST['color_model_colors'] : [];
@@ -496,7 +523,13 @@ function createVehicle($pdo) {
             }
         }
 
-        $view360Json = !empty($colorModelMap) ? json_encode($colorModelMap) : null;
+        // Color-specific models take precedence over generic uploads
+        $view360Json = null;
+        if (!empty($colorModelMap)) {
+            $view360Json = json_encode($colorModelMap);
+        } elseif (!empty($view360ImagesPaths)) {
+            $view360Json = json_encode($view360ImagesPaths);
+        }
 
         $sql = "INSERT INTO vehicles (
             model_name, variant, year_model, category, engine_type, transmission, 

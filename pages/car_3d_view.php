@@ -479,10 +479,10 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
         }
 
         .color-swatch {
-            width: 32px;
-            height: 32px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
-            border: 2px solid var(--border-color);
+            border: 3px solid var(--border-color);
             cursor: pointer;
             box-shadow: var(--shadow-sm);
             transition: var(--transition);
@@ -490,10 +490,33 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
             align-items: center;
             justify-content: center;
             background: #f5f5f5;
+            position: relative;
+            overflow: hidden;
         }
 
-        .color-swatch:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-        .color-swatch.active { border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(230,0,18,0.15); }
+        .color-swatch:hover { 
+            transform: translateY(-2px) scale(1.05); 
+            box-shadow: var(--shadow-md); 
+            border-color: var(--text-secondary);
+        }
+        
+        .color-swatch.active { 
+            border-color: var(--primary-color); 
+            box-shadow: 0 0 0 3px rgba(230,0,18,0.2);
+            transform: scale(1.1);
+        }
+        
+        .color-swatch.active::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--primary-color);
+            font-size: 1.25rem;
+            font-weight: bold;
+            text-shadow: 0 0 2px white, 0 0 4px white;
+        }
 
         /* Info Panel */
         .info-panel {
@@ -950,6 +973,11 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
 
                     // Build color->model map if objects provided or infer by filename
                     colorModels = buildColorModelMap(view360Files, normalizedColors);
+                    
+                    // Debug logging
+                    console.log('Color Options:', colorOptions);
+                    console.log('Normalized Colors:', normalizedColors);
+                    console.log('Color Models Mapping:', colorModels);
 
                     // Collect plain model files for non-mapped case
                     const modelFiles = flattenToArray(view360Files).filter(filePath => 
@@ -1054,29 +1082,150 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
             if (!container) return;
             container.innerHTML = '';
             if (!colorOptions || colorOptions.length === 0) return;
+            
             colorOptions.forEach(color => {
                 const key = normalizeColorKey(color);
                 const swatch = document.createElement('button');
                 swatch.type = 'button';
                 swatch.className = 'color-swatch';
                 swatch.title = color;
-                // Try to set CSS color safely; fall back to label if invalid
-                swatch.style.background = color;
+                swatch.setAttribute('aria-label', `Select ${color} color`);
+                
+                // Get proper color value for display
+                const colorValue = getColorValue(color);
+                if (colorValue) {
+                    swatch.style.background = colorValue;
+                } else {
+                    // Fallback: show color name as text for non-CSS colors
+                    swatch.style.background = '#f5f5f5';
+                    swatch.style.fontSize = '0.625rem';
+                    swatch.style.fontWeight = '600';
+                    swatch.style.color = '#333';
+                    swatch.style.textAlign = 'center';
+                    swatch.style.lineHeight = '1';
+                    swatch.style.padding = '0.125rem';
+                    swatch.textContent = color.substring(0, 3).toUpperCase();
+                }
+                
                 swatch.dataset.colorKey = key;
                 swatch.addEventListener('click', () => selectColor(key));
                 container.appendChild(swatch);
             });
         }
+        
+        // Map common car color names to hex codes
+        function getColorValue(colorName) {
+            const normalized = String(colorName).trim().toLowerCase();
+            
+            // Common car color mappings
+            const colorMap = {
+                // Standard colors
+                'white': '#FFFFFF',
+                'black': '#000000',
+                'red': '#E30019',
+                'blue': '#0047AB',
+                'silver': '#C0C0C0',
+                'gray': '#808080',
+                'grey': '#808080',
+                'green': '#00703C',
+                'yellow': '#FFED00',
+                'orange': '#FF6600',
+                'brown': '#6F4E37',
+                'gold': '#FFD700',
+                'bronze': '#CD7F32',
+                
+                // Pearl/Metallic variants
+                'pearl white': '#F8F8FF',
+                'pearl': '#F8F8FF',
+                'snow white': '#FFFAFA',
+                'titanium white': '#E8E8E8',
+                'diamond white': '#F5F5F5',
+                
+                // Black variants
+                'jet black': '#0A0A0A',
+                'onyx black': '#0F0F0F',
+                'midnight black': '#191970',
+                'diamond black': '#1C1C1C',
+                'tuxedo black': '#000000',
+                
+                // Gray variants
+                'titanium gray': '#878681',
+                'titanium grey': '#878681',
+                'graphite gray': '#41424C',
+                'graphite grey': '#41424C',
+                'sterling silver': '#C0C0C0',
+                'platinum silver': '#E5E4E2',
+                'cosmic gray': '#645E5C',
+                'cosmic grey': '#645E5C',
+                
+                // Red variants
+                'rally red': '#C1272D',
+                'passion red': '#C41E3A',
+                'electric red': '#E60012',
+                'burgundy': '#800020',
+                'maroon': '#800000',
+                
+                // Blue variants
+                'deep blue': '#003F87',
+                'ocean blue': '#4F42B5',
+                'sky blue': '#87CEEB',
+                'midnight blue': '#191970',
+                'royal blue': '#4169E1',
+                'navy blue': '#000080',
+                'navy': '#000080',
+                
+                // Green variants
+                'forest green': '#228B22',
+                'emerald green': '#50C878',
+                'olive green': '#808000',
+                'lime green': '#32CD32',
+                
+                // Other
+                'beige': '#F5F5DC',
+                'champagne': '#F7E7CE',
+                'bronze': '#CD7F32',
+                'copper': '#B87333'
+            };
+            
+            // Check if it's in the map
+            if (colorMap[normalized]) {
+                return colorMap[normalized];
+            }
+            
+            // Check if it's already a valid CSS color (hex, rgb, etc.)
+            if (/^#[0-9A-F]{3}([0-9A-F]{3})?$/i.test(colorName)) {
+                return colorName; // Valid hex color
+            }
+            
+            if (/^rgb\(/.test(normalized) || /^rgba\(/.test(normalized)) {
+                return colorName; // Valid rgb/rgba
+            }
+            
+            // Try to use as CSS color and validate
+            const testEl = document.createElement('div');
+            testEl.style.color = colorName;
+            if (testEl.style.color) {
+                return colorName; // Valid CSS color name
+            }
+            
+            return null; // Not a recognized color
+        }
 
         async function selectColor(colorKey) {
+            console.log('Color selected:', colorKey);
+            console.log('Available models:', colorModels);
+            console.log('Model for this color:', colorModels[colorKey]);
+            
             selectedColor = colorKey;
             setActiveColorUI(colorKey);
             const model = colorModels[colorKey];
             if (model) {
+                console.log('Loading model:', model);
                 await loadModelFromPath(model);
             } else {
                 // No model for this color, show fallback message
                 console.warn('No 3D model available for color:', colorKey);
+                console.warn('Available color-model mappings:', Object.keys(colorModels));
                 showFallbackMessage();
             }
         }
@@ -1170,11 +1319,26 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
             try {
                 // Fetch 360 images from the database
                 const response = await fetch(`get_360_images.php?vehicle_id=${vehicleId}`);
+                
+                if (!response.ok) {
+                    console.error('API returned error status:', response.status);
+                    showFallbackMessage();
+                    return;
+                }
+                
                 const result = await response.json();
                 
                 if (result.success && result.images && result.images.length > 0) {
-                    images360 = result.images;
-                    showImageCarousel();
+                    // Check format - either 'paths' (file paths) or 'base64' (base64 encoded images)
+                    if (result.format === 'paths') {
+                        // Convert file paths to full URLs
+                        images360 = result.images.map(path => toProjectWebUrl(path));
+                        showImageCarouselFromPaths();
+                    } else {
+                        // Legacy base64 format
+                        images360 = result.images;
+                        showImageCarousel();
+                    }
                 } else {
                     showFallbackMessage();
                 }
