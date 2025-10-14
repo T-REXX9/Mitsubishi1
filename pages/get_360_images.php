@@ -27,7 +27,15 @@ try {
         exit;
     }
     
-    // Try to unserialize the data
+    // Check if data is JSON (new format with color-model mappings)
+    $json_data = @json_decode($view_360_images, true);
+    if (json_last_error() === JSON_ERROR_NONE && is_array($json_data)) {
+        // This is the new format with color-model mappings, not actual 360 images
+        echo json_encode(['success' => false, 'message' => 'Vehicle uses 3D models, not 360 images']);
+        exit;
+    }
+    
+    // Try to unserialize the data (old format)
     $images = @unserialize($view_360_images);
     
     if ($images === false) {

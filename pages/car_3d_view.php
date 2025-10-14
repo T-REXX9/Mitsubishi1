@@ -1075,12 +1075,9 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
             if (model) {
                 await loadModelFromPath(model);
             } else {
-                // No model for this color, show images or fallback
-                if (images360 && images360.length > 0) {
-                    showImageCarouselFromPaths(images360);
-                } else {
-                    await setup360ImageCarousel();
-                }
+                // No model for this color, show fallback message
+                console.warn('No 3D model available for color:', colorKey);
+                showFallbackMessage();
             }
         }
 
