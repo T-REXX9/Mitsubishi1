@@ -162,7 +162,7 @@ if (!$customerProfile) {
         }
 
         .orders-container {
-            background: #808080;
+            background: #80808088;
             border-radius: 20px;
             padding: 30px;
             backdrop-filter: blur(20px);
@@ -183,7 +183,7 @@ if (!$customerProfile) {
         }
 
         .order-card {
-            background: rgba(255, 255, 255, 0.52);
+            background: rgba(199, 186, 186, 0.51);
             border-radius: 15px;
             padding: 25px;
             margin-bottom: 20px;
@@ -267,7 +267,7 @@ if (!$customerProfile) {
         }
 
         .detail-item {
-            background: rgba(0, 0, 0, 0.50);
+            background: #ffffff;
             padding: 15px;
             border-radius: 10px;
         }
@@ -280,7 +280,7 @@ if (!$customerProfile) {
         }
 
         .detail-value {
-            color: white;
+            color: #000000;
             font-size: 1rem;
         }
 

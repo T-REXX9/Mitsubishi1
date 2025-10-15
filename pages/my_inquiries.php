@@ -364,7 +364,7 @@ function getInquiryResponses($connect, $inquiryId) {
         .page-subtitle { color: #000000; font-size: 1.1rem; }
 
         .inquiries-container { display: grid; gap: 25px; }
-        .inquiry-card { background: #808080; border-radius: 16px; backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); overflow: hidden; transition: all 0.3s ease; }
+        .inquiry-card { background: #80808088; border-radius: 16px; backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); overflow: hidden; transition: all 0.3s ease; }
         .inquiry-card:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4); }
 
         .inquiry-header { padding: 20px; border-bottom: 1px solid rgba(0, 0, 0, 0.1); }
@@ -512,7 +512,7 @@ function getInquiryResponses($connect, $inquiryId) {
                border-bottom: 2px solid transparent; transition: all 0.3s ease; }
         .tab.active { color: #E60012; border-bottom-color: #ff0000ff; }
         .tab:hover:not(.active) { color: #E60012; }
-        .tab-badge { background: rgba(255, 215, 0, 0.2); color: #ffd700; border-radius: 10px; 
+        .tab-badge { background: rgba(255, 0, 0, 0.2); color: #00000086; border-radius: 10px; 
                     padding: 2px 8px; font-size: 0.7rem; margin-left: 5px; }
         
         /* Status badges */
