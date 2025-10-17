@@ -364,7 +364,7 @@ function getInquiryResponses($connect, $inquiryId) {
         .page-subtitle { color: #000000; font-size: 1.1rem; }
 
         .inquiries-container { display: grid; gap: 25px; }
-        .inquiry-card { background: #80808088; border-radius: 16px; backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); overflow: hidden; transition: all 0.3s ease; }
+        .inquiry-card { background: #8080803a; border-radius: 16px; backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); overflow: hidden; transition: all 0.3s ease; }
         .inquiry-card:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4); }
 
         .inquiry-header { padding: 20px; border-bottom: 1px solid rgba(0, 0, 0, 0.1); }
@@ -373,8 +373,8 @@ function getInquiryResponses($connect, $inquiryId) {
         .inquiry-date { color: rgba(0, 0, 0, 0.6); font-size: 0.9rem; }
 
         .inquiry-status { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; margin-top: 8px; }
-        .status-new { background: rgba(255, 193, 7, 0.2); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3); }
-        .status-responded { background: rgba(40, 167, 69, 0.2); color: #28a745; border: 1px solid rgba(40, 167, 69, 0.3); }
+        .status-new { background: rgba(255, 193, 7, 1); color: #000000; border: 1px solid rgba(255, 193, 7, 0.3); }
+        .status-responded { background: rgba(40, 167, 70, 1); color: #000000; border: 1px solid rgba(40, 167, 69, 0.3); }
 
         .inquiry-body { padding: 20px; }
         .inquiry-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
@@ -387,9 +387,9 @@ function getInquiryResponses($connect, $inquiryId) {
 
         .responses-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
         .responses-header { color: #ffd700; font-weight: 600; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
-        .response-item { background: rgba(40, 167, 69, 0.1); border: 1px solid rgba(40, 167, 69, 0.2); border-radius: 8px; padding: 15px; margin-bottom: 10px; }
+        .response-item { background: rgba(255, 255, 255, 0.3); border: 1px solid rgba(40, 167, 69, 0.2); border-radius: 8px; padding: 15px; margin-bottom: 10px; }
         .response-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .response-type { background: rgba(40, 167, 69, 0.3); color: #28a745; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .response-type { background: rgba(40, 167, 70, 1); color: #000000; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
         .response-date { color: rgba(0, 0, 0, 0.6); font-size: 0.8rem; }
         .response-agent { color: rgba(0, 0, 0, 0.7); font-size: 0.8rem; margin-bottom: 8px; }
         .response-message { line-height: 1.6; color: #000000;}

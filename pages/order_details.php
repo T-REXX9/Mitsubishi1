@@ -183,7 +183,7 @@ if (!$customerProfile) {
         }
 
         .order-card {
-            background: rgba(199, 186, 186, 0.51);
+            background: #00000038;
             border-radius: 15px;
             padding: 25px;
             margin-bottom: 20px;
@@ -212,7 +212,7 @@ if (!$customerProfile) {
         }
 
         .order-info p {
-            color: #000000ff;
+            color: #ffffffff;
             font-size: 0.9rem;
         }
 
@@ -268,6 +268,7 @@ if (!$customerProfile) {
 
         .detail-item {
             background: #ffffff;
+            border: 1.5px solid #e600139c;
             padding: 15px;
             border-radius: 10px;
         }
