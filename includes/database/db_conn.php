@@ -6,6 +6,13 @@ error_reporting(E_ALL);
 
 // db_connection.php
 
+// Include the EnvLoader to load environment variables
+$env_loader_path = __DIR__ . '/../utils/EnvLoader.php';
+if (file_exists($env_loader_path)) {
+    require_once $env_loader_path;
+    EnvLoader::load();
+}
+
 // Include the host helper
 $host_helper_path = __DIR__ . '/../host/host_helper.php';
 if (file_exists($host_helper_path)) {
@@ -13,9 +20,16 @@ if (file_exists($host_helper_path)) {
 }
 
 try {
-    global $connect; // db password: ChangeThisRootPassword
+    global $connect;
+
+    // Load database credentials from environment variables
+    $db_host = getenv('DB_HOST') ?: 'localhost';
+    $db_name = getenv('DB_NAME') ?: 'mitsubishi';
+    $db_user = getenv('DB_USER') ?: 'root';
+    $db_password = getenv('DB_PASSWORD') ?: '';
+
     // Ensure connection uses UTF-8 to prevent json_encode failures on non-ASCII data
-    $connect = new PDO("mysql:host=localhost;dbname=mitsubishi;charset=utf8mb4", "root", "");
+    $connect = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_password);
     $connect->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $connect->setAttribute(PDO::ATTR_TIMEOUT, 300); // 5 minutes timeout
     $connect->setAttribute(PDO::MYSQL_ATTR_INIT_COMMAND, "SET NAMES utf8mb4");

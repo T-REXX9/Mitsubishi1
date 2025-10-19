@@ -3,6 +3,8 @@
 
 # Environment variables - IMPORTANT: Contains sensitive credentials!
 .env
+.env.production
+.env.local
 
 # IDE files
 .vscode/

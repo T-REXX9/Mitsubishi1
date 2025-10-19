@@ -43,8 +43,20 @@ class DeepSeekChatbot {
     }
 
     private function loadApiKey() {
-        // Hardcoded API key
-        $this->apiKey = 'sk-27e6623100404762826fc0d41454bfff';
+        // Load API key from environment variable
+        $this->apiKey = getenv('DEEPSEEK_API_KEY');
+
+        if (!$this->apiKey) {
+            // Fallback: try to load from apikey.txt (deprecated)
+            $keyFile = __DIR__ . '/../../apikey.txt';
+            if (file_exists($keyFile)) {
+                $this->apiKey = trim(file_get_contents($keyFile));
+            }
+        }
+
+        if (!$this->apiKey) {
+            throw new Exception('DeepSeek API key not configured. Please set DEEPSEEK_API_KEY in .env file.');
+        }
     }
 
     private function initializeSession() {
