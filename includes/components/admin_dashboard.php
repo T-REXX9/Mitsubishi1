@@ -773,202 +773,168 @@ $accountStats = getAccountStats($connect);
   </div>
 </div>
 
-<!-- Admin Car Listing Interface -->
-<div class="interface-container" id="carListingInterface">
-  <div class="interface-header">
-    <h2 class="interface-title">
-      <i class="fas fa-car-side"></i>
-      Admin Car Listing
-    </h2>
-    <button class="interface-close" id="closeCarListing">&times;</button>
-  </div>
 
-  <div class="tab-navigation">
-    <button class="tab-button active" data-tab="car-add">Add New Vehicle</button>
-  </div>
 
-  <div class="tab-content active" id="car-add">
-    <h3 class="section-heading">Add New Vehicle to Inventory</h3>
+<!-- Add/Edit Vehicle Modal -->
+<div class="modal-overlay" id="adminVehicleModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="adminModalTitle">Add New Vehicle</h3>
+      <button class="modal-close" onclick="closeAdminVehicleModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
     <form id="addVehicleForm" enctype="multipart/form-data">
-      <fieldset>
-        <legend>Vehicle Information</legend>
+      <div class="modal-body">
+        <input type="hidden" id="adminVehicleId" name="id">
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Model Name <span style="color: red;">*</span></label>
-            <input type="text" class="form-input" name="model_name" placeholder="e.g., Montero Sport" required>
+            <label class="form-label">Model Name *</label>
+            <input type="text" class="form-control" id="adminModelName" name="model_name" required>
           </div>
           <div class="form-group">
-            <label class="form-label">Variant <span style="color: red;">*</span></label>
-            <input type="text" class="form-input" name="variant" placeholder="e.g., GLS Premium" required>
+            <label class="form-label">Variant *</label>
+            <input type="text" class="form-control" id="adminVariant" name="variant" required>
           </div>
         </div>
+
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Year Model <span style="color: red;">*</span></label>
-            <select class="form-select" name="year_model" required>
-              <option value="">Select year</option>
-              <?php
-              $currentYear = date('Y');
-              for ($year = $currentYear + 1; $year >= $currentYear - 10; $year--) {
-                echo "<option value=\"$year\">$year</option>";
-              }
-              ?>
-            </select>
+            <label class="form-label">Year Model *</label>
+            <input type="number" class="form-control" id="adminYearModel" name="year_model" min="2000" max="2030" required>
           </div>
           <div class="form-group">
-            <label class="form-label">Category <span style="color: red;">*</span></label>
-            <select class="form-select" name="category" required>
-              <option value="">Select category</option>
-              <option value="sedan">Sedan</option>
-              <option value="suv">SUV</option>
-              <option value="pickup">Pickup Truck</option>
-              <option value="hatchback">Hatchback</option>
-              <option value="mpv">MPV</option>
-              <option value="hybrid">Hybrid/Electric</option>
+            <label class="form-label">Category *</label>
+            <select class="form-control" id="adminCategory" name="category" required>
+              <option value="">Select Category</option>
+              <option value="Sedan">Sedan</option>
+              <option value="SUV">SUV</option>
+              <option value="Pickup">Pickup</option>
+              <option value="Hatchback">Hatchback</option>
+              <option value="MPV">MPV</option>
             </select>
           </div>
         </div>
-      </fieldset>
 
-      <fieldset>
-        <legend>Technical Specifications</legend>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Engine Type <span style="color: red;">*</span></label>
-            <input type="text" class="form-input" name="engine_type" placeholder="e.g., 2.4L MIVEC Diesel" required>
+            <label class="form-label">Engine Type *</label>
+            <input type="text" class="form-control" id="adminEngineType" name="engine_type" required>
           </div>
           <div class="form-group">
-            <label class="form-label">Transmission <span style="color: red;">*</span></label>
-            <select class="form-select" name="transmission" required>
-              <option value="">Select transmission</option>
-              <option value="manual">Manual</option>
-              <option value="automatic">Automatic</option>
-              <option value="cvt">CVT</option>
-              <option value="dct">DCT</option>
+            <label class="form-label">Transmission *</label>
+            <select class="form-control" id="adminTransmission" name="transmission" required>
+              <option value="">Select Transmission</option>
+              <option value="Manual">Manual</option>
+              <option value="Automatic">Automatic</option>
+              <option value="CVT">CVT</option>
             </select>
           </div>
         </div>
+
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Fuel Type <span style="color: red;">*</span></label>
-            <select class="form-select" name="fuel_type" required>
-              <option value="">Select fuel type</option>
-              <option value="gasoline">Gasoline</option>
-              <option value="diesel">Diesel</option>
-              <option value="hybrid">Hybrid</option>
-              <option value="electric">Electric</option>
-              <option value="lpg">LPG</option>
+            <label class="form-label">Fuel Type *</label>
+            <select class="form-control" id="adminFuelType" name="fuel_type" required>
+              <option value="">Select Fuel Type</option>
+              <option value="Gasoline">Gasoline</option>
+              <option value="Diesel">Diesel</option>
+              <option value="Hybrid">Hybrid</option>
+              <option value="Electric">Electric</option>
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Seating Capacity <span style="color: red;">*</span></label>
-            <select class="form-select" name="seating_capacity" required>
-              <option value="">Select capacity</option>
-              <option value="2">2 Seater</option>
-              <option value="4">4 Seater</option>
-              <option value="5">5 Seater</option>
-              <option value="6">6 Seater</option>
-              <option value="7">7 Seater</option>
-              <option value="8">8 Seater</option>
-              <option value="9">9+ Seater</option>
-            </select>
+            <label class="form-label">Seating Capacity *</label>
+            <input type="number" class="form-control" id="adminSeatingCapacity" name="seating_capacity" min="2" max="9" required>
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Key Features</label>
-          <textarea class="form-textarea" name="key_features" rows="3" placeholder="List key features and specifications..."></textarea>
-        </div>
-      </fieldset>
 
-      <fieldset>
-        <legend>Pricing Information</legend>
-        <div class="form-row">
+        <div class="form-row full-width">
           <div class="form-group">
-            <label class="form-label">Base Price (₱) <span style="color: red;">*</span></label>
-            <input type="number" class="form-input" name="base_price" placeholder="Enter base price" step="0.01" min="0" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Promotional Price (₱)</label>
-            <input type="number" class="form-input" name="promotional_price" placeholder="Enter promotional price" step="0.01" min="0">
+            <label class="form-label">Key Features</label>
+            <textarea class="form-control" id="adminKeyFeatures" name="key_features" rows="3"></textarea>
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Minimum Down Payment (%)</label>
-            <input type="number" class="form-input" name="min_downpayment_percentage" placeholder="e.g., 20" min="0" max="100">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Financing Terms Available</label>
-            <input type="text" class="form-input" name="financing_terms" placeholder="e.g., 12, 24, 36, 48, 60 months">
-          </div>
-        </div>
-      </fieldset>
 
-      <fieldset>
-        <legend>Color Options</legend>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Available Colors</label>
-            <input type="text" class="form-input" name="color_options" placeholder="e.g., White Pearl, Black Mica, Silver Metallic">
+            <label class="form-label">Base Price *</label>
+            <input type="number" class="form-control" id="adminBasePrice" name="base_price" min="0" step="0.01" required>
           </div>
           <div class="form-group">
-            <label class="form-label">Most Popular Color</label>
-            <input type="text" class="form-input" name="popular_color" placeholder="Enter most popular color">
+            <label class="form-label">Promotional Price</label>
+            <input type="number" class="form-control" id="adminPromotionalPrice" name="promotional_price" min="0" step="0.01">
           </div>
         </div>
-      </fieldset>
 
-      <fieldset>
-        <legend>Vehicle Images</legend>
-        <div class="form-group">
-          <label class="form-label">Main Display Image</label>
-          <input type="file" class="form-input" name="main_image" accept="image/*">
-          <small style="color: var(--text-light);">Upload main vehicle image (recommended: 1200x800px)</small>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Min Downpayment % *</label>
+            <input type="number" class="form-control" id="adminMinDownpayment" name="min_downpayment_percentage" min="0" max="100" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Financing Terms</label>
+            <input type="text" class="form-control" id="adminFinancingTerms" name="financing_terms">
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Additional Images</label>
-          <input type="file" class="form-input" name="additional_images[]" accept="image/*" multiple>
-          <small style="color: var(--text-light);">Upload additional images (interior, exterior, engine, etc.)</small>
-        </div>
-        <div class="form-group">
-          <label class="form-label">360° View Images</label>
-          <input type="file" class="form-input" name="view_360_images[]" accept="image/*" multiple>
-          <small style="color: var(--text-light);">Upload 360° view images for interactive display</small>
-        </div>
-      </fieldset>
 
-      <fieldset>
-        <legend>Inventory & Availability</legend>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Stock Quantity <span style="color: red;">*</span></label>
-            <input type="number" class="form-input" name="stock_quantity" placeholder="Enter available stock" min="0" required>
+            <label class="form-label">Color Options *</label>
+            <input type="text" class="form-control" id="adminColorOptions" name="color_options" placeholder="e.g., White Pearl, Black Mica, Silver" required>
           </div>
           <div class="form-group">
-            <label class="form-label">Minimum Stock Alert</label>
-            <input type="number" class="form-input" name="min_stock_alert" placeholder="Alert when stock reaches" min="0">
+            <label class="form-label">Popular Color</label>
+            <input type="text" class="form-control" id="adminPopularColor" name="popular_color">
           </div>
         </div>
+
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Availability Status <span style="color: red;">*</span></label>
-            <select class="form-select" name="availability_status" required>
+            <label class="form-label">Stock Quantity *</label>
+            <input type="number" class="form-control" id="adminStockQuantity" name="stock_quantity" min="0" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Min Stock Alert *</label>
+            <input type="number" class="form-control" id="adminMinStockAlert" name="min_stock_alert" min="0" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Availability Status *</label>
+            <select class="form-control" id="adminAvailabilityStatus" name="availability_status" required>
               <option value="available">Available</option>
-              <option value="pre-order">Pre-Order Only</option>
-              <option value="out-of-stock">Out of Stock</option>
+              <option value="pre-order">Pre-order</option>
               <option value="discontinued">Discontinued</option>
             </select>
           </div>
           <div class="form-group">
             <label class="form-label">Expected Delivery Time</label>
-            <input type="text" class="form-input" name="expected_delivery_time" placeholder="e.g., 2-4 weeks">
+            <input type="text" class="form-control" id="adminExpectedDelivery" name="expected_delivery_time" placeholder="e.g., 2-3 weeks">
           </div>
         </div>
-      </fieldset>
-      <div class="action-area">
-        <button type="button" class="btn btn-outline" id="saveDraftBtn">Save as Draft</button>
-        <button type="submit" class="btn btn-primary">Add Vehicle to Inventory</button>
-        <button type="button" class="btn btn-secondary" id="clearFormBtn">Clear Form</button>
+
+        <div class="image-upload-section">
+          <label class="image-upload-label">Main Image</label>
+          <input type="file" class="file-input" id="adminMainImage" name="main_image" accept="image/*">
+          <div class="file-info">Max size: 10MB per file</div>
+
+          <label class="image-upload-label">Additional Images</label>
+          <input type="file" class="file-input" id="adminAdditionalImages" name="additional_images[]" accept="image/*" multiple>
+          <div class="file-info">Max size: 10MB per file</div>
+
+          <label class="image-upload-label" style="margin-top:12px;">3D Models by Color</label>
+          <div id="adminColorModelList"></div>
+          <button type="button" class="btn btn-secondary" id="adminAddColorModelBtn" style="margin-top:8px;">Add Color & Model</button>
+          <div class="file-info">Pair each color with its .glb/.gltf file.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeAdminVehicleModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+          <span id="adminSubmitBtnText">Add Vehicle</span>
+        </button>
       </div>
     </form>
   </div>
@@ -1032,7 +998,7 @@ $accountStats = getAccountStats($connect);
 <style>
 /* Modal Styles */
 .modal-overlay {
-  position: fixed; 
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -1044,12 +1010,26 @@ $accountStats = getAccountStats($connect);
   justify-content: center;
 }
 
+.modal-overlay.active {
+  display: flex;
+}
+
 .modal-container {
   background: white;
   border-radius: 8px;
   width: 90%;
   max-width: 800px;
   max-height: 95%;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal {
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 900px;
+  max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
@@ -1095,6 +1075,8 @@ $accountStats = getAccountStats($connect);
 
 .modal-body {
   padding: 20px;
+  max-height: calc(90vh - 140px);
+  overflow-y: auto;
 }
 
 .modal-footer {
@@ -1104,6 +1086,50 @@ $accountStats = getAccountStats($connect);
   justify-content: flex-end;
   gap: 10px;
   background-color: #f8f9fa;
+}
+
+.image-upload-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #dee2e6;
+}
+
+.image-upload-label {
+  display: block;
+  font-weight: 600;
+  margin-top: 15px;
+  margin-bottom: 8px;
+  color: #495057;
+}
+
+.file-input {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.file-info {
+  font-size: 12px;
+  color: #6c757d;
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+.form-control {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #dc143c;
+  box-shadow: 0 0 0 0.2rem rgba(220, 20, 60, 0.25);
 }
 
 .customer-details-card {
@@ -1632,17 +1658,14 @@ $accountStats = getAccountStats($connect);
 
     const accountReviewInterface = document.getElementById('accountReviewInterface');
     const transactionUpdateInterface = document.getElementById('transactionUpdateInterface');
-    const carListingInterface = document.getElementById('carListingInterface');
 
     const closeAccountReview = document.getElementById('closeAccountReview');
     const closeTransactionUpdate = document.getElementById('closeTransactionUpdate');
-    const closeCarListing = document.getElementById('closeCarListing');
 
     // Hide all interfaces
     function hideAllInterfaces() {
       accountReviewInterface.style.display = 'none';
       transactionUpdateInterface.style.display = 'none';
-      carListingInterface.style.display = 'none';
     }
 
     // Toggle interfaces
@@ -1657,11 +1680,121 @@ $accountStats = getAccountStats($connect);
     });
 
     carListingBtn.addEventListener('click', function() {
-      hideAllInterfaces();
-      carListingInterface.style.display = 'block';
-      // If "Add New Vehicle" is the only tab, it's already active by HTML.
-      // No specific JS needed here to activate it unless there were multiple tabs.
+      openAddVehicleModal();
     });
+
+    // Modal functions for admin vehicle form
+    window.openAddVehicleModal = function() {
+      document.getElementById('adminModalTitle').textContent = 'Add New Vehicle';
+      document.getElementById('adminSubmitBtnText').textContent = 'Add Vehicle';
+      document.getElementById('adminVehicleId').value = '';
+      document.getElementById('addVehicleForm').reset();
+      document.getElementById('adminColorModelList').innerHTML = '';
+      document.getElementById('adminVehicleModal').classList.add('active');
+      document.getElementById('adminVehicleModal').style.display = 'flex';
+    };
+
+    window.closeAdminVehicleModal = function() {
+      document.getElementById('adminVehicleModal').classList.remove('active');
+      document.getElementById('adminVehicleModal').style.display = 'none';
+    };
+
+    // Color-model add button for admin form
+    const adminAddBtn = document.getElementById('adminAddColorModelBtn');
+    if (adminAddBtn) {
+      adminAddBtn.addEventListener('click', function() {
+        addAdminColorModelRow();
+      });
+    }
+
+    function addAdminColorModelRow(colorVal = '', fileRequired = false) {
+      const list = document.getElementById('adminColorModelList');
+      if (!list) return;
+      const row = document.createElement('div');
+      row.className = 'form-row';
+      row.style.alignItems = 'center';
+      row.style.gap = '10px';
+      row.innerHTML = `
+        <div class="form-group" style="flex:1 1 40%">
+          <input type="text" class="form-control" name="color_model_colors[]" placeholder="Color name (e.g., White)" value="${colorVal || ''}">
+        </div>
+        <div class="form-group" style="flex:1 1 50%">
+          <input type="file" class="file-input" name="color_model_files[]" accept=".glb,.gltf" ${fileRequired ? 'required' : ''}>
+        </div>
+        <div class="form-group" style="flex:0 0 auto">
+          <button type="button" class="btn btn-secondary" onclick="this.closest('div.form-row').remove()">Remove</button>
+        </div>
+      `;
+      list.appendChild(row);
+    }
+
+    // Form submission handler for admin vehicle form
+    const adminVehicleForm = document.getElementById('addVehicleForm');
+    if (adminVehicleForm) {
+      adminVehicleForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        // Validate color-model files size (50MB each)
+        const colorModelFiles = adminVehicleForm.querySelectorAll('input[name="color_model_files[]"]');
+        for (let i = 0; i < colorModelFiles.length; i++) {
+          const f = colorModelFiles[i].files && colorModelFiles[i].files[0];
+          if (f && f.size > 50 * 1024 * 1024) {
+            Swal.fire({
+              icon: 'error',
+              title: 'File Too Large',
+              text: `Color model file ${i + 1} is too large. Maximum size is 50MB per file.`
+            });
+            return;
+          }
+        }
+
+        const formData = new FormData(adminVehicleForm);
+        const submitBtn = adminVehicleForm.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding Vehicle...';
+        submitBtn.disabled = true;
+
+        try {
+          const response = await fetch('../../api/vehicles.php', {
+            method: 'POST',
+            body: formData
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            SwalSuccess.fire({
+              title: 'Success!',
+              text: result.message || 'Vehicle added successfully!'
+            });
+
+            adminVehicleForm.reset();
+            document.getElementById('adminColorModelList').innerHTML = '';
+            closeAdminVehicleModal();
+
+            setTimeout(() => {
+              location.reload();
+            }, 2000);
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error!',
+              text: result.message || 'Failed to add vehicle'
+            });
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: 'An error occurred while adding the vehicle'
+          });
+        } finally {
+          submitBtn.innerHTML = originalText;
+          submitBtn.disabled = false;
+        }
+      });
+    }
 
     // Close buttons
     closeAccountReview.addEventListener('click', function() {
@@ -1670,10 +1803,6 @@ $accountStats = getAccountStats($connect);
 
     closeTransactionUpdate.addEventListener('click', function() {
       transactionUpdateInterface.style.display = 'none';
-    });
-
-    closeCarListing.addEventListener('click', function() {
-      carListingInterface.style.display = 'none';
     });
 
     // Tab switching functionality
@@ -2350,87 +2479,6 @@ $accountStats = getAccountStats($connect);
       });
     };
 
-  });
-
-  // Add Vehicle Form Handler
-  document.addEventListener('DOMContentLoaded', function() {
-    const addVehicleForm = document.getElementById('addVehicleForm');
-    
-    if (addVehicleForm) {
-      addVehicleForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        // Show loading state
-        const submitBtn = addVehicleForm.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding Vehicle...';
-        submitBtn.disabled = true;
-        
-        try {
-          const formData = new FormData(addVehicleForm);
-          
-          const response = await fetch('../../api/vehicles.php', {
-            method: 'POST',
-            body: formData
-          });
-          
-          const result = await response.json();
-          
-          if (result.success) {
-            SwalSuccess.fire({
-              title: 'Success!',
-              text: result.message || 'Vehicle added successfully!'
-            });
-            
-            // Reset form
-            addVehicleForm.reset();
-            
-            // Optionally reload the page or update the UI
-            setTimeout(() => {
-              location.reload();
-            }, 2000);
-          } else {
-            SwalError.fire({
-              title: 'Error!',
-              text: result.message || 'Failed to add vehicle'
-            });
-          }
-        } catch (error) {
-          console.error('Error:', error);
-          SwalError.fire({
-            title: 'Error!',
-            text: 'An error occurred while adding the vehicle'
-          });
-        } finally {
-          // Restore button state
-          submitBtn.innerHTML = originalText;
-          submitBtn.disabled = false;
-        }
-      });
-      
-      // Clear Form Button Handler
-      const clearFormBtn = document.getElementById('clearFormBtn');
-      if (clearFormBtn) {
-        clearFormBtn.addEventListener('click', function() {
-          if (confirm('Are you sure you want to clear all form data?')) {
-            addVehicleForm.reset();
-          }
-        });
-      }
-      
-      // Save Draft Button Handler (optional functionality)
-      const saveDraftBtn = document.getElementById('saveDraftBtn');
-      if (saveDraftBtn) {
-        saveDraftBtn.addEventListener('click', function() {
-          // You can implement draft saving functionality here
-          SwalSuccess.fire({
-            title: 'Draft Saved!',
-            text: 'Your vehicle draft has been saved locally',
-            timer: 2000
-          });
-        });
-      }
-    }
   });
 
 </script>

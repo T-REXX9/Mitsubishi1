@@ -1198,14 +1198,10 @@ if ($user_role === 'Sales Agent') {
             <label class="image-upload-label">Main Image</label>
             <input type="file" class="file-input" id="mainImage" name="main_image" accept="image/*">
             <div class="file-info">Max size: 10MB per file</div>
-            
+
             <label class="image-upload-label">Additional Images</label>
             <input type="file" class="file-input" id="additionalImages" name="additional_images[]" accept="image/*" multiple>
             <div class="file-info">Max size: 10MB per file</div>
-            
-            <label class="image-upload-label">360° View Images / 3D Models</label>
-            <input type="file" class="file-input" id="view360Images" name="view_360_images[]" accept="image/*,.glb,.gltf" multiple>
-            <div class="file-info">Max size: 50MB per file (supports images and 3D models)</div>
 
             <label class="image-upload-label" style="margin-top:12px;">3D Models by Color</label>
             <div id="colorModelList"></div>
@@ -1819,14 +1815,13 @@ if (vehicle.additional_images && Array.isArray(vehicle.additional_images) && veh
       // Validate file sizes before submission
       const mainImage = document.getElementById('mainImage').files[0];
       const additionalImages = document.getElementById('additionalImages').files;
-      const view360Images = document.getElementById('view360Images').files;
-      
+
       // Check main image size (10MB limit)
       if (mainImage && mainImage.size > 10 * 1024 * 1024) {
         showToast('Main image file is too large. Maximum size is 10MB.', 'error');
         return;
       }
-      
+
       // Check additional images size (10MB each)
       for (let i = 0; i < additionalImages.length; i++) {
         if (additionalImages[i].size > 10 * 1024 * 1024) {
@@ -1834,25 +1829,17 @@ if (vehicle.additional_images && Array.isArray(vehicle.additional_images) && veh
           return;
         }
       }
-      
-      // Check 360/3D files size (50MB each)
-      for (let i = 0; i < view360Images.length; i++) {
-        if (view360Images[i].size > 50 * 1024 * 1024) {
-          showToast(`360°/3D file ${i + 1} is too large. Maximum size is 50MB per file.`, 'error');
-          return;
-        }
-      }
 
       // Check color-model files size (50MB each)
       const colorModelFiles = vehicleForm.querySelectorAll('input[name="color_model_files[]"]');
       for (let i = 0; i < colorModelFiles.length; i++) {
-        const f = colorModelFiles[i].files && colorModelFiles[i].files[0];
-        if (f && f.size > 50 * 1024 * 1024) {
+        const file = colorModelFiles[i].files && colorModelFiles[i].files[0];
+        if (file && file.size > 50 * 1024 * 1024) {
           showToast(`Color model file ${i + 1} is too large. Maximum size is 50MB per file.`, 'error');
           return;
         }
       }
-      
+
       const formData = new FormData(vehicleForm);
       const vehicleId = document.getElementById('vehicleId').value;
       const isEdit = vehicleId !== '';
