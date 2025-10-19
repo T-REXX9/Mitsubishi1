@@ -60,20 +60,20 @@ $agent_id = $_SESSION['user_id'] ?? null;
         }
 
         .payment-stat-card.pending {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: #afafafff;
         }
 
         .payment-stat-card.confirmed {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            background: #afafafff;
         }
 
         .payment-stat-card.failed {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            background: #afafafff;
         }
 
         .payment-stat-card.total {
-            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-            color: #333;
+            background: #afafafff;
+            color: #ffffffff;
         }
 
         .stat-header {
