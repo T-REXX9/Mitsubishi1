@@ -40,6 +40,10 @@ try {
     // Note: max_allowed_packet is read-only at session level, must be set globally in MySQL config
     $connect->exec("SET SESSION net_read_timeout = 60");
     $connect->exec("SET SESSION net_write_timeout = 60");
+
+    // Set MySQL timezone to match PHP timezone (Asia/Manila = UTC+8)
+    // This ensures NOW(), CURRENT_TIMESTAMP, and other MySQL date functions use the correct timezone
+    $connect->exec("SET time_zone = '+08:00'");
 } catch (PDOException $e) {
     error_log("Database connection failed: " . $e->getMessage());
     
