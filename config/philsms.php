@@ -10,7 +10,7 @@
 $env_loader_path = __DIR__ . '/../includes/utils/EnvLoader.php';
 if (file_exists($env_loader_path)) {
     require_once $env_loader_path;
-    EnvLoader::load();
+    \Mitsubishi\Utils\EnvLoader::load();
 }
 
 // Get API token from environment variable

@@ -10,7 +10,7 @@ error_reporting(E_ALL);
 $env_loader_path = __DIR__ . '/../utils/EnvLoader.php';
 if (file_exists($env_loader_path)) {
     require_once $env_loader_path;
-    EnvLoader::load();
+    \Mitsubishi\Utils\EnvLoader::load();
 }
 
 // Include the host helper
