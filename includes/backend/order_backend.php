@@ -524,9 +524,20 @@ function getPaymentHistory()
 		}
 
 		if ($tableExists) {
-			$sql = "SELECT 
+			$sql = "SELECT
                         ph.*,
-                        CONCAT(processor.FirstName, ' ', processor.LastName) as processed_by_name
+                        CONCAT(processor.FirstName, ' ', processor.LastName) as processed_by_name,
+                        (SELECT COALESCE(SUM(ph2.amount_paid), 0)
+                         FROM payment_history ph2
+                         WHERE ph2.order_id = ph.order_id
+                         AND ph2.status = 'Confirmed'
+                         AND ph2.payment_date <= ph.payment_date) as total_paid,
+                        (SELECT o.total_price - COALESCE(SUM(ph3.amount_paid), 0)
+                         FROM orders o
+                         LEFT JOIN payment_history ph3 ON ph3.order_id = o.order_id
+                            AND ph3.status = 'Confirmed'
+                            AND ph3.payment_date <= ph.payment_date
+                         WHERE o.order_id = ph.order_id) as remaining_balance
                     FROM payment_history ph
                     LEFT JOIN accounts processor ON ph.processed_by = processor.Id
                     WHERE ph.order_id = ?

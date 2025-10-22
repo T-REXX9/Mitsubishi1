@@ -185,7 +185,7 @@ function getAgentPayments()
         $total = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
         
         // Get paginated results - with proper joins and customer information
-        $sql = "SELECT 
+        $sql = "SELECT
                     ph.id,
                     ph.payment_number,
                     ph.amount_paid,
@@ -198,10 +198,16 @@ function getAgentPayments()
                     o.order_number,
                     o.vehicle_model,
                     o.vehicle_variant,
-                    CONCAT(ci.firstname, ' ', ci.lastname) as customer_name
+                    COALESCE(
+                        NULLIF(TRIM(CONCAT(COALESCE(ci.firstname, ''), ' ', COALESCE(ci.lastname, ''))), ''),
+                        NULLIF(TRIM(CONCAT(COALESCE(a.FirstName, ''), ' ', COALESCE(a.LastName, ''))), ''),
+                        a.Username,
+                        CONCAT('Customer #', ph.customer_id)
+                    ) as customer_name
                 FROM payment_history ph
                 INNER JOIN orders o ON ph.order_id = o.order_id
                 LEFT JOIN customer_information ci ON ph.customer_id = ci.cusID
+                LEFT JOIN accounts a ON ci.account_id = a.Id
                 $whereClause
                 ORDER BY ph.created_at DESC
                 LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
@@ -240,10 +246,15 @@ function getPaymentDetails()
     
     try {
         // Build query with role-based access control
-        $sql = "SELECT 
+        $sql = "SELECT
                     ph.*,
                     o.order_number,
-                    CONCAT(ci.firstname, ' ', ci.lastname) as customer_name,
+                    COALESCE(
+                        NULLIF(TRIM(CONCAT(COALESCE(ci.firstname, ''), ' ', COALESCE(ci.lastname, ''))), ''),
+                        NULLIF(TRIM(CONCAT(COALESCE(a.FirstName, ''), ' ', COALESCE(a.LastName, ''))), ''),
+                        a.Username,
+                        CONCAT('Customer #', ph.customer_id)
+                    ) as customer_name,
                     ci.mobile_number,
                     o.vehicle_model,
                     o.vehicle_variant,
@@ -252,11 +263,12 @@ function getPaymentDetails()
                 FROM payment_history ph
                 LEFT JOIN orders o ON ph.order_id = o.order_id
                 LEFT JOIN customer_information ci ON ph.customer_id = ci.cusID
+                LEFT JOIN accounts a ON ci.account_id = a.Id
                 LEFT JOIN accounts proc ON ph.processed_by = proc.Id
                 WHERE ph.id = ?";
-        
+
         $params = [$payment_id];
-        
+
         // Add role-based restriction
         if ($user_role !== 'Admin') {
             $sql .= " AND o.sales_agent_id = ?";
@@ -379,56 +391,57 @@ function processPayment()
 function updatePaymentSchedule($order_id, $amount, $payment_type)
 {
     global $pdo;
-    
+
     try {
         // Get the next pending payment in the schedule
-        $scheduleSql = "SELECT * FROM payment_schedule 
-                        WHERE order_id = ? AND status = 'Pending' 
-                        ORDER BY due_date ASC 
+        $scheduleSql = "SELECT * FROM payment_schedule
+                        WHERE order_id = ? AND status IN ('Pending', 'Partial')
+                        ORDER BY due_date ASC
                         LIMIT 1";
-        
+
         $scheduleStmt = $pdo->prepare($scheduleSql);
         $scheduleStmt->execute([$order_id]);
         $nextPayment = $scheduleStmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if ($nextPayment) {
             $remaining_amount = $amount;
             $payment_id = $nextPayment['id'];
-            
+
+            // Calculate current balance (amount_due - amount_paid)
+            $current_balance = $nextPayment['amount_due'] - $nextPayment['amount_paid'];
+
             // Update the payment schedule entry
-            if ($remaining_amount >= $nextPayment['balance']) {
+            if ($remaining_amount >= $current_balance) {
                 // Full payment of this installment
-                $updateSql = "UPDATE payment_schedule 
-                              SET amount_paid = amount_due, 
-                                  balance = 0, 
+                $updateSql = "UPDATE payment_schedule
+                              SET amount_paid = amount_due,
                                   status = 'Paid',
+                                  paid_date = NOW(),
                                   updated_at = NOW()
                               WHERE id = ?";
                 $updateStmt = $pdo->prepare($updateSql);
                 $updateStmt->execute([$payment_id]);
-                
-                $remaining_amount -= $nextPayment['balance'];
-                
+
+                $remaining_amount -= $current_balance;
+
                 // If there's remaining amount, apply to next payments
                 if ($remaining_amount > 0) {
                     applyRemainingAmount($order_id, $remaining_amount);
                 }
             } else {
                 // Partial payment
-                $new_balance = $nextPayment['balance'] - $remaining_amount;
                 $new_amount_paid = $nextPayment['amount_paid'] + $remaining_amount;
-                
-                $updateSql = "UPDATE payment_schedule 
-                              SET amount_paid = ?, 
-                                  balance = ?, 
+
+                $updateSql = "UPDATE payment_schedule
+                              SET amount_paid = ?,
                                   status = 'Partial',
                                   updated_at = NOW()
                               WHERE id = ?";
                 $updateStmt = $pdo->prepare($updateSql);
-                $updateStmt->execute([$new_amount_paid, $new_balance, $payment_id]);
+                $updateStmt->execute([$new_amount_paid, $payment_id]);
             }
         }
-        
+
     } catch (PDOException $e) {
         throw new Exception('Failed to update payment schedule: ' . $e->getMessage());
     }
@@ -440,50 +453,51 @@ function updatePaymentSchedule($order_id, $amount, $payment_type)
 function applyRemainingAmount($order_id, $remaining_amount)
 {
     global $pdo;
-    
+
     try {
         // Get next pending payments
-        $sql = "SELECT * FROM payment_schedule 
-                WHERE order_id = ? AND status = 'Pending' 
+        $sql = "SELECT * FROM payment_schedule
+                WHERE order_id = ? AND status IN ('Pending', 'Partial')
                 ORDER BY due_date ASC";
-        
+
         $stmt = $pdo->prepare($sql);
         $stmt->execute([$order_id]);
         $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         foreach ($payments as $payment) {
             if ($remaining_amount <= 0) break;
-            
-            if ($remaining_amount >= $payment['balance']) {
+
+            // Calculate current balance (amount_due - amount_paid)
+            $current_balance = $payment['amount_due'] - $payment['amount_paid'];
+
+            if ($remaining_amount >= $current_balance) {
                 // Full payment
-                $updateSql = "UPDATE payment_schedule 
-                              SET amount_paid = amount_due, 
-                                  balance = 0, 
+                $updateSql = "UPDATE payment_schedule
+                              SET amount_paid = amount_due,
                                   status = 'Paid',
+                                  paid_date = NOW(),
                                   updated_at = NOW()
                               WHERE id = ?";
                 $updateStmt = $pdo->prepare($updateSql);
                 $updateStmt->execute([$payment['id']]);
-                
-                $remaining_amount -= $payment['balance'];
+
+                $remaining_amount -= $current_balance;
             } else {
                 // Partial payment
-                $new_balance = $payment['balance'] - $remaining_amount;
                 $new_amount_paid = $payment['amount_paid'] + $remaining_amount;
-                
-                $updateSql = "UPDATE payment_schedule 
-                              SET amount_paid = ?, 
-                                  balance = ?, 
+
+                $updateSql = "UPDATE payment_schedule
+                              SET amount_paid = ?,
                                   status = 'Partial',
                                   updated_at = NOW()
                               WHERE id = ?";
                 $updateStmt = $pdo->prepare($updateSql);
-                $updateStmt->execute([$new_amount_paid, $new_balance, $payment['id']]);
-                
+                $updateStmt->execute([$new_amount_paid, $payment['id']]);
+
                 $remaining_amount = 0;
             }
         }
-        
+
     } catch (PDOException $e) {
         throw new Exception('Failed to apply remaining amount: ' . $e->getMessage());
     }

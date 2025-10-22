@@ -78,21 +78,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  */
 function getPendingPayments($connect, $user_id, $user_role) {
     try {
-        // Base query
-        $sql = "SELECT ph.*, 
+        // Base query - FIXED: Join customer_information first, then accounts
+        $sql = "SELECT ph.*,
                        o.order_number, o.vehicle_model, o.vehicle_variant, o.monthly_payment, o.total_price,
-                       a.FirstName, a.LastName, a.Email,
-                       ci.mobile_number, ci.agent_id,
+                       ci.firstname, ci.lastname, ci.mobile_number, ci.agent_id,
+                       a.FirstName, a.LastName, a.Email, a.Username,
                        agent.FirstName as agent_fname, agent.LastName as agent_lname,
                        v.model_name, v.variant
                 FROM payment_history ph
                 JOIN orders o ON ph.order_id = o.order_id
-                JOIN accounts a ON ph.customer_id = a.Id
-                LEFT JOIN customer_information ci ON a.Id = ci.account_id
+                LEFT JOIN customer_information ci ON ph.customer_id = ci.cusID
+                LEFT JOIN accounts a ON ci.account_id = a.Id
                 LEFT JOIN accounts agent ON ci.agent_id = agent.Id
                 LEFT JOIN vehicles v ON o.vehicle_id = v.id
                 WHERE ph.status = 'Pending'";
-        
+
         // Add role-based filtering
         if ($user_role === 'Sales Agent') {
             $sql .= " AND ci.agent_id = ?";
@@ -100,20 +100,29 @@ function getPendingPayments($connect, $user_id, $user_role) {
         } else {
             $params = [];
         }
-        
+
         $sql .= " ORDER BY ph.payment_date DESC";
-        
+
         $stmt = $connect->prepare($sql);
         $stmt->execute($params);
         $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Format the data
         foreach ($payments as &$payment) {
-            $payment['customer_name'] = trim(($payment['FirstName'] ?? '') . ' ' . ($payment['LastName'] ?? ''));
+            // Build customer name with fallbacks - FIXED: Check customer_information first
+            $customer_name = trim(($payment['firstname'] ?? '') . ' ' . ($payment['lastname'] ?? ''));
+            if (empty($customer_name)) {
+                $customer_name = trim(($payment['FirstName'] ?? '') . ' ' . ($payment['LastName'] ?? ''));
+            }
+            if (empty($customer_name)) {
+                $customer_name = $payment['Email'] ?? $payment['Username'] ?? 'Customer #' . $payment['customer_id'];
+            }
+            $payment['customer_name'] = $customer_name;
+
             $payment['agent_name'] = trim(($payment['agent_fname'] ?? '') . ' ' . ($payment['agent_lname'] ?? ''));
             $payment['vehicle_display'] = ($payment['model_name'] ?? $payment['vehicle_model']) . ' ' . ($payment['variant'] ?? $payment['vehicle_variant'] ?? '');
             $payment['has_receipt'] = !empty($payment['receipt_filename']);
-            
+
             // Format receipt URL if exists
             if ($payment['has_receipt']) {
                 $payment['receipt_url'] = '../../uploads/receipts/' . $payment['receipt_filename'];
@@ -137,23 +146,23 @@ function getPendingPayments($connect, $user_id, $user_role) {
  */
 function getVerifiedPayments($connect, $user_id, $user_role) {
     try {
-        // Base query
-        $sql = "SELECT ph.*, 
+        // Base query - FIXED: Join customer_information first, then accounts
+        $sql = "SELECT ph.*,
                        o.order_number, o.vehicle_model, o.vehicle_variant, o.monthly_payment,
-                       a.FirstName, a.LastName, a.Email,
-                       ci.mobile_number, ci.agent_id,
+                       ci.firstname, ci.lastname, ci.mobile_number, ci.agent_id,
+                       a.FirstName, a.LastName, a.Email, a.Username,
                        agent.FirstName as agent_fname, agent.LastName as agent_lname,
                        processor.FirstName as processor_fname, processor.LastName as processor_lname,
                        v.model_name, v.variant
                 FROM payment_history ph
                 JOIN orders o ON ph.order_id = o.order_id
-                JOIN accounts a ON ph.customer_id = a.Id
-                LEFT JOIN customer_information ci ON a.Id = ci.account_id
+                LEFT JOIN customer_information ci ON ph.customer_id = ci.cusID
+                LEFT JOIN accounts a ON ci.account_id = a.Id
                 LEFT JOIN accounts agent ON ci.agent_id = agent.Id
                 LEFT JOIN accounts processor ON ph.processed_by = processor.Id
                 LEFT JOIN vehicles v ON o.vehicle_id = v.id
                 WHERE ph.status = 'Confirmed'";
-        
+
         // Add role-based filtering
         if ($user_role === 'Sales Agent') {
             $sql .= " AND ci.agent_id = ?";
@@ -161,21 +170,30 @@ function getVerifiedPayments($connect, $user_id, $user_role) {
         } else {
             $params = [];
         }
-        
+
         $sql .= " ORDER BY ph.updated_at DESC LIMIT 100";
-        
+
         $stmt = $connect->prepare($sql);
         $stmt->execute($params);
         $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         // Format the data
         foreach ($payments as &$payment) {
-            $payment['customer_name'] = trim(($payment['FirstName'] ?? '') . ' ' . ($payment['LastName'] ?? ''));
+            // Build customer name with fallbacks - FIXED: Check customer_information first
+            $customer_name = trim(($payment['firstname'] ?? '') . ' ' . ($payment['lastname'] ?? ''));
+            if (empty($customer_name)) {
+                $customer_name = trim(($payment['FirstName'] ?? '') . ' ' . ($payment['LastName'] ?? ''));
+            }
+            if (empty($customer_name)) {
+                $customer_name = $payment['Email'] ?? $payment['Username'] ?? 'Customer #' . $payment['customer_id'];
+            }
+            $payment['customer_name'] = $customer_name;
+
             $payment['agent_name'] = trim(($payment['agent_fname'] ?? '') . ' ' . ($payment['agent_lname'] ?? ''));
             $payment['processor_name'] = trim(($payment['processor_fname'] ?? '') . ' ' . ($payment['processor_lname'] ?? ''));
             $payment['vehicle_display'] = ($payment['model_name'] ?? $payment['vehicle_model']) . ' ' . ($payment['variant'] ?? $payment['vehicle_variant'] ?? '');
             $payment['has_receipt'] = !empty($payment['receipt_filename']);
-            
+
             if ($payment['has_receipt']) {
                 $payment['receipt_url'] = '../../uploads/receipts/' . $payment['receipt_filename'];
             }
@@ -288,41 +306,50 @@ function getAllLoanCustomers($connect, $user_id, $user_role) {
  */
 function getPaymentDetails($connect, $payment_id, $user_id, $user_role) {
     try {
-        // Base query
-        $sql = "SELECT ph.*, 
+        // Base query - FIXED: Join customer_information first, then accounts
+        $sql = "SELECT ph.*,
                        o.order_number, o.vehicle_model, o.vehicle_variant, o.monthly_payment, o.order_id,
-                       a.FirstName, a.LastName, a.Email,
-                       ci.mobile_number, ci.agent_id,
+                       ci.firstname, ci.lastname, ci.mobile_number, ci.agent_id,
+                       a.FirstName, a.LastName, a.Email, a.Username,
                        agent.FirstName as agent_fname, agent.LastName as agent_lname,
                        processor.FirstName as processor_fname, processor.LastName as processor_lname,
                        v.model_name, v.variant
                 FROM payment_history ph
                 JOIN orders o ON ph.order_id = o.order_id
-                JOIN accounts a ON ph.customer_id = a.Id
-                LEFT JOIN customer_information ci ON a.Id = ci.account_id
+                LEFT JOIN customer_information ci ON ph.customer_id = ci.cusID
+                LEFT JOIN accounts a ON ci.account_id = a.Id
                 LEFT JOIN accounts agent ON ci.agent_id = agent.Id
                 LEFT JOIN accounts processor ON ph.processed_by = processor.Id
                 LEFT JOIN vehicles v ON o.vehicle_id = v.id
                 WHERE ph.id = ?";
-        
+
         $params = [$payment_id];
-        
+
         // Add role-based filtering for Sales Agents
         if ($user_role === 'Sales Agent') {
             $sql .= " AND ci.agent_id = ?";
             $params[] = $user_id;
         }
-        
+
         $stmt = $connect->prepare($sql);
         $stmt->execute($params);
         $payment = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if (!$payment) {
             return ['success' => false, 'error' => 'Payment not found or access denied'];
         }
-        
+
         // Format the data
-        $payment['customer_name'] = trim(($payment['FirstName'] ?? '') . ' ' . ($payment['LastName'] ?? ''));
+        // Build customer name with fallbacks - FIXED: Check customer_information first
+        $customer_name = trim(($payment['firstname'] ?? '') . ' ' . ($payment['lastname'] ?? ''));
+        if (empty($customer_name)) {
+            $customer_name = trim(($payment['FirstName'] ?? '') . ' ' . ($payment['LastName'] ?? ''));
+        }
+        if (empty($customer_name)) {
+            $customer_name = $payment['Email'] ?? $payment['Username'] ?? 'Customer #' . $payment['customer_id'];
+        }
+        $payment['customer_name'] = $customer_name;
+
         $payment['customer_mobile'] = $payment['mobile_number'] ?? 'N/A';
         $payment['customer_email'] = $payment['Email'] ?? 'N/A';
         $payment['agent_name'] = trim(($payment['agent_fname'] ?? '') . ' ' . ($payment['agent_lname'] ?? ''));
@@ -330,7 +357,7 @@ function getPaymentDetails($connect, $payment_id, $user_id, $user_role) {
         $payment['vehicle_model'] = $payment['model_name'] ?? $payment['vehicle_model'];
         $payment['vehicle_variant'] = $payment['variant'] ?? $payment['vehicle_variant'] ?? '';
         $payment['has_receipt'] = !empty($payment['receipt_filename']);
-        
+
         if ($payment['has_receipt']) {
             $payment['receipt_url'] = '../../uploads/receipts/' . $payment['receipt_filename'];
         }
@@ -395,25 +422,26 @@ function approvePayment($connect, $payment_id, $user_id, $user_role) {
         $remaining_amount = $amount_paid;
         foreach ($schedules as $schedule) {
             if ($remaining_amount <= 0) break;
-            
+
             $amount_due = $schedule['amount_due'];
             $already_paid = $schedule['amount_paid'] ?? 0;
-            $balance = $amount_due - $already_paid;
-            
-            if ($remaining_amount >= $balance) {
+            // Calculate current balance (amount_due - amount_paid)
+            $current_balance = $amount_due - $already_paid;
+
+            if ($remaining_amount >= $current_balance) {
                 // Full payment for this schedule
-                $stmt = $connect->prepare("UPDATE payment_schedule 
+                $stmt = $connect->prepare("UPDATE payment_schedule
                                            SET amount_paid = amount_due,
                                                status = 'Paid',
                                                paid_date = NOW(),
                                                updated_at = NOW()
                                            WHERE id = ?");
                 $stmt->execute([$schedule['id']]);
-                $remaining_amount -= $balance;
+                $remaining_amount -= $current_balance;
             } else {
                 // Partial payment
                 $new_paid = $already_paid + $remaining_amount;
-                $stmt = $connect->prepare("UPDATE payment_schedule 
+                $stmt = $connect->prepare("UPDATE payment_schedule
                                            SET amount_paid = ?,
                                                status = 'Partial',
                                                updated_at = NOW()

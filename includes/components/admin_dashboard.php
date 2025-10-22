@@ -1269,8 +1269,8 @@ $accountStats = getAccountStats($connect);
     });
 
   // Payment Approval Functions
-  function loadPendingPayments() {
-    fetch('../includes/api/payment_approval_api.php?action=getPendingPayments')
+  window.loadPendingPayments = function() {
+    fetch('../../includes/api/payment_approval_api.php?action=getPendingPayments')
       .then(response => response.json())
       .then(data => {
         if (data.success) {
@@ -1278,16 +1278,16 @@ $accountStats = getAccountStats($connect);
           updatePendingStats(data.data);
         } else {
           console.error('Error loading pending payments:', data.error);
-          document.getElementById('pendingPaymentsTable').innerHTML = 
+          document.getElementById('pendingPaymentsTable').innerHTML =
             '<tr><td colspan="9" class="text-center">Error loading payments</td></tr>';
         }
       })
       .catch(error => {
         console.error('Error:', error);
-        document.getElementById('pendingPaymentsTable').innerHTML = 
+        document.getElementById('pendingPaymentsTable').innerHTML =
           '<tr><td colspan="9" class="text-center">Error loading payments</td></tr>';
       });
-  }
+  };
 
   function displayPendingPayments(payments) {
     const tbody = document.getElementById('pendingPaymentsTable');
@@ -1330,8 +1330,8 @@ $accountStats = getAccountStats($connect);
     document.getElementById('pendingAmount').textContent = '₱' + totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
   }
 
-  function loadVerifiedPayments() {
-    fetch('../includes/api/payment_approval_api.php?action=getVerifiedPayments')
+  window.loadVerifiedPayments = function() {
+    fetch('../../includes/api/payment_approval_api.php?action=getVerifiedPayments')
       .then(response => response.json())
       .then(data => {
         if (data.success) {
@@ -1339,16 +1339,16 @@ $accountStats = getAccountStats($connect);
           updateVerifiedStats(data.data);
         } else {
           console.error('Error loading verified payments:', data.error);
-          document.getElementById('verifiedPaymentsTable').innerHTML = 
+          document.getElementById('verifiedPaymentsTable').innerHTML =
             '<tr><td colspan="8" class="text-center">Error loading payments</td></tr>';
         }
       })
       .catch(error => {
         console.error('Error:', error);
-        document.getElementById('verifiedPaymentsTable').innerHTML = 
+        document.getElementById('verifiedPaymentsTable').innerHTML =
           '<tr><td colspan="8" class="text-center">Error loading payments</td></tr>';
       });
-  }
+  };
 
   function displayVerifiedPayments(payments) {
     const tbody = document.getElementById('verifiedPaymentsTable');
@@ -1384,8 +1384,8 @@ $accountStats = getAccountStats($connect);
     document.getElementById('verifiedAmount').textContent = '₱' + totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
   }
 
-  function loadLoanCustomers() {
-    fetch('../includes/api/payment_approval_api.php?action=getAllLoanCustomers')
+  window.loadLoanCustomers = function() {
+    fetch('../../includes/api/payment_approval_api.php?action=getAllLoanCustomers')
       .then(response => response.json())
       .then(data => {
         if (data.success) {
@@ -1393,16 +1393,16 @@ $accountStats = getAccountStats($connect);
           updateLoanCustomerStats(data.data);
         } else {
           console.error('Error loading loan customers:', data.error);
-          document.getElementById('loanCustomersTable').innerHTML = 
+          document.getElementById('loanCustomersTable').innerHTML =
             '<tr><td colspan="9" class="text-center">Error loading loan customers</td></tr>';
         }
       })
       .catch(error => {
         console.error('Error:', error);
-        document.getElementById('loanCustomersTable').innerHTML = 
+        document.getElementById('loanCustomersTable').innerHTML =
           '<tr><td colspan="9" class="text-center">Error loading loan customers</td></tr>';
       });
-  }
+  };
 
   function displayLoanCustomers(customers) {
     const tbody = document.getElementById('loanCustomersTable');
@@ -1460,7 +1460,7 @@ $accountStats = getAccountStats($connect);
     document.getElementById('overdueCount').textContent = overdueCount;
   }
 
-  function viewLoanDetails(orderId) {
+  window.viewLoanDetails = function(orderId) {
     // Implementation for viewing full loan details with payment schedule
     Swal.fire({
       title: 'Loan Details',
@@ -1469,9 +1469,9 @@ $accountStats = getAccountStats($connect);
       confirmButtonColor: '#dc143c'
     });
     // TODO: Implement full loan details view with payment schedule
-  }
+  };
 
-  function approvePayment(paymentId) {
+  window.approvePayment = function(paymentId) {
     Swal.fire({
       title: 'Approve Payment?',
       text: 'Are you sure you want to approve this payment?',
@@ -1485,8 +1485,8 @@ $accountStats = getAccountStats($connect);
         const formData = new FormData();
         formData.append('action', 'approvePayment');
         formData.append('payment_id', paymentId);
-        
-        fetch('../includes/api/payment_approval_api.php', {
+
+        fetch('../../includes/api/payment_approval_api.php', {
           method: 'POST',
           body: formData
         })
@@ -1514,9 +1514,9 @@ $accountStats = getAccountStats($connect);
         });
       }
     });
-  }
+  };
 
-  function rejectPayment(paymentId) {
+  window.rejectPayment = function(paymentId) {
     Swal.fire({
       title: 'Reject Payment?',
       text: 'Please provide a reason for rejection:',
@@ -1537,8 +1537,8 @@ $accountStats = getAccountStats($connect);
         formData.append('action', 'rejectPayment');
         formData.append('payment_id', paymentId);
         formData.append('rejection_reason', result.value);
-        
-        fetch('../includes/api/payment_approval_api.php', {
+
+        fetch('../../includes/api/payment_approval_api.php', {
           method: 'POST',
           body: formData
         })
@@ -1566,10 +1566,10 @@ $accountStats = getAccountStats($connect);
         });
       }
     });
-  }
+  };
 
-  function viewPaymentDetails(paymentId) {
-    fetch(`../includes/api/payment_approval_api.php?action=getPaymentDetails&payment_id=${paymentId}`)
+  window.viewPaymentDetails = function(paymentId) {
+    fetch(`../../includes/api/payment_approval_api.php?action=getPaymentDetails&payment_id=${paymentId}`)
       .then(response => response.json())
       .then(data => {
         if (data.success) {
@@ -1640,36 +1640,10 @@ $accountStats = getAccountStats($connect);
           text: 'Network error occurred'
         });
       });
-  }
+  };
 
-  // Load data when the transaction update interface is opened
-  document.addEventListener('DOMContentLoaded', function() {
-    const transactionUpdateBtn = document.getElementById('transactionUpdateBtn');
-    if (transactionUpdateBtn) {
-      transactionUpdateBtn.addEventListener('click', function() {
-        setTimeout(() => {
-          loadPendingPayments();
-          loadVerifiedPayments();
-          loadLoanCustomers();
-        }, 100);
-      });
-    }
-    
-    // Handle tab switching to reload data
-    const transactionTabs = document.querySelectorAll('#transactionUpdateInterface .tab-button');
-    transactionTabs.forEach(tab => {
-      tab.addEventListener('click', function() {
-        const tabId = this.getAttribute('data-tab');
-        if (tabId === 'transaction-pending') {
-          loadPendingPayments();
-        } else if (tabId === 'transaction-verified') {
-          loadVerifiedPayments();
-        } else if (tabId === 'transaction-customers') {
-          loadLoanCustomers();
-        }
-      });
-    });
-  });
+  // Note: Transaction update button click handler is set up in the main DOMContentLoaded listener below
+  // along with the interface toggle functionality
 
     const SwalError = Swal.mixin({
       toast: true,
@@ -1730,6 +1704,12 @@ $accountStats = getAccountStats($connect);
     transactionUpdateBtn.addEventListener('click', function() {
       hideAllInterfaces();
       transactionUpdateInterface.style.display = 'block';
+      // Load data when interface is opened
+      setTimeout(() => {
+        loadPendingPayments();
+        loadVerifiedPayments();
+        loadLoanCustomers();
+      }, 100);
     });
 
     carListingBtn.addEventListener('click', function() {
@@ -2062,6 +2042,17 @@ $accountStats = getAccountStats($connect);
         // Add active class to clicked tab and corresponding content
         this.classList.add('active');
         container.querySelector('#' + tabName).classList.add('active');
+
+        // Load data for transaction update tabs
+        if (container.id === 'transactionUpdateInterface') {
+          if (tabName === 'transaction-pending') {
+            loadPendingPayments();
+          } else if (tabName === 'transaction-verified') {
+            loadVerifiedPayments();
+          } else if (tabName === 'transaction-customers') {
+            loadLoanCustomers();
+          }
+        }
       });
     });
 
