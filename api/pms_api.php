@@ -1,4 +1,8 @@
 <?php
+// Increase timeout limits
+set_time_limit(60); // 60 seconds
+ini_set('max_execution_time', 60);
+
 header('Content-Type: application/json');
 require_once dirname(__DIR__) . '/includes/init.php';
 require_once dirname(__DIR__) . '/includes/handlers/pms_handler.php';
@@ -27,20 +31,28 @@ try {
                 'status' => $_GET['status'] ?? '',
                 'completion_period' => $_GET['completion_period'] ?? ''
             ];
+
             $records = $pmsHandler->getAllPMSRecords($filters);
             
             // Ensure all records have required fields with default values
             foreach ($records as &$record) {
                 $record['approved_at'] = $record['approved_at'] ?? null;
-                $record['approved_by_name'] = $record['approved_by_name'] ?? 'N/A';
-                $record['full_name'] = $record['full_name'] ?? 'N/A';
-                $record['mobile_number'] = $record['mobile_number'] ?? 'N/A';
-                $record['model'] = $record['model'] ?? 'N/A';
-                $record['plate_number'] = $record['plate_number'] ?? 'N/A';
-                $record['color'] = $record['color'] ?? 'N/A';
-                $record['transmission'] = $record['transmission'] ?? 'N/A';
-                $record['pms_info'] = $record['pms_info'] ?? 'N/A';
-                $record['next_pms_due'] = $record['next_pms_due'] ?? 'N/A';
+
+                // Handle approved_by_name - check if it's empty or just whitespace
+                $approvedByName = trim($record['approved_by_name'] ?? '');
+                $record['approved_by_name'] = !empty($approvedByName) ? $approvedByName : 'N/A';
+
+                // Handle full_name - check if it's empty or just whitespace
+                $fullName = trim($record['full_name'] ?? '');
+                $record['full_name'] = !empty($fullName) ? $fullName : 'N/A';
+
+                $record['mobile_number'] = !empty(trim($record['mobile_number'] ?? '')) ? $record['mobile_number'] : 'N/A';
+                $record['model'] = !empty(trim($record['model'] ?? '')) ? $record['model'] : 'N/A';
+                $record['plate_number'] = !empty(trim($record['plate_number'] ?? '')) ? $record['plate_number'] : 'N/A';
+                $record['color'] = !empty(trim($record['color'] ?? '')) ? $record['color'] : 'N/A';
+                $record['transmission'] = !empty(trim($record['transmission'] ?? '')) ? $record['transmission'] : 'N/A';
+                $record['pms_info'] = !empty(trim($record['pms_info'] ?? '')) ? $record['pms_info'] : 'N/A';
+                $record['next_pms_due'] = !empty(trim($record['next_pms_due'] ?? '')) ? $record['next_pms_due'] : 'N/A';
                 $record['request_status'] = $record['request_status'] ?? 'Pending';
                 $record['current_odometer'] = $record['current_odometer'] ?? 0;
                 $record['customer_id'] = $record['customer_id'] ?? 0;
@@ -177,7 +189,78 @@ try {
             $result = $pmsHandler->updatePMSRecord($pmsId, $data);
             echo json_encode($result);
             break;
-            
+
+        case 'reschedule':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('POST method required');
+            }
+
+            $pmsId = $_POST['pms_id'] ?? 0;
+            $newDate = $_POST['new_date'] ?? '';
+            $newTime = $_POST['new_time'] ?? '';
+            $reason = $_POST['reschedule_reason'] ?? '';
+
+            if (!$pmsId || !$newDate || !$newTime) {
+                throw new Exception('PMS ID, date, and time are required');
+            }
+
+            $scheduledDatetime = $newDate . ' ' . $newTime . ':00';
+
+            // Prepare data for status update
+            $data = [
+                'scheduled_date' => $scheduledDatetime,
+                'approved_by' => $_SESSION['user_role'] === 'Admin' ? 1 : ($_SESSION['agent_profile_id'] ?? 1)
+            ];
+
+            // Update status to Scheduled
+            $result = $pmsHandler->updatePMSStatus($pmsId, 'Scheduled', $data);
+
+            // Add reschedule reason to service notes if provided and status update was successful
+            if ($result['success'] && $reason) {
+                $stmt = $pdo->prepare("SELECT service_notes_findings FROM car_pms_records WHERE pms_id = ?");
+                $stmt->execute([$pmsId]);
+                $currentNotes = $stmt->fetchColumn();
+
+                $noteData = [
+                    'service_notes_findings' => trim($currentNotes . "\nRescheduled: " . $reason)
+                ];
+
+                $pmsHandler->updatePMSRecord($pmsId, $noteData);
+            }
+
+            echo json_encode($result);
+            break;
+
+        case 'mark_completed':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('POST method required');
+            }
+
+            $pmsId = $_POST['pms_id'] ?? 0;
+            $completionDate = $_POST['completion_date'] ?? '';
+            $serviceNotes = $_POST['service_notes'] ?? '';
+            $nextPmsDue = $_POST['next_pms_due'] ?? '';
+
+            if (!$pmsId || !$completionDate || !$serviceNotes) {
+                throw new Exception('PMS ID, completion date, and service notes are required');
+            }
+
+            // Prepare data for status update
+            $data = [
+                'pms_date' => $completionDate,
+                'service_notes_findings' => $serviceNotes,
+                'approved_by' => $_SESSION['user_role'] === 'Admin' ? 1 : ($_SESSION['agent_profile_id'] ?? 1)
+            ];
+
+            if ($nextPmsDue) {
+                $data['next_pms_due'] = $nextPmsDue;
+            }
+
+            // Update status to Completed
+            $result = $pmsHandler->updatePMSStatus($pmsId, 'Completed', $data);
+            echo json_encode($result);
+            break;
+
         default:
             throw new Exception('Invalid action specified');
     }

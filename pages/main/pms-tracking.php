@@ -105,11 +105,13 @@ $customers = $pmsHandler->getCustomers();
             <label for="pms-type">PMS Type</label>
             <select id="pms-type" class="filter-select">
               <option value="all">All PMS Types</option>
-              <option value="5000km">5,000 KM Service</option>
-              <option value="10000km">10,000 KM Service</option>
-              <option value="20000km">20,000 KM Service</option>
-              <option value="40000km">40,000 KM Service</option>
-              <option value="60000km">60,000 KM Service</option>
+              <option value="First 1K KM">First 1K KM</option>
+              <option value="5K KM">5K KM</option>
+              <option value="10K KM">10K KM</option>
+              <option value="15K KM">15K KM</option>
+              <option value="20K KM">20K KM</option>
+              <option value="40K KM">40K KM</option>
+              <option value="60K KM">60K KM</option>
             </select>
           </div>
           <div class="filter-group">
@@ -216,14 +218,33 @@ $customers = $pmsHandler->getCustomers();
                         <button class="btn-small btn-edit" title="Edit Record" onclick="editPMSRecord(<?php echo $record['pms_id'] ?? 0; ?>)">
                           <i class="fas fa-edit"></i>
                         </button>
-                        
+
                         <?php if (!empty($record['has_receipt'])): ?>
                           <button class="btn-small btn-view" title="View Receipt" onclick="viewReceipt(<?php echo $record['pms_id']; ?>)" style="background: #17a2b8;">
                             <i class="fas fa-receipt"></i>
                           </button>
                         <?php endif; ?>
-                        
-                        <?php if (($_SESSION['user_role'] ?? '') === 'SalesAgent' && ($record['request_status'] ?? '') === 'Pending'): ?>
+
+                        <?php
+                        $status = $record['request_status'] ?? '';
+                        // Show Reschedule button for Scheduled or Approved status
+                        if (in_array($status, ['Scheduled', 'Approved'])):
+                        ?>
+                          <button class="btn-small btn-edit" title="Reschedule" onclick="rescheduleRequest(<?php echo $record['pms_id'] ?? 0; ?>)" style="background: #f39c12;">
+                            <i class="fas fa-calendar-alt"></i>
+                          </button>
+                        <?php endif; ?>
+
+                        <?php
+                        // Show Mark as Completed button for Scheduled or Approved status
+                        if (in_array($status, ['Scheduled', 'Approved'])):
+                        ?>
+                          <button class="btn-small btn-view" title="Mark as Completed" onclick="markAsCompleted(<?php echo $record['pms_id'] ?? 0; ?>)" style="background: #27ae60;">
+                            <i class="fas fa-check-circle"></i>
+                          </button>
+                        <?php endif; ?>
+
+                        <?php if (($_SESSION['user_role'] ?? '') === 'SalesAgent' && $status === 'Pending'): ?>
                           <button class="btn-small btn-view" title="Approve" onclick="updateStatus(<?php echo $record['pms_id'] ?? 0; ?>, 'Approved')" style="background: #27ae60;">
                             <i class="fas fa-check"></i>
                           </button>
@@ -444,6 +465,86 @@ $customers = $pmsHandler->getCustomers();
     </div>
   </div>
 
+  <!-- Reschedule Modal -->
+  <div class="modal-overlay" id="rescheduleModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Reschedule PMS Appointment</h3>
+        <button class="modal-close" onclick="closeRescheduleModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <form id="rescheduleForm">
+        <div class="modal-body">
+          <input type="hidden" id="reschedulePmsId" name="pmsId">
+          <div class="form-group">
+            <label class="form-label">New Scheduled Date</label>
+            <input type="date" class="form-input" id="newDate" name="newDate" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Available Time Slots</label>
+            <select class="form-input" id="newTime" name="newTime" required>
+              <option value="">Select a time slot</option>
+              <option value="08:00">8:00 AM - 9:00 AM</option>
+              <option value="09:00">9:00 AM - 10:00 AM</option>
+              <option value="10:00">10:00 AM - 11:00 AM</option>
+              <option value="11:00">11:00 AM - 12:00 PM</option>
+              <option value="13:00">1:00 PM - 2:00 PM</option>
+              <option value="14:00">2:00 PM - 3:00 PM</option>
+              <option value="15:00">3:00 PM - 4:00 PM</option>
+              <option value="16:00">4:00 PM - 5:00 PM</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Reason for Rescheduling (Optional)</label>
+            <textarea class="form-textarea" id="rescheduleReason" name="rescheduleReason" rows="3" placeholder="Enter reason for rescheduling..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeRescheduleModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-calendar-check"></i> Confirm Reschedule
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Mark as Completed Modal -->
+  <div class="modal-overlay" id="completedModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Mark PMS as Completed</h3>
+        <button class="modal-close" onclick="closeCompletedModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <form id="completedForm">
+        <div class="modal-body">
+          <input type="hidden" id="completedPmsId" name="pmsId">
+          <div class="form-group">
+            <label class="form-label">Completion Date</label>
+            <input type="date" class="form-input" id="completionDate" name="completionDate" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Service Notes / Findings</label>
+            <textarea class="form-textarea" id="completionNotes" name="completionNotes" rows="4" placeholder="Enter service notes and findings..." required></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Next PMS Due</label>
+            <input type="text" class="form-input" id="nextPmsDue" name="nextPmsDue" placeholder="e.g., 20K KM or Date">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeCompletedModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-check-circle"></i> Mark as Completed
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Remove SweetAlert CDN -->
   <script src="../../includes/js/common-scripts.js"></script>
   
@@ -617,7 +718,26 @@ $customers = $pmsHandler->getCustomers();
               </button>
             `;
           }
-          
+
+          // Reschedule button for Scheduled or Approved status
+          const isScheduledOrApproved = ['Scheduled', 'Approved'].includes(record.request_status || '');
+          if (isScheduledOrApproved) {
+            actionButtons += `
+              <button class="btn-small btn-edit" title="Reschedule" onclick="rescheduleRequest(${record.pms_id || 0})" style="background: #f39c12;">
+                <i class="fas fa-calendar-alt"></i>
+              </button>
+            `;
+          }
+
+          // Mark as Completed button for Scheduled or Approved status
+          if (isScheduledOrApproved) {
+            actionButtons += `
+              <button class="btn-small btn-view" title="Mark as Completed" onclick="markAsCompleted(${record.pms_id || 0})" style="background: #27ae60;">
+                <i class="fas fa-check-circle"></i>
+              </button>
+            `;
+          }
+
           // Approve button for pending records (only for sales agents)
           if (isPending && userRole === 'SalesAgent') {
             actionButtons += `
@@ -864,6 +984,49 @@ $customers = $pmsHandler->getCustomers();
       document.getElementById('exportHistoryModal').classList.remove('active');
     }
 
+    // Reschedule functions
+    function rescheduleRequest(pmsId) {
+      if (!pmsId) {
+        showNotification('Error: Invalid PMS ID', 'error');
+        return;
+      }
+
+      document.getElementById('reschedulePmsId').value = pmsId;
+      document.getElementById('rescheduleModal').classList.add('active');
+
+      // Set minimum date to tomorrow
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().split('T')[0];
+      document.getElementById('newDate').min = tomorrowStr;
+    }
+
+    function closeRescheduleModal() {
+      document.getElementById('rescheduleModal').classList.remove('active');
+      document.getElementById('rescheduleForm').reset();
+    }
+
+    // Mark as Completed functions
+    function markAsCompleted(pmsId) {
+      if (!pmsId) {
+        showNotification('Error: Invalid PMS ID', 'error');
+        return;
+      }
+
+      document.getElementById('completedPmsId').value = pmsId;
+      document.getElementById('completedModal').classList.add('active');
+
+      // Set default completion date to today
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('completionDate').value = today;
+      document.getElementById('completionDate').max = today;
+    }
+
+    function closeCompletedModal() {
+      document.getElementById('completedModal').classList.remove('active');
+      document.getElementById('completedForm').reset();
+    }
+
     // Notification system to replace SweetAlert
     function showNotification(message, type = 'info') {
       // Create notification element
@@ -927,7 +1090,7 @@ $customers = $pmsHandler->getCustomers();
       // Real-time search functionality with debounce
       const searchInput = document.getElementById('client-search');
       const debouncedSearch = debounce(applyFilters, 500);
-      
+
       searchInput.addEventListener('input', function() {
         debouncedSearch();
       });
@@ -936,6 +1099,90 @@ $customers = $pmsHandler->getCustomers();
       document.getElementById('pms-type').addEventListener('change', applyFilters);
       document.getElementById('completion-period').addEventListener('change', applyFilters);
       document.getElementById('status-filter').addEventListener('change', applyFilters);
+
+      // Reschedule form handler
+      document.getElementById('rescheduleForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const pmsId = document.getElementById('reschedulePmsId').value;
+        const newDate = document.getElementById('newDate').value;
+        const newTime = document.getElementById('newTime').value;
+        const reason = document.getElementById('rescheduleReason').value;
+
+        if (!newDate || !newTime) {
+          showNotification('Please select both date and time', 'error');
+          return;
+        }
+
+        // Check if date is not in the past
+        const selectedDate = new Date(newDate + ' ' + newTime);
+        const now = new Date();
+        if (selectedDate <= now) {
+          showNotification('Please select a future date and time', 'error');
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('pms_id', pmsId);
+        formData.append('new_date', newDate);
+        formData.append('new_time', newTime);
+        formData.append('reschedule_reason', reason);
+
+        fetch('../../api/pms_api.php?action=reschedule', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showNotification('PMS appointment rescheduled successfully!', 'success');
+            closeRescheduleModal();
+            setTimeout(() => location.reload(), 1500);
+          } else {
+            throw new Error(data.message || 'Failed to reschedule');
+          }
+        })
+        .catch(error => {
+          showNotification('Failed to reschedule: ' + error.message, 'error');
+        });
+      });
+
+      // Mark as Completed form handler
+      document.getElementById('completedForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const pmsId = document.getElementById('completedPmsId').value;
+        const completionDate = document.getElementById('completionDate').value;
+        const notes = document.getElementById('completionNotes').value;
+        const nextPmsDue = document.getElementById('nextPmsDue').value;
+
+        if (!completionDate || !notes) {
+          showNotification('Please fill in all required fields', 'error');
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('pms_id', pmsId);
+        formData.append('completion_date', completionDate);
+        formData.append('service_notes', notes);
+        formData.append('next_pms_due', nextPmsDue);
+
+        fetch('../../api/pms_api.php?action=mark_completed', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showNotification('PMS marked as completed successfully!', 'success');
+            closeCompletedModal();
+            setTimeout(() => location.reload(), 1500);
+          } else {
+            throw new Error(data.message || 'Failed to mark as completed');
+          }
+        })
+        .catch(error => {
+          showNotification('Failed to mark as completed: ' + error.message, 'error');
+        });
+      });
     });
   </script>
 

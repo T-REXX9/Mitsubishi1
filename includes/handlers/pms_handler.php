@@ -46,7 +46,10 @@ class PMSHandler {
      */
     public function getAllPMSRecords($filters = []) {
         try {
-            $query = "SELECT 
+            // Set a reasonable timeout for the query
+            $this->pdo->setAttribute(PDO::ATTR_TIMEOUT, 30);
+
+            $query = "SELECT
                         p.pms_id,
                         p.customer_id,
                         p.plate_number,
@@ -65,39 +68,40 @@ class PMSHandler {
                         p.created_at,
                         p.updated_at,
                         p.service_notes_findings,
-                        CASE WHEN p.uploaded_receipt IS NOT NULL THEN 1 ELSE 0 END as has_receipt,
+                        IF(p.uploaded_receipt IS NOT NULL, 1, 0) as has_receipt,
                         c.firstname,
                         c.lastname,
                         c.middlename,
                         c.mobile_number,
                         c.Status as customer_status,
-                        CONCAT(c.firstname, ' ', IFNULL(c.middlename, ''), ' ', c.lastname) as full_name,
+                        TRIM(CONCAT(IFNULL(c.firstname, ''), ' ', IFNULL(c.middlename, ''), ' ', IFNULL(c.lastname, ''))) as full_name,
                         a.Email,
-                        COALESCE(sa.display_name, sa.agent_id_number, 'N/A') as approved_by_name
+                        COALESCE(sa.display_name, CONCAT(aa.FirstName, ' ', aa.LastName), 'N/A') as approved_by_name
                       FROM car_pms_records p
-                      LEFT JOIN customer_information c ON p.customer_id = c.cusID
+                      LEFT JOIN customer_information c ON p.customer_id = c.account_id
                       LEFT JOIN accounts a ON c.account_id = a.Id
-                      LEFT JOIN sales_agent_profiles sa ON p.approved_by = sa.agent_profile_id";
-            
+                      LEFT JOIN sales_agent_profiles sa ON p.approved_by = sa.account_id
+                      LEFT JOIN accounts aa ON p.approved_by = aa.Id";
+
             $whereConditions = [];
             $params = [];
-            
+
             // Apply filters
             if (!empty($filters['customer_search'])) {
                 $whereConditions[] = "(c.firstname LIKE :search OR c.lastname LIKE :search OR p.plate_number LIKE :search)";
                 $params['search'] = '%' . $filters['customer_search'] . '%';
             }
-            
+
             if (!empty($filters['pms_type']) && $filters['pms_type'] !== 'all') {
                 $whereConditions[] = "p.pms_info LIKE :pms_type";
                 $params['pms_type'] = '%' . $filters['pms_type'] . '%';
             }
-            
+
             if (!empty($filters['status']) && $filters['status'] !== 'all') {
                 $whereConditions[] = "p.request_status = :status";
                 $params['status'] = $filters['status'];
             }
-            
+
             if (!empty($filters['completion_period']) && $filters['completion_period'] !== 'all') {
                 switch ($filters['completion_period']) {
                     case 'last7days':
@@ -117,30 +121,42 @@ class PMSHandler {
                         break;
                 }
             }
-            
+
             if (!empty($whereConditions)) {
                 $query .= " WHERE " . implode(" AND ", $whereConditions);
             }
-            
-            $query .= " ORDER BY p.created_at DESC";
-            
+
+            $query .= " ORDER BY p.created_at DESC LIMIT 1000";
+
             $stmt = $this->pdo->prepare($query);
             $stmt->execute($params);
-            
+
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
+
             // Ensure all required fields exist with default values
             foreach ($results as &$record) {
                 $record['approved_at'] = $record['approved_at'] ?? null;
-                $record['approved_by_name'] = $record['approved_by_name'] ?? 'N/A';
-                $record['full_name'] = $record['full_name'] ?? 'N/A';
+
+                // Handle approved_by_name - check if it's empty or just whitespace
+                $approvedByName = trim($record['approved_by_name'] ?? '');
+                $record['approved_by_name'] = !empty($approvedByName) ? $approvedByName : 'N/A';
+
+                // Handle full_name - check if it's empty or just whitespace
+                $fullName = trim($record['full_name'] ?? '');
+                $record['full_name'] = !empty($fullName) ? $fullName : 'N/A';
+
                 $record['mobile_number'] = $record['mobile_number'] ?? 'N/A';
                 $record['has_receipt'] = $record['has_receipt'] ?? 0;
+                $record['firstname'] = $record['firstname'] ?? '';
+                $record['lastname'] = $record['lastname'] ?? '';
+                $record['middlename'] = $record['middlename'] ?? '';
+                $record['Email'] = $record['Email'] ?? '';
             }
-            
+
             return $results;
         } catch (PDOException $e) {
             error_log("Error getting PMS records: " . $e->getMessage());
+            error_log("Error trace: " . $e->getTraceAsString());
             return [];
         }
     }
@@ -150,14 +166,15 @@ class PMSHandler {
      */
     public function getCustomerPMSHistory($customerId) {
         try {
-            $query = "SELECT 
+            $query = "SELECT
                         p.*,
                         CASE WHEN p.uploaded_receipt IS NOT NULL THEN 1 ELSE 0 END as has_receipt,
-                        COALESCE(sa.display_name, sa.agent_id_number, 'N/A') as approved_by_name,
+                        COALESCE(sa.display_name, CONCAT(aa.FirstName, ' ', aa.LastName), 'N/A') as approved_by_name,
                         TIMESTAMPDIFF(HOUR, p.scheduled_date, p.updated_at) as duration_hours
                       FROM car_pms_records p
-                      LEFT JOIN sales_agent_profiles sa ON p.approved_by = sa.agent_profile_id
-                      WHERE p.customer_id = :customer_id 
+                      LEFT JOIN sales_agent_profiles sa ON p.approved_by = sa.account_id
+                      LEFT JOIN accounts aa ON p.approved_by = aa.Id
+                      WHERE p.customer_id = :customer_id
                       ORDER BY p.pms_date DESC";
             
             $stmt = $this->pdo->prepare($query);
@@ -254,28 +271,60 @@ class PMSHandler {
         try {
             $updateFields = ['request_status = :status', 'updated_at = NOW()'];
             $params = ['pms_id' => $pmsId, 'status' => $status];
-            
+
             if ($status === 'Approved' && isset($data['approved_by'])) {
                 $updateFields[] = 'approved_by = :approved_by';
                 $updateFields[] = 'approved_at = NOW()';
                 $params['approved_by'] = $data['approved_by'];
             }
-            
+
             if ($status === 'Scheduled' && isset($data['scheduled_date'])) {
                 $updateFields[] = 'scheduled_date = :scheduled_date';
                 $params['scheduled_date'] = $data['scheduled_date'];
+
+                // Also set approved_by and approved_at for scheduled status
+                if (isset($data['approved_by'])) {
+                    $updateFields[] = 'approved_by = :approved_by';
+                    $updateFields[] = 'approved_at = NOW()';
+                    $params['approved_by'] = $data['approved_by'];
+                }
             }
-            
+
             if ($status === 'Rejected' && isset($data['rejection_reason'])) {
                 $updateFields[] = 'rejection_reason = :rejection_reason';
                 $params['rejection_reason'] = $data['rejection_reason'];
             }
-            
+
+            if ($status === 'Completed') {
+                // Handle completion-specific fields
+                if (isset($data['pms_date'])) {
+                    $updateFields[] = 'pms_date = :pms_date';
+                    $params['pms_date'] = $data['pms_date'];
+                }
+
+                if (isset($data['service_notes_findings'])) {
+                    $updateFields[] = 'service_notes_findings = :service_notes_findings';
+                    $params['service_notes_findings'] = $data['service_notes_findings'];
+                }
+
+                if (isset($data['next_pms_due'])) {
+                    $updateFields[] = 'next_pms_due = :next_pms_due';
+                    $params['next_pms_due'] = $data['next_pms_due'];
+                }
+
+                // Set approved_by and approved_at for completed status
+                if (isset($data['approved_by'])) {
+                    $updateFields[] = 'approved_by = :approved_by';
+                    $updateFields[] = 'approved_at = NOW()';
+                    $params['approved_by'] = $data['approved_by'];
+                }
+            }
+
             $query = "UPDATE car_pms_records SET " . implode(', ', $updateFields) . " WHERE pms_id = :pms_id";
-            
+
             $stmt = $this->pdo->prepare($query);
             $result = $stmt->execute($params);
-            
+
             if ($result) {
                 return ['success' => true, 'message' => 'PMS status updated successfully'];
             } else {
@@ -431,10 +480,11 @@ class PMSHandler {
                         c.middlename,
                         c.mobile_number,
                         CONCAT(c.firstname, ' ', IFNULL(c.middlename, ''), ' ', c.lastname) as full_name,
-                        COALESCE(sa.display_name, sa.agent_id_number, 'N/A') as approved_by_name
+                        COALESCE(sa.display_name, CONCAT(aa.FirstName, ' ', aa.LastName), 'N/A') as approved_by_name
                       FROM car_pms_records p
-                      LEFT JOIN customer_information c ON p.customer_id = c.cusID
-                      LEFT JOIN sales_agent_profiles sa ON p.approved_by = sa.agent_profile_id
+                      LEFT JOIN customer_information c ON p.customer_id = c.account_id
+                      LEFT JOIN sales_agent_profiles sa ON p.approved_by = sa.account_id
+                      LEFT JOIN accounts aa ON p.approved_by = aa.Id
                       WHERE p.pms_id = :pms_id";
             
             $stmt = $this->pdo->prepare($query);

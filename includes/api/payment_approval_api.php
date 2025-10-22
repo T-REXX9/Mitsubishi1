@@ -216,26 +216,27 @@ function getVerifiedPayments($connect, $user_id, $user_role) {
  */
 function getAllLoanCustomers($connect, $user_id, $user_role) {
     try {
-        // Base query - Fixed GROUP BY to include all non-aggregated columns
+        // Base query - Count confirmed payments from payment_history, schedule from payment_schedule
         $sql = "SELECT o.order_id, o.order_number, o.customer_id, o.vehicle_model, o.vehicle_variant,
                        o.total_price, o.down_payment, o.monthly_payment, o.financing_term, o.order_date,
+                       ci.firstname, ci.lastname, ci.mobile_number, ci.agent_id,
                        a.FirstName, a.LastName, a.Email,
-                       ci.mobile_number, ci.agent_id,
                        agent.FirstName as agent_fname, agent.LastName as agent_lname,
                        v.model_name, v.variant,
                        COUNT(DISTINCT ps.id) as total_payments_due,
-                       SUM(CASE WHEN ps.status = 'Paid' THEN 1 ELSE 0 END) as payments_made,
+                       COUNT(DISTINCT CASE WHEN ph.status = 'Confirmed' THEN ph.id END) as payments_made,
                        SUM(CASE WHEN ps.status = 'Pending' AND ps.due_date < NOW() THEN 1 ELSE 0 END) as overdue_payments,
                        MIN(CASE WHEN ps.status = 'Pending' THEN ps.due_date END) as next_due_date,
-                       SUM(CASE WHEN ps.status = 'Paid' THEN ps.amount_paid ELSE 0 END) as total_paid
+                       COALESCE(SUM(CASE WHEN ph.status = 'Confirmed' THEN ph.amount_paid ELSE 0 END), 0) as total_paid
                 FROM orders o
-                JOIN accounts a ON o.customer_id = a.Id
-                LEFT JOIN customer_information ci ON a.Id = ci.account_id
+                LEFT JOIN customer_information ci ON o.customer_id = ci.cusID
+                LEFT JOIN accounts a ON ci.account_id = a.Id
                 LEFT JOIN accounts agent ON ci.agent_id = agent.Id
                 LEFT JOIN vehicles v ON o.vehicle_id = v.id
                 LEFT JOIN payment_schedule ps ON o.order_id = ps.order_id
-                WHERE o.payment_method = 'financing'";
-        
+                LEFT JOIN payment_history ph ON o.order_id = ph.order_id
+                WHERE o.payment_method = 'financing' AND ci.cusID IS NOT NULL";
+
         // Add role-based filtering
         if ($user_role === 'Sales Agent') {
             $sql .= " AND ci.agent_id = ?";
@@ -243,12 +244,12 @@ function getAllLoanCustomers($connect, $user_id, $user_role) {
         } else {
             $params = [];
         }
-        
+
         // GROUP BY all non-aggregated columns to comply with ONLY_FULL_GROUP_BY
         $sql .= " GROUP BY o.order_id, o.order_number, o.customer_id, o.vehicle_model, o.vehicle_variant,
                          o.total_price, o.down_payment, o.monthly_payment, o.financing_term, o.order_date,
+                         ci.firstname, ci.lastname, ci.mobile_number, ci.agent_id,
                          a.FirstName, a.LastName, a.Email,
-                         ci.mobile_number, ci.agent_id,
                          agent.FirstName, agent.LastName,
                          v.model_name, v.variant
                   ORDER BY o.order_date DESC";
@@ -259,15 +260,30 @@ function getAllLoanCustomers($connect, $user_id, $user_role) {
         
         // Format the data
         foreach ($customers as &$customer) {
-            $customer['customer_name'] = trim(($customer['FirstName'] ?? '') . ' ' . ($customer['LastName'] ?? ''));
+            // Build customer name with fallbacks - FIXED: Check customer_information first
+            $customer_name = trim(($customer['firstname'] ?? '') . ' ' . ($customer['lastname'] ?? ''));
+            if (empty($customer_name)) {
+                $customer_name = trim(($customer['FirstName'] ?? '') . ' ' . ($customer['LastName'] ?? ''));
+            }
+            if (empty($customer_name)) {
+                $customer_name = $customer['Email'] ?? 'Customer #' . $customer['customer_id'];
+            }
+            $customer['customer_name'] = $customer_name;
+
             $customer['agent_name'] = trim(($customer['agent_fname'] ?? '') . ' ' . ($customer['agent_lname'] ?? ''));
             $customer['vehicle_display'] = ($customer['model_name'] ?? $customer['vehicle_model']) . ' ' . ($customer['variant'] ?? $customer['vehicle_variant'] ?? '');
             
             // Calculate payment status
-            $payments_made = (int)$customer['payments_made'];
-            $total_due = (int)$customer['total_payments_due'];
-            $overdue = (int)$customer['overdue_payments'];
-            
+            $payments_made = (int)($customer['payments_made'] ?? 0);
+            $total_due = (int)($customer['total_payments_due'] ?? 0);
+            $overdue = (int)($customer['overdue_payments'] ?? 0);
+
+            // If no payment schedule exists, use financing_term as total_due
+            if ($total_due === 0 && !empty($customer['financing_term'])) {
+                $total_due = (int)$customer['financing_term'];
+                $customer['total_payments_due'] = $total_due;
+            }
+
             if ($overdue > 0) {
                 $customer['payment_status'] = 'overdue';
                 $customer['payment_status_label'] = 'Overdue';
@@ -281,10 +297,27 @@ function getAllLoanCustomers($connect, $user_id, $user_role) {
                 $customer['payment_status'] = 'pending';
                 $customer['payment_status_label'] = 'Pending';
             }
-            
-            // Calculate progress percentage
-            $customer['payment_progress'] = $total_due > 0 ? round(($payments_made / $total_due) * 100) : 0;
-            
+
+            // Calculate progress percentage based on amount paid vs total price (same as order details page)
+            $total_price = (float)($customer['total_price'] ?? 0);
+            $total_paid = (float)($customer['total_paid'] ?? 0);
+            $customer['payment_progress'] = $total_price > 0 ? round(($total_paid / $total_price) * 100, 2) : 0;
+
+            // If no next_due_date from payment_schedule, calculate it based on order date and payments made
+            if (empty($customer['next_due_date']) && $payments_made < $total_due && !empty($customer['order_date'])) {
+                try {
+                    $order_date = new DateTime($customer['order_date']);
+                    // Calculate next payment number (payments_made + 1)
+                    $next_payment_number = $payments_made + 1;
+                    // Add months to order date
+                    $order_date->modify("+{$next_payment_number} months");
+                    $customer['next_due_date'] = $order_date->format('Y-m-d');
+                } catch (Exception $e) {
+                    // If date calculation fails, leave it as null
+                    $customer['next_due_date'] = null;
+                }
+            }
+
             // Calculate balance
             $customer['balance'] = $customer['total_price'] - ($customer['down_payment'] ?? 0) - ($customer['total_paid'] ?? 0);
         }

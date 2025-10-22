@@ -1,4 +1,9 @@
 <?php
+// Enable error logging for debugging
+error_reporting(E_ALL);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/../../error_log.txt');
+
 // Always respond with JSON
 if (!headers_sent()) {
     header('Content-Type: application/json');
@@ -50,8 +55,17 @@ try {
             echo json_encode(['success' => false, 'error' => 'Invalid action']);
     }
 } catch (Throwable $e) {
+    // Log the full error for debugging
+    error_log("Transaction Backend Error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+
     http_response_code(500);
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    echo json_encode([
+        'success' => false,
+        'error' => $e->getMessage(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine(),
+        'trace' => $e->getTraceAsString()
+    ]);
 }
 
 function getTransactions()
@@ -72,14 +86,17 @@ function getTransactions()
     $where = [];
     $params = [];
 
-    // Map UI status based on payment completion
+    // Map UI status based on order_status field (aligned with Sales Report)
+    // This approach handles both:
+    // 1. Walk-in clients who pay full cash (no payment_history records)
+    // 2. Financing clients who complete all payments (marked as Completed)
     if ($status !== '') {
         if ($status === 'completed') {
-            // Fully paid orders (remaining balance = 0)
-            $where[] = "(o.total_price - COALESCE(payments.total_paid, 0)) = 0";
+            // Orders marked as completed (includes cash sales and fully paid financing)
+            $where[] = "o.order_status = 'Completed'";
         } elseif ($status === 'pending') {
-            // Not fully paid orders (remaining balance > 0)
-            $where[] = "(o.total_price - COALESCE(payments.total_paid, 0)) > 0";
+            // Orders not marked as completed (ongoing financing, pending delivery, etc.)
+            $where[] = "o.order_status != 'Completed'";
         }
     }
 
@@ -181,12 +198,18 @@ function getTransactions()
             ORDER BY o.created_at DESC
             LIMIT ? OFFSET ?";
 
-    $params2 = $params;
-    $params2[] = $limit;
-    $params2[] = $offset;
-
     $stmt = $pdo->prepare($sql);
-    $stmt->execute($params2);
+
+    // Bind all the WHERE clause parameters
+    foreach ($params as $i => $param) {
+        $stmt->bindValue($i + 1, $param);
+    }
+
+    // Bind LIMIT and OFFSET as integers
+    $stmt->bindValue(count($params) + 1, $limit, PDO::PARAM_INT);
+    $stmt->bindValue(count($params) + 2, $offset, PDO::PARAM_INT);
+
+    $stmt->execute();
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Format for UI
@@ -233,8 +256,8 @@ function getStats()
 
     $where = [];
     $params = [];
-    
-    // Build base join for payment calculation
+
+    // Build base join for payment calculation (still needed for total_sales_value)
     $paymentJoin = "LEFT JOIN (
         SELECT order_id, COALESCE(SUM(amount_paid), 0) as total_paid
         FROM payment_history
@@ -242,10 +265,12 @@ function getStats()
         GROUP BY order_id
     ) payments ON o.order_id = payments.order_id";
 
+    // Use order_status field (aligned with Sales Report)
+    // This handles both cash sales and completed financing
     if ($status === 'completed') {
-        $where[] = "(o.total_price - COALESCE(payments.total_paid, 0)) = 0";
+        $where[] = "o.order_status = 'Completed'";
     } elseif ($status === 'pending') {
-        $where[] = "(o.total_price - COALESCE(payments.total_paid, 0)) > 0";
+        $where[] = "o.order_status != 'Completed'";
     }
 
     // Sales Agent restriction
