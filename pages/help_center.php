@@ -353,13 +353,15 @@ $displayName = !empty($user['FirstName']) ? $user['FirstName'] : $user['Username
             margin: var(--space-4) 0;
             border-left: 0.25rem solid var(--color-primary);
             font-size: var(--font-size-sm);
+            color: #000000;
         }
 
         .accordion-content .steps {
-            background: var(--color-highlight-bg);
-            padding: var(--space-5);
-            border-radius: var(--radius-md);
-            margin: var(--space-4) 0;
+              background: var(--color-highlight-bg);
+              padding: var(--space-5);
+              border-radius: var(--radius-md);
+              margin: var(--space-4) 0;
+              color: #000000; /* sets text color to black */
         }
 
         .accordion-content .step {

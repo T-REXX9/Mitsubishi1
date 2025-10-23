@@ -86,7 +86,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     body {
-      background-image: url(../includes/images/logbg.jpg); 
+      /*background-image: url(../includes/images/logbg.jpg);*/
+      background-image: none;
+      background-color: #222222;
       background-size: cover; /* scales image to cover the whole area */
       background-position: center; /* centers the image */
       background-repeat: no-repeat;
@@ -122,6 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     h2 {
+      color: #ffffff;
       font-size: 1.5rem;
       margin-bottom: 30px;
       line-height: 1.2;
@@ -180,6 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     .register {
+      color: #ffffff;
       margin-top: 10px;
       font-size: 0.85rem;
     }

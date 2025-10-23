@@ -15,6 +15,8 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['user_role'])) {
     }
 }
 
+
+
 include_once(dirname(__DIR__) . '/includes/database/db_conn.php');
 
 $login_error = '';
@@ -160,7 +162,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     body {
-      background-image: url(../includes/images/logbg.jpg); 
+      /*wag po i-uncomment yung background image kasi pinapatanggal samin yun*/
+      /*background-image: url(../includes/images/logbg.jpg);*/
+      background-color: #222222;
       background-size: cover; /* scales image to cover the whole area */
       background-position: center; /* centers the image */
       background-repeat: no-repeat;
@@ -196,6 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       font-size: 1.5rem;
       margin-bottom: 30px;
       line-height: 1.2;
+      color: #ffffff;
     }
 
     form {
@@ -260,10 +265,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .register {
       margin-top: 10px;
       font-size: 0.85rem;
+      color: #ffffff;
     }
 
     .register a {
-      color: #ffd700;
+      color: #FFCC33;
       text-decoration: none;
     }
 
@@ -518,6 +524,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
     }
   </script>
+  
+
 </body>
 
 </html>
