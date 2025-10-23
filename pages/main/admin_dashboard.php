@@ -1142,27 +1142,35 @@ $accountStats = getAccountStats($connect);
 
   function displayPendingPayments(payments) {
     const tbody = document.getElementById('pendingPaymentsTable');
-    
+
     if (payments.length === 0) {
       tbody.innerHTML = '<tr><td colspan="7" class="text-center">No pending payments</td></tr>';
       return;
     }
 
-    tbody.innerHTML = payments.map(payment => `
-      <tr>
-        <td>PAY-${payment.id}</td>
-        <td>${payment.customer_name}</td>
-        <td>₱${parseFloat(payment.amount_paid).toLocaleString()}</td>
-        <td>${payment.payment_method}</td>
-        <td>${payment.reference_number || 'N/A'}</td>
-        <td>${new Date(payment.payment_date).toLocaleDateString()}</td>
-        <td class="table-actions">
-          <button class="btn btn-small btn-success" onclick="approvePayment(${payment.id})">Approve</button>
-          <button class="btn btn-small btn-danger" onclick="rejectPayment(${payment.id})">Reject</button>
-          <button class="btn btn-small btn-info" onclick="viewPaymentDetails(${payment.id})">Details</button>
-        </td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = payments.map(payment => {
+      // Role-based button visibility: Only Sales Agents can approve/reject
+      // Handle both "SalesAgent" (database format) and "Sales Agent" (display format)
+      const isSalesAgent = window.userRole === 'SalesAgent' || window.userRole === 'Sales Agent';
+
+      return `
+        <tr>
+          <td>PAY-${payment.id}</td>
+          <td>${payment.customer_name}</td>
+          <td>₱${parseFloat(payment.amount_paid).toLocaleString()}</td>
+          <td>${payment.payment_method}</td>
+          <td>${payment.reference_number || 'N/A'}</td>
+          <td>${new Date(payment.payment_date).toLocaleDateString()}</td>
+          <td class="table-actions">
+            ${isSalesAgent ? `
+              <button class="btn btn-small btn-success" onclick="approvePayment(${payment.id})">Approve</button>
+              <button class="btn btn-small btn-danger" onclick="rejectPayment(${payment.id})">Reject</button>
+            ` : ''}
+            <button class="btn btn-small btn-info" onclick="viewPaymentDetails(${payment.id})">Details</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
   }
 
   function updatePendingStats(payments) {
@@ -1173,7 +1181,7 @@ $accountStats = getAccountStats($connect);
     document.getElementById('pendingAmount').textContent = '₱' + totalAmount.toLocaleString();
   }
 
-  function approvePayment(paymentId) {
+  window.approvePayment = function(paymentId) {
     Swal.fire({
       title: 'Approve Payment?',
       text: 'Are you sure you want to approve this payment?',
@@ -1187,7 +1195,7 @@ $accountStats = getAccountStats($connect);
         const formData = new FormData();
         formData.append('action', 'approvePayment');
         formData.append('payment_id', paymentId);
-        
+
         fetch('../includes/api/payment_approval_api.php', {
           method: 'POST',
           body: formData
@@ -1216,9 +1224,9 @@ $accountStats = getAccountStats($connect);
         });
       }
     });
-  }
+  };
 
-  function rejectPayment(paymentId) {
+  window.rejectPayment = function(paymentId) {
     Swal.fire({
       title: 'Reject Payment?',
       text: 'Please provide a reason for rejection:',
@@ -1239,7 +1247,7 @@ $accountStats = getAccountStats($connect);
         formData.append('action', 'rejectPayment');
         formData.append('payment_id', paymentId);
         formData.append('rejection_reason', result.value);
-        
+
         fetch('../includes/api/payment_approval_api.php', {
           method: 'POST',
           body: formData
@@ -1268,21 +1276,21 @@ $accountStats = getAccountStats($connect);
         });
       }
     });
-  }
+  };
 
-  function viewPaymentDetails(paymentId) {
+  window.viewPaymentDetails = function(paymentId) {
     fetch(`../includes/api/payment_approval_api.php?action=getPaymentDetails&payment_id=${paymentId}`)
       .then(response => response.json())
       .then(data => {
         if (data.success) {
           const payment = data.data;
-          
+
           // Build receipt section
           let receiptSection = '';
           if (payment.has_receipt && payment.receipt_filename) {
             const receiptUrl = payment.receipt_url;
             const isImage = /\.(jpg|jpeg|png|gif)$/i.test(payment.receipt_filename);
-            
+
             if (isImage) {
               receiptSection = `
                 <p><strong>Receipt:</strong></p>
@@ -1293,7 +1301,7 @@ $accountStats = getAccountStats($connect);
               `;
             } else {
               receiptSection = `
-                <p><strong>Receipt:</strong> 
+                <p><strong>Receipt:</strong>
                   <a href="${receiptUrl}" target="_blank" style="color: #dc143c; text-decoration: none;">
                     📄 ${payment.receipt_filename}
                   </a>
@@ -1303,7 +1311,7 @@ $accountStats = getAccountStats($connect);
           } else {
             receiptSection = '<p><strong>Receipt:</strong> <span style="color: #999;">No receipt uploaded</span></p>';
           }
-          
+
           Swal.fire({
             title: 'Payment Details',
             html: `
@@ -1342,7 +1350,7 @@ $accountStats = getAccountStats($connect);
           text: 'Network error occurred'
         });
       });
-  }
+  };
 
   // Load pending payments when the transaction update interface is opened
   document.addEventListener('DOMContentLoaded', function() {

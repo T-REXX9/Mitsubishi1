@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  */
 function getPendingPayments($connect, $user_id, $user_role) {
     try {
-        // Base query - FIXED: Join customer_information first, then accounts
+        // Base query - Use orders.sales_agent_id for filtering (same as payment_backend.php)
         $sql = "SELECT ph.*,
                        o.order_number, o.vehicle_model, o.vehicle_variant, o.monthly_payment, o.total_price,
                        ci.firstname, ci.lastname, ci.mobile_number, ci.agent_id,
@@ -89,13 +89,14 @@ function getPendingPayments($connect, $user_id, $user_role) {
                 JOIN orders o ON ph.order_id = o.order_id
                 LEFT JOIN customer_information ci ON ph.customer_id = ci.cusID
                 LEFT JOIN accounts a ON ci.account_id = a.Id
-                LEFT JOIN accounts agent ON ci.agent_id = agent.Id
+                LEFT JOIN accounts agent ON o.sales_agent_id = agent.Id
                 LEFT JOIN vehicles v ON o.vehicle_id = v.id
                 WHERE ph.status = 'Pending'";
 
-        // Add role-based filtering
-        if ($user_role === 'Sales Agent') {
-            $sql .= " AND ci.agent_id = ?";
+        // Add role-based filtering - Use orders.sales_agent_id (same as payment_backend.php)
+        // Handle both "SalesAgent" (database format) and "Sales Agent" (display format)
+        if ($user_role === 'SalesAgent' || $user_role === 'Sales Agent') {
+            $sql .= " AND o.sales_agent_id = ?";
             $params = [$user_id];
         } else {
             $params = [];
@@ -146,7 +147,7 @@ function getPendingPayments($connect, $user_id, $user_role) {
  */
 function getVerifiedPayments($connect, $user_id, $user_role) {
     try {
-        // Base query - FIXED: Join customer_information first, then accounts
+        // Base query - Use orders.sales_agent_id for filtering (same as payment_backend.php)
         $sql = "SELECT ph.*,
                        o.order_number, o.vehicle_model, o.vehicle_variant, o.monthly_payment,
                        ci.firstname, ci.lastname, ci.mobile_number, ci.agent_id,
@@ -158,14 +159,15 @@ function getVerifiedPayments($connect, $user_id, $user_role) {
                 JOIN orders o ON ph.order_id = o.order_id
                 LEFT JOIN customer_information ci ON ph.customer_id = ci.cusID
                 LEFT JOIN accounts a ON ci.account_id = a.Id
-                LEFT JOIN accounts agent ON ci.agent_id = agent.Id
+                LEFT JOIN accounts agent ON o.sales_agent_id = agent.Id
                 LEFT JOIN accounts processor ON ph.processed_by = processor.Id
                 LEFT JOIN vehicles v ON o.vehicle_id = v.id
                 WHERE ph.status = 'Confirmed'";
 
-        // Add role-based filtering
-        if ($user_role === 'Sales Agent') {
-            $sql .= " AND ci.agent_id = ?";
+        // Add role-based filtering - Use orders.sales_agent_id (same as payment_backend.php)
+        // Handle both "SalesAgent" (database format) and "Sales Agent" (display format)
+        if ($user_role === 'SalesAgent' || $user_role === 'Sales Agent') {
+            $sql .= " AND o.sales_agent_id = ?";
             $params = [$user_id];
         } else {
             $params = [];
@@ -216,7 +218,7 @@ function getVerifiedPayments($connect, $user_id, $user_role) {
  */
 function getAllLoanCustomers($connect, $user_id, $user_role) {
     try {
-        // Base query - Count confirmed payments from payment_history, schedule from payment_schedule
+        // Base query - Use orders.sales_agent_id for filtering (same as payment_backend.php)
         $sql = "SELECT o.order_id, o.order_number, o.customer_id, o.vehicle_model, o.vehicle_variant,
                        o.total_price, o.down_payment, o.monthly_payment, o.financing_term, o.order_date,
                        ci.firstname, ci.lastname, ci.mobile_number, ci.agent_id,
@@ -231,15 +233,16 @@ function getAllLoanCustomers($connect, $user_id, $user_role) {
                 FROM orders o
                 LEFT JOIN customer_information ci ON o.customer_id = ci.cusID
                 LEFT JOIN accounts a ON ci.account_id = a.Id
-                LEFT JOIN accounts agent ON ci.agent_id = agent.Id
+                LEFT JOIN accounts agent ON o.sales_agent_id = agent.Id
                 LEFT JOIN vehicles v ON o.vehicle_id = v.id
                 LEFT JOIN payment_schedule ps ON o.order_id = ps.order_id
                 LEFT JOIN payment_history ph ON o.order_id = ph.order_id
                 WHERE o.payment_method = 'financing' AND ci.cusID IS NOT NULL";
 
-        // Add role-based filtering
-        if ($user_role === 'Sales Agent') {
-            $sql .= " AND ci.agent_id = ?";
+        // Add role-based filtering - Use orders.sales_agent_id (same as payment_backend.php)
+        // Handle both "SalesAgent" (database format) and "Sales Agent" (display format)
+        if ($user_role === 'SalesAgent' || $user_role === 'Sales Agent') {
+            $sql .= " AND o.sales_agent_id = ?";
             $params = [$user_id];
         } else {
             $params = [];
@@ -339,7 +342,7 @@ function getAllLoanCustomers($connect, $user_id, $user_role) {
  */
 function getPaymentDetails($connect, $payment_id, $user_id, $user_role) {
     try {
-        // Base query - FIXED: Join customer_information first, then accounts
+        // Base query - Use orders.sales_agent_id for filtering (same as payment_backend.php)
         $sql = "SELECT ph.*,
                        o.order_number, o.vehicle_model, o.vehicle_variant, o.monthly_payment, o.order_id,
                        ci.firstname, ci.lastname, ci.mobile_number, ci.agent_id,
@@ -351,16 +354,17 @@ function getPaymentDetails($connect, $payment_id, $user_id, $user_role) {
                 JOIN orders o ON ph.order_id = o.order_id
                 LEFT JOIN customer_information ci ON ph.customer_id = ci.cusID
                 LEFT JOIN accounts a ON ci.account_id = a.Id
-                LEFT JOIN accounts agent ON ci.agent_id = agent.Id
+                LEFT JOIN accounts agent ON o.sales_agent_id = agent.Id
                 LEFT JOIN accounts processor ON ph.processed_by = processor.Id
                 LEFT JOIN vehicles v ON o.vehicle_id = v.id
                 WHERE ph.id = ?";
 
         $params = [$payment_id];
 
-        // Add role-based filtering for Sales Agents
-        if ($user_role === 'Sales Agent') {
-            $sql .= " AND ci.agent_id = ?";
+        // Add role-based filtering for Sales Agents - Use orders.sales_agent_id (same as payment_backend.php)
+        // Handle both "SalesAgent" (database format) and "Sales Agent" (display format)
+        if ($user_role === 'SalesAgent' || $user_role === 'Sales Agent') {
+            $sql .= " AND o.sales_agent_id = ?";
             $params[] = $user_id;
         }
 
@@ -410,26 +414,33 @@ function getPaymentDetails($connect, $payment_id, $user_id, $user_role) {
  * Approve a payment
  */
 function approvePayment($connect, $payment_id, $user_id, $user_role) {
+    // Only Sales Agents can approve payments - check this before starting transaction
+    // Handle both "SalesAgent" (database format) and "Sales Agent" (display format)
+    if ($user_role !== 'SalesAgent' && $user_role !== 'Sales Agent') {
+        return ['success' => false, 'error' => 'Unauthorized: Only Sales Agents can approve payments'];
+    }
+
     try {
         $connect->beginTransaction();
-        
-        // Get payment details first
-        $stmt = $connect->prepare("SELECT ph.*, o.order_id, ci.agent_id 
+
+        // Get payment details first - Use orders.sales_agent_id (same as payment_backend.php)
+        $stmt = $connect->prepare("SELECT ph.*, o.order_id, o.sales_agent_id
                                     FROM payment_history ph
                                     JOIN orders o ON ph.order_id = o.order_id
-                                    JOIN accounts a ON ph.customer_id = a.Id
-                                    LEFT JOIN customer_information ci ON a.Id = ci.account_id
-                                    WHERE ph.id = ?");
+                                    WHERE ph.id = ? AND ph.status = 'Pending'");
         $stmt->execute([$payment_id]);
         $payment = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if (!$payment) {
-            throw new Exception('Payment not found');
+            throw new Exception('Payment not found or already processed');
         }
-        
-        // Check authorization for Sales Agents
-        if ($user_role === 'Sales Agent' && $payment['agent_id'] != $user_id) {
-            throw new Exception('Unauthorized: You can only approve payments for your assigned customers');
+
+        // Check authorization - Sales Agents can only approve payments for their assigned customers
+        // Use orders.sales_agent_id (same as payment_backend.php)
+        if ($user_role === 'SalesAgent' || $user_role === 'Sales Agent') {
+            if ($payment['sales_agent_id'] != $user_id) {
+                throw new Exception('Unauthorized: You can only approve payments for your assigned customers');
+            }
         }
         
         // Update payment status
@@ -513,25 +524,33 @@ function approvePayment($connect, $payment_id, $user_id, $user_role) {
  * Reject a payment
  */
 function rejectPayment($connect, $payment_id, $rejection_reason, $user_id, $user_role) {
+    // Only Sales Agents can reject payments - check this before starting transaction
+    // Handle both "SalesAgent" (database format) and "Sales Agent" (display format)
+    if ($user_role !== 'SalesAgent' && $user_role !== 'Sales Agent') {
+        return ['success' => false, 'error' => 'Unauthorized: Only Sales Agents can reject payments'];
+    }
+
     try {
         $connect->beginTransaction();
-        
-        // Get payment details first
-        $stmt = $connect->prepare("SELECT ph.*, ci.agent_id 
+
+        // Get payment details first - Use orders.sales_agent_id (same as payment_backend.php)
+        $stmt = $connect->prepare("SELECT ph.*, o.order_id, o.sales_agent_id
                                     FROM payment_history ph
-                                    JOIN accounts a ON ph.customer_id = a.Id
-                                    LEFT JOIN customer_information ci ON a.Id = ci.account_id
-                                    WHERE ph.id = ?");
+                                    JOIN orders o ON ph.order_id = o.order_id
+                                    WHERE ph.id = ? AND ph.status = 'Pending'");
         $stmt->execute([$payment_id]);
         $payment = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if (!$payment) {
-            throw new Exception('Payment not found');
+            throw new Exception('Payment not found or already processed');
         }
-        
-        // Check authorization for Sales Agents
-        if ($user_role === 'Sales Agent' && $payment['agent_id'] != $user_id) {
-            throw new Exception('Unauthorized: You can only reject payments for your assigned customers');
+
+        // Check authorization - Sales Agents can only reject payments for their assigned customers
+        // Use orders.sales_agent_id (same as payment_backend.php)
+        if ($user_role === 'SalesAgent' || $user_role === 'Sales Agent') {
+            if ($payment['sales_agent_id'] != $user_id) {
+                throw new Exception('Unauthorized: You can only reject payments for your assigned customers');
+            }
         }
         
         // Update payment status

@@ -420,6 +420,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
   <script src="../../includes/js/common-scripts.js"></script>
 
   <script>
+    // Pass PHP session variables to JavaScript
+    window.userRole = <?php echo json_encode($user_role); ?>;
+    window.userId = <?php echo json_encode($user_id); ?>;
+
     // Include SweetAlert2 from CDN
     if (!document.querySelector('script[src*="sweetalert2"]')) {
       const swalScript = document.createElement('script');

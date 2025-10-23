@@ -2,36 +2,65 @@
 session_start();
 include_once(dirname(__DIR__) . '/includes/database/db_conn.php');
 
+// Initialize CSRF token
+if (empty($_SESSION['csrf_token'])) {
+    try {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    } catch (Exception $e) {
+        $_SESSION['csrf_token'] = bin2hex(openssl_random_pseudo_bytes(32));
+    }
+}
+
 $reset_error = '';
 $reset_success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email'] ?? '');
-
-    // Check if email exists
-    $stmt = $connect->prepare("SELECT * FROM accounts WHERE Email = ?");
-    $stmt->execute([$email]);
-    $account = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($account) {
-        // Generate and send OTP for password reset
-        require_once(dirname(__DIR__) . '/includes/services/OTPService.php');
-        $otpService = new \Mitsubishi\Services\OTPService($connect);
-        $otpResult = $otpService->sendOTP($account['Id'], $email, 'password_reset');
-
-        if ($otpResult['success']) {
-            // Set session variables for password reset
-            $_SESSION['pending_password_reset_user_id'] = $account['Id'];
-            $_SESSION['pending_password_reset_email'] = $email;
-
-            // Redirect to OTP verification page
-            header("Location: verify_reset_otp.php");
-            exit;
-        } else {
-            $reset_error = "Failed to send verification code. Please try again.";
-        }
+    // Validate CSRF token
+    $token = $_POST['csrf_token'] ?? '';
+    if (!$token || !hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
+        $reset_error = "Security validation failed. Please try again.";
     } else {
-        $reset_error = "No account found with that email address.";
+        $email = trim($_POST['email'] ?? '');
+
+        if (empty($email)) {
+            $reset_error = "Please enter your email address.";
+        } else {
+            // Check if email exists
+            $stmt = $connect->prepare("SELECT * FROM accounts WHERE Email = ?");
+            $stmt->execute([$email]);
+            $account = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($account) {
+                // Generate and send OTP for password reset
+                require_once(dirname(__DIR__) . '/includes/services/OTPService.php');
+                $otpService = new \Mitsubishi\Services\OTPService($connect);
+                $otpResult = $otpService->sendOTP($account['Id'], $email, 'password_reset');
+
+                if ($otpResult['success']) {
+                    // Set session variables for password reset
+                    $_SESSION['pending_password_reset_user_id'] = $account['Id'];
+                    $_SESSION['pending_password_reset_email'] = $email;
+
+                    // Redirect to OTP verification page
+                    header("Location: verify_reset_otp.php");
+                    exit;
+                } else {
+                    // Show generic error to prevent enumeration
+                    $reset_success = "If an account exists with this email, a verification code has been sent.";
+                }
+            } else {
+                // Show same message as success to prevent user enumeration
+                // This prevents attackers from discovering valid email addresses
+                $reset_success = "If an account exists with this email, a verification code has been sent.";
+            }
+        }
+    }
+
+    // Regenerate CSRF token after each attempt
+    try {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    } catch (Exception $e) {
+        $_SESSION['csrf_token'] = bin2hex(openssl_random_pseudo_bytes(32));
     }
 }
 ?>
@@ -233,6 +262,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div style="color:#ffd700;"><?php echo $reset_success; ?></div>
       <?php else: ?>
       <form method="post" autocomplete="off">
+        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
         <div>
           <label for="email">Email</label>
           <input type="email" id="email" name="email" placeholder="Enter your email" required value="<?php echo isset($email) ? htmlspecialchars($email, ENT_QUOTES) : ''; ?>" />

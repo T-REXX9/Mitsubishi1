@@ -1291,35 +1291,43 @@ $accountStats = getAccountStats($connect);
 
   function displayPendingPayments(payments) {
     const tbody = document.getElementById('pendingPaymentsTable');
-    
+
     if (payments.length === 0) {
       tbody.innerHTML = '<tr><td colspan="9" class="text-center">No pending payments</td></tr>';
       return;
     }
 
-    tbody.innerHTML = payments.map(payment => `
-      <tr>
-        <td>${payment.payment_number || 'PAY-' + payment.id}</td>
-        <td>${payment.customer_name}<br><small>${payment.Email || ''}</small></td>
-        <td>${payment.agent_name || 'N/A'}</td>
-        <td>${payment.vehicle_display || 'N/A'}</td>
-        <td>₱${parseFloat(payment.amount_paid).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-        <td>${payment.payment_method}</td>
-        <td>${payment.reference_number || 'N/A'}</td>
-        <td>${new Date(payment.payment_date).toLocaleDateString()}</td>
-        <td class="table-actions">
-          <button class="btn btn-small btn-success" onclick="approvePayment(${payment.id})" title="Approve Payment">
-            <i class="fas fa-check"></i>
-          </button>
-          <button class="btn btn-small btn-danger" onclick="rejectPayment(${payment.id})" title="Reject Payment">
-            <i class="fas fa-times"></i>
-          </button>
-          <button class="btn btn-small btn-info" onclick="viewPaymentDetails(${payment.id})" title="View Details">
-            <i class="fas fa-eye"></i>
-          </button>
-        </td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = payments.map(payment => {
+      // Role-based button visibility: Only Sales Agents can approve/reject
+      // Handle both "SalesAgent" (database format) and "Sales Agent" (display format)
+      const isSalesAgent = window.userRole === 'SalesAgent' || window.userRole === 'Sales Agent';
+
+      return `
+        <tr>
+          <td>${payment.payment_number || 'PAY-' + payment.id}</td>
+          <td>${payment.customer_name}<br><small>${payment.Email || ''}</small></td>
+          <td>${payment.agent_name || 'N/A'}</td>
+          <td>${payment.vehicle_display || 'N/A'}</td>
+          <td>₱${parseFloat(payment.amount_paid).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+          <td>${payment.payment_method}</td>
+          <td>${payment.reference_number || 'N/A'}</td>
+          <td>${new Date(payment.payment_date).toLocaleDateString()}</td>
+          <td class="table-actions">
+            ${isSalesAgent ? `
+              <button class="btn btn-small btn-success" onclick="approvePayment(${payment.id})" title="Approve Payment">
+                <i class="fas fa-check"></i>
+              </button>
+              <button class="btn btn-small btn-danger" onclick="rejectPayment(${payment.id})" title="Reject Payment">
+                <i class="fas fa-times"></i>
+              </button>
+            ` : ''}
+            <button class="btn btn-small btn-info" onclick="viewPaymentDetails(${payment.id})" title="View Details">
+              <i class="fas fa-eye"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
   }
 
   function updatePendingStats(payments) {

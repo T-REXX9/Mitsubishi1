@@ -2,19 +2,33 @@
 session_start();
 include_once(dirname(__DIR__) . '/includes/database/db_conn.php');
 
+// Initialize CSRF token
+if (empty($_SESSION['csrf_token'])) {
+    try {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    } catch (Exception $e) {
+        $_SESSION['csrf_token'] = bin2hex(openssl_random_pseudo_bytes(32));
+    }
+}
+
 $register_error = '';
 $register_success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $name = trim($_POST['name'] ?? '');
-  $email = trim($_POST['email'] ?? '');
-  $password = $_POST['password'] ?? '';
-  $confirm_password = $_POST['confirm_password'] ?? '';
-
-  // Check if passwords match
-  if ($password !== $confirm_password) {
-    $register_error = "Passwords do not match.";
+  // Validate CSRF token
+  $token = $_POST['csrf_token'] ?? '';
+  if (!$token || !hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
+    $register_error = "Security validation failed. Please try again.";
   } else {
+    $name = trim($_POST['name'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $confirm_password = $_POST['confirm_password'] ?? '';
+
+    // Check if passwords match
+    if ($password !== $confirm_password) {
+      $register_error = "Passwords do not match.";
+    } else {
     // Split name into first and last (simple logic)
     $nameParts = explode(' ', $name, 2);
     $firstName = $nameParts[0] ?? '';
@@ -58,6 +72,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $register_error = "Failed to create account. Please try again.";
       }
     }
+  }
+
+  // Regenerate CSRF token after each attempt
+  try {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+  } catch (Exception $e) {
+    $_SESSION['csrf_token'] = bin2hex(openssl_random_pseudo_bytes(32));
   }
 }
 ?>
@@ -350,6 +371,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div style="color:#ffd700;margin-bottom:10px;"><?php echo htmlspecialchars($register_error); ?></div>
       <?php endif; ?>
       <form method="post" autocomplete="off">
+        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
         <div>
           <label for="name">Full Name</label>
           <input type="text" id="name" name="name" placeholder="Enter your full name" required />
