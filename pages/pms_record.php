@@ -261,7 +261,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .radio-group input[type="radio"] {
-            accent-color: #ffd700;
+            accent-color: #E60012;
         }
 
         .checkbox-grid {
@@ -573,7 +573,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </label>
                                 <span class="file-name"></span>
                             </div>
-                            <small style="color: rgba(255, 255, 255, 0.7); margin-top: 5px; display: block;">
+                            <small style="color: #000000; margin-top: 5px; display: block;">
                                 Accepted formats: JPG, PNG, PDF, DOCX (Max 10MB)
                             </small>
                         </div>

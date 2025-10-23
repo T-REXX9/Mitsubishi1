@@ -517,7 +517,7 @@ include 'header.php';
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <div class="container">
-  <h1 class="page-title">Service Offer</h1>
+  <h1 class="page-title">Mitsubishi Service Offer</h1>
   
   <div class="page-intro;">
     <p style = "color: #ffffff; text-align: center;">Trust your Mitsubishi to the experts. Our certified technicians use genuine parts and specialized equipment to keep your vehicle performing at its best.</p>
@@ -530,7 +530,7 @@ include 'header.php';
       <div class="service-description">
         Keep your Mitsubishi in peak condition with our comprehensive maintenance services, from oil changes to system checks.
       </div>
-      <button class="service-btn"><i class="fas fa-calendar-check"></i> Book Service</button>
+      <!--<button class="service-btn"><i class="fas fa-calendar-check"></i> Book Service</button>-->
     </div>
     
     <div class="service-card">
@@ -539,7 +539,7 @@ include 'header.php';
       <div class="service-description">
         Expert diagnosis and repair using genuine Mitsubishi parts. We fix it right the first time, every time.
       </div>
-      <button class="service-btn"><i class="fas fa-clock"></i> Schedule Repair</button>
+      <!--<button class="service-btn"><i class="fas fa-clock"></i> Schedule Repair</button>-->
     </div>
     
     <div class="service-card">
@@ -548,7 +548,7 @@ include 'header.php';
       <div class="service-description">
         24/7 roadside assistance and priority service for emergencies. We're there when you need us most.
       </div>
-      <button class="service-btn"><i class="fas fa-phone"></i> Emergency Call</button>
+      <!--<button class="service-btn"><i class="fas fa-phone"></i> Emergency Call</button>-->
     </div>
     
     <div class="service-card">
@@ -557,7 +557,7 @@ include 'header.php';
       <div class="service-description">
         Browse our selection of genuine Mitsubishi parts and accessories to maintain performance and value.
       </div>
-      <button class="service-btn"><i class="fas fa-shopping-cart"></i> Browse Parts</button>
+      <!--<button class="service-btn"><i class="fas fa-shopping-cart"></i> Browse Parts</button>-->
     </div>
     
     <div class="service-card">
@@ -566,7 +566,7 @@ include 'header.php';
       <div class="service-description">
         Comprehensive multi-point inspections to identify potential issues before they become major problems.
       </div>
-      <button class="service-btn"><i class="fas fa-clipboard-check"></i> Book Inspection</button>
+      <!--<button class="service-btn"><i class="fas fa-clipboard-check"></i> Book Inspection</button>-->
     </div>
     
     <div class="service-card">
@@ -575,7 +575,7 @@ include 'header.php';
       <div class="service-description">
         Quick service for busy schedules. Basic maintenance completed in under 60 minutes while you wait.
       </div>
-      <button class="service-btn"><i class="fas fa-stopwatch"></i> Express Booking</button>
+      <!--<button class="service-btn"><i class="fas fa-stopwatch"></i> Express Booking</button>-->
     </div>
   </div>
     

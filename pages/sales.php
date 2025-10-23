@@ -602,7 +602,7 @@ include 'header.php';
           <div class="promo-detail"><i class="fas fa-calendar-alt"></i> Until Aug 31</div>
           <div class="promo-detail"><i class="fas fa-tag"></i> 20% DP</div>
         </div>
-        <button class="promo-btn"><i class="fas fa-info-circle"></i> Learn More</button>
+        <!--<button class="promo-btn"><i class="fas fa-info-circle"></i> Learn More</button>-->
       </div>
       
       <div class="promo-card">
@@ -616,7 +616,7 @@ include 'header.php';
           <div class="promo-detail"><i class="fas fa-calendar-alt"></i> Ongoing</div>
           <div class="promo-detail"><i class="fas fa-file-alt"></i> Free Appraisal</div>
         </div>
-        <button class="promo-btn"><i class="fas fa-calculator"></i> Get Quote</button>
+        <!--<button class="promo-btn"><i class="fas fa-calculator"></i> Get Quote</button>-->
       </div>
       
       <div class="promo-card">
@@ -629,7 +629,7 @@ include 'header.php';
           <div class="promo-detail"><i class="fas fa-users"></i> 3+ Vehicles</div>
           <div class="promo-detail"><i class="fas fa-tools"></i> Service Package</div>
         </div>
-        <button class="promo-btn"><i class="fas fa-handshake"></i> Contact Sales</button>
+        <!--<button class="promo-btn"><i class="fas fa-handshake"></i> Contact Sales</button>-->
       </div>
       
       <div class="promo-card">
@@ -642,7 +642,7 @@ include 'header.php';
           <div class="promo-detail"><i class="fas fa-percentage"></i> Low DP</div>
           <div class="promo-detail"><i class="fas fa-calendar-alt"></i> Extended Terms</div>
         </div>
-        <button class="promo-btn"><i class="fas fa-file-signature"></i> Apply Now</button>
+        <!--<button class="promo-btn"><i class="fas fa-file-signature"></i> Apply Now</button>-->
       </div>
     </div>
   </div>

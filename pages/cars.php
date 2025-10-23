@@ -51,12 +51,9 @@ $stmt = $connect->prepare("SELECT * FROM vehicles WHERE availability_status = 'a
     margin-top: 32px;
   }
   .car-card {
-    position: relative;
-    overflow: hidden;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 215, 0, 0.2);
-    transition: transform 0.4s ease, box-shadow 0.4s ease, opacity 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
   .car-card:hover {
     transform: translateY(-8px);
@@ -129,7 +126,9 @@ $stmt = $connect->prepare("SELECT * FROM vehicles WHERE availability_status = 'a
   }
 
   .car-info {
-    padding: 20px;
+    flex: 1; /* allows info to grow and push the button down */
+    display: flex;
+    flex-direction: column;
   }
 
   .car-name {
@@ -148,7 +147,7 @@ $stmt = $connect->prepare("SELECT * FROM vehicles WHERE availability_status = 'a
     gap: 15px;
     margin: 15px 0;
     padding-bottom: 15px;
-    border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+    
   }
 
   .car-spec {
@@ -165,6 +164,8 @@ $stmt = $connect->prepare("SELECT * FROM vehicles WHERE availability_status = 'a
   }
 
   .learn-more-btn {
+    margin-top: auto;
+    border-top: 1px solid rgba(255, 215, 0, 0.2);
     width: 100%;
     position: relative;
     overflow: hidden;
