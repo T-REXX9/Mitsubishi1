@@ -26,7 +26,7 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'Admin') {
     }
     
     body {
-      zoom: 80%;
+      zoom: 85%;
     }
     /* Admin Transaction Records Specific Styles */
     .page-header {

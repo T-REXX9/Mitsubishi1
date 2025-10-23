@@ -56,7 +56,7 @@ try {
     }
     
     body {
-      zoom: 80%;
+      zoom: 85%;
     }
 
     .delivery-stats {

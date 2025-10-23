@@ -27,6 +27,9 @@ if (!$pdo) {
   <link href="../../includes/css/common-styles.css" rel="stylesheet">
   <link href="../../includes/css/orders-styles.css" rel="stylesheet">
   <style>
+    body{
+      zoom: 85%;
+    } 
     /* Enable scroll inside table area */
     .table-responsive {
       max-height: 70vh;

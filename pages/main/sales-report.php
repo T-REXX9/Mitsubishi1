@@ -33,6 +33,10 @@ if (!$pdo) {
       height: auto !important;
       scroll-behavior: smooth;
     }
+
+    body{
+      zoom: 85%;
+    }
     
     .main {
       height: auto !important;

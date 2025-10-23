@@ -24,6 +24,10 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'Admin') {
       scroll-behavior: smooth;
     }
 
+    body{
+      zoom: 85%;
+    }
+
     .main {
       height: auto !important;
       min-height: 100vh;

@@ -276,7 +276,7 @@ if (!empty($user_data['ProfileImage'])) {
     }
     
     body {
-      zoom: 80%;
+      zoom: 85%;
     }
     .profile-container {
       display: grid;

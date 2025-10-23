@@ -27,6 +27,7 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'Admin') {
     }
     
     body {
+      zoom:85%;
     }
     /* Admin Handled Records Specific Styles */
     .page-header {

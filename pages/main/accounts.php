@@ -244,6 +244,9 @@ $activeAgents = $customerOp->getActiveSalesAgents();
   <style>
     /* Page-specific overrides to avoid bottom white space and allow full-page scroll */
     body { overflow-y: auto !important; }
+    body{
+      zoom: 85%;
+    }
     .main-content { padding-bottom: 0 !important; }
 
     /* Smaller confirm modal */

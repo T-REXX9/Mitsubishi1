@@ -1,0 +1,21 @@
+[23-Oct-2025 13:47:44 Europe/Berlin] EnvLoader: .env file not found at: C:\xampp\htdocs\Mitsubishi1/.env
+[23-Oct-2025 13:47:44 Europe/Berlin] EnvLoader: .env file not found at: C:\xampp\htdocs\Mitsubishi1/.env
+[23-Oct-2025 19:47:44 Asia/Manila] Transaction Backend Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mitsubishi.payment_history' doesn't exist
+#0 C:\xampp\htdocs\Mitsubishi1\includes\backend\transactions_backend.php(288): PDOStatement->execute(Array)
+#1 C:\xampp\htdocs\Mitsubishi1\includes\backend\transactions_backend.php(36): getStats()
+#2 {main}
+[23-Oct-2025 13:47:44 Europe/Berlin] EnvLoader: .env file not found at: C:\xampp\htdocs\Mitsubishi1/.env
+[23-Oct-2025 19:47:44 Asia/Manila] Transaction Backend Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mitsubishi.payment_history' doesn't exist
+#0 C:\xampp\htdocs\Mitsubishi1\includes\backend\transactions_backend.php(288): PDOStatement->execute(Array)
+#1 C:\xampp\htdocs\Mitsubishi1\includes\backend\transactions_backend.php(36): getStats()
+#2 {main}
+[23-Oct-2025 13:47:44 Europe/Berlin] EnvLoader: .env file not found at: C:\xampp\htdocs\Mitsubishi1/.env
+[23-Oct-2025 19:47:44 Asia/Manila] Transaction Backend Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mitsubishi.payment_history' doesn't exist
+#0 C:\xampp\htdocs\Mitsubishi1\includes\backend\transactions_backend.php(148): PDOStatement->execute(Array)
+#1 C:\xampp\htdocs\Mitsubishi1\includes\backend\transactions_backend.php(33): getTransactions()
+#2 {main}
+[23-Oct-2025 13:47:44 Europe/Berlin] EnvLoader: .env file not found at: C:\xampp\htdocs\Mitsubishi1/.env
+[23-Oct-2025 19:47:44 Asia/Manila] Transaction Backend Error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mitsubishi.payment_history' doesn't exist
+#0 C:\xampp\htdocs\Mitsubishi1\includes\backend\transactions_backend.php(148): PDOStatement->execute(Array)
+#1 C:\xampp\htdocs\Mitsubishi1\includes\backend\transactions_backend.php(33): getTransactions()
+#2 {main}
