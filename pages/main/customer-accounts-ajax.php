@@ -1,8 +1,29 @@
 <?php
+// Start output buffering FIRST to catch any unwanted output
+ob_start();
+
+// Include init file
 include_once(dirname(dirname(__DIR__)) . '/includes/init.php');
+
+// Discard any output from init
+if (ob_get_level() > 0) {
+    ob_end_clean();
+}
+
+// FORCE disable error display to prevent any output before JSON (must be after init.php)
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+error_reporting(E_ALL);
+
+// Start fresh output buffer
+ob_start();
+
+// Set JSON header
+header('Content-Type: application/json; charset=utf-8');
 
 // Check if user is Sales Agent
 if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'SalesAgent') {
+    if (ob_get_level() > 0) ob_end_clean();
     echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
     exit();
 }
@@ -12,34 +33,46 @@ $sales_agent_id = $_SESSION['user_id'];
 // Handle different actions
 $action = $_REQUEST['action'] ?? '';
 
-switch($action) {
-    case 'search_accounts':
-        searchCustomerAccounts();
-        break;
-    case 'add_customer':
-        addCustomer();
-        break;
-    case 'update_customer':
-        updateCustomer();
-        break;
-    case 'get_customer':
-        getCustomer();
-        break;
-    case 'delete_customer':
-        deleteCustomer();
-        break;
-    case 'get_customers':
-        getCustomers();
-        break;
-    default:
-        echo json_encode(['success' => false, 'message' => 'Invalid action']);
+try {
+    switch($action) {
+        case 'search_accounts':
+            searchCustomerAccounts();
+            break;
+        case 'add_customer':
+            addCustomer();
+            break;
+        case 'update_customer':
+            updateCustomer();
+            break;
+        case 'get_customer':
+            getCustomer();
+            break;
+        case 'delete_customer':
+            deleteCustomer();
+            break;
+        case 'get_customers':
+            getCustomers();
+            break;
+        default:
+            if (ob_get_level() > 0) ob_end_clean();
+            echo json_encode(['success' => false, 'message' => 'Invalid action']);
+            exit();
+    }
+} catch (Exception $e) {
+    if (ob_get_level() > 0) ob_end_clean();
+    error_log("AJAX Error: " . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
+    exit();
 }
+
+// This should never be reached since all functions call exit()
+if (ob_get_level() > 0) ob_end_clean();
 
 function searchCustomerAccounts() {
     global $connect;
-    
+
     $term = $_GET['term'] ?? '';
-    
+
     try {
         $stmt = $connect->prepare("
             SELECT Id, Username, Email, FirstName, LastName, DateOfBirth, Status
@@ -48,17 +81,21 @@ function searchCustomerAccounts() {
             AND (Username LIKE :term OR Email LIKE :term OR FirstName LIKE :term OR LastName LIKE :term OR CONCAT(FirstName, ' ', LastName) LIKE :term)
             LIMIT 10
         ");
-        
+
         $searchTerm = "%{$term}%";
         $stmt->bindParam(':term', $searchTerm);
         $stmt->execute();
-        
+
         $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
+        if (ob_get_level() > 0) ob_end_clean();
         echo json_encode(['success' => true, 'accounts' => $accounts]);
+        exit();
     } catch (PDOException $e) {
         error_log("Search accounts error: " . $e->getMessage());
+        if (ob_get_level() > 0) ob_end_clean();
         echo json_encode(['success' => false, 'message' => 'Database error']);
+        exit();
     }
 }
 
@@ -170,33 +207,37 @@ function addCustomer() {
         createNotification($account_id, null, 'Customer Info Approved', 'Your customer information has been verified and approved by Sales Agent.', 'customer');
         createNotification(null, 'SalesAgent', 'Walk-in Customer Added', 'Walk-in customer added and approved: ' . $_POST['firstname'] . ' ' . $_POST['lastname'], 'customer');
 
+        if (ob_get_level() > 0) ob_end_clean();
         echo json_encode(['success' => true, 'message' => 'Walk-in customer added and approved successfully']);
+        exit();
 
     } catch (Exception $e) {
         if ($connect->inTransaction()) {
             $connect->rollBack();
         }
         error_log("Add customer error: " . $e->getMessage());
+        if (ob_get_level() > 0) ob_end_clean();
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        exit();
     }
 }
 
 function updateCustomer() {
     global $connect;
-    
+
     try {
         $connect->beginTransaction();
-        
+
         // Validate required fields
         if (empty($_POST['cusID']) || empty($_POST['firstname']) || empty($_POST['lastname']) || empty($_POST['birthday'])) {
             throw new Exception('Required fields are missing');
         }
-        
+
         // Calculate age
         $birthday = new DateTime($_POST['birthday']);
         $today = new DateTime();
         $age = $today->diff($birthday)->y;
-        
+
         // Update customer information
         $stmt = $connect->prepare("
             UPDATE customer_information SET
@@ -219,7 +260,7 @@ function updateCustomer() {
                 valid_id_number = :valid_id_number
             WHERE cusID = :cusID
         ");
-        
+
         $stmt->execute([
             ':cusID' => $_POST['cusID'],
             ':firstname' => $_POST['firstname'],
@@ -240,31 +281,36 @@ function updateCustomer() {
             ':valid_id_type' => $_POST['valid_id_type'] ?: null,
             ':valid_id_number' => $_POST['valid_id_number'] ?: null
         ]);
-        
+
         $connect->commit();
-require_once(dirname(dirname(__DIR__)) . '/includes/api/notification_api.php');
-createNotification($_POST['cusID'], null, 'Customer Info Updated', 'Your customer information has been updated by Sales Agent.', 'customer');
-createNotification(null, 'SalesAgent', 'Customer Info Updated', 'Customer info updated for customer ID ' . $_POST['cusID'], 'customer');
-echo json_encode(['success' => true, 'message' => 'Customer information updated successfully']);
-        
+        require_once(dirname(dirname(__DIR__)) . '/includes/api/notification_api.php');
+        createNotification($_POST['cusID'], null, 'Customer Info Updated', 'Your customer information has been updated by Sales Agent.', 'customer');
+        createNotification(null, 'SalesAgent', 'Customer Info Updated', 'Customer info updated for customer ID ' . $_POST['cusID'], 'customer');
+
+        if (ob_get_level() > 0) ob_end_clean();
+        echo json_encode(['success' => true, 'message' => 'Customer information updated successfully']);
+        exit();
+
     } catch (Exception $e) {
         $connect->rollBack();
         error_log("Update customer error: " . $e->getMessage());
+        if (ob_get_level() > 0) ob_end_clean();
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        exit();
     }
 }
 
 function getCustomer() {
     global $connect;
-    
+
     $cusID = $_GET['id'] ?? 0;
-    
+
     try {
         $stmt = $connect->prepare("
-            SELECT 
-                ci.*, 
-                a.Username, 
-                a.Email, 
+            SELECT
+                ci.*,
+                a.Username,
+                a.Email,
                 a.Status as AccountStatus,
                 a.FirstName AS AccountFirstName,
                 a.LastName AS AccountLastName,
@@ -273,57 +319,82 @@ function getCustomer() {
             INNER JOIN accounts a ON ci.account_id = a.Id
             WHERE ci.cusID = :cusID
         ");
-        
+
         $stmt->bindParam(':cusID', $cusID);
         $stmt->execute();
-        
+
         $customer = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if ($customer) {
+            // Convert valid_id_image BLOB to base64 data URL if it exists
+            if (!empty($customer['valid_id_image'])) {
+                $imageData = base64_encode($customer['valid_id_image']);
+                $customer['valid_id_image_url'] = 'data:image/jpeg;base64,' . $imageData;
+                // Remove the binary data from the response
+                unset($customer['valid_id_image']);
+            }
+
+            if (ob_get_level() > 0) ob_end_clean();
             echo json_encode(['success' => true, 'customer' => $customer]);
+            exit();
         } else {
+            if (ob_get_level() > 0) ob_end_clean();
             echo json_encode(['success' => false, 'message' => 'Customer not found']);
+            exit();
         }
-        
+
     } catch (PDOException $e) {
         error_log("Get customer error: " . $e->getMessage());
-        echo json_encode(['success' => false, 'message' => 'Database error']);
+        if (ob_get_level() > 0) ob_end_clean();
+        echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+        exit();
     }
 }
 
 function deleteCustomer() {
     global $connect;
-    
+
     $cusID = $_POST['cusID'] ?? 0;
-    
+
     try {
         $stmt = $connect->prepare("DELETE FROM customer_information WHERE cusID = :cusID");
         $stmt->bindParam(':cusID', $cusID);
         $stmt->execute();
-        
+
         if ($stmt->rowCount() > 0) {
             require_once(dirname(dirname(__DIR__)) . '/includes/api/notification_api.php');
             createNotification(null, 'SalesAgent', 'Customer Info Deleted', 'Customer info deleted for customer ID ' . $_POST['cusID'], 'customer');
             createNotification(null, 'Admin', 'Customer Info Deleted', 'A customer account was deleted by Sales Agent. Customer ID: ' . $_POST['cusID'], 'customer');
+
+            if (ob_get_level() > 0) ob_end_clean();
             echo json_encode(['success' => true, 'message' => 'Customer deleted successfully']);
+            exit();
         } else {
+            if (ob_get_level() > 0) ob_end_clean();
             echo json_encode(['success' => false, 'message' => 'Customer not found']);
+            exit();
         }
-        
+
     } catch (PDOException $e) {
         error_log("Delete customer error: " . $e->getMessage());
+        if (ob_get_level() > 0) ob_end_clean();
         echo json_encode(['success' => false, 'message' => 'Database error']);
+        exit();
     }
 }
 
 function getCustomers() {
     global $connect;
-    
+
     $search = $_GET['search'] ?? '';
     $status = $_GET['status'] ?? 'all';
     $sales_agent_id = $_SESSION['user_id'];
-    
+
     try {
+        // Clean and normalize search input to handle pasted text with hidden characters
+        $searchTerm = trim($search);
+        $searchTerm = preg_replace('/\s+/', ' ', $searchTerm);
+
         $query = "
             SELECT
                 ci.*,
@@ -336,42 +407,70 @@ function getCustomers() {
             INNER JOIN accounts a ON ci.account_id = a.Id
             WHERE a.Role = 'Customer' AND ci.agent_id = :agent_id
         ";
-        
+
         $params = [':agent_id' => $sales_agent_id];
-        
-        // Add search filter
-        if (!empty($search)) {
-            $query .= " AND (
-                ci.firstname LIKE :search OR
-                ci.lastname LIKE :search OR
-                a.Email LIKE :search OR
-                ci.mobile_number LIKE :search OR
-                ci.complete_address LIKE :search
-            )";
-            $params[':search'] = "%{$search}%";
+
+        // Add search filter with multi-word support
+        if (!empty($searchTerm)) {
+            // Split search term into words for multi-word search
+            $searchWords = explode(' ', $searchTerm);
+            $searchConditions = [];
+
+            foreach ($searchWords as $index => $word) {
+                $word = trim($word);
+                if ($word !== '') {
+                    $paramName = ':search_' . $index;
+                    $searchConditions[] = "(" .
+                        "ci.firstname LIKE " . $paramName . " OR " .
+                        "ci.lastname LIKE " . $paramName . " OR " .
+                        "a.Email LIKE " . $paramName . " OR " .
+                        "ci.mobile_number LIKE " . $paramName . " OR " .
+                        "ci.complete_address LIKE " . $paramName . " OR " .
+                        "CONCAT(ci.firstname, ' ', ci.lastname) LIKE " . $paramName .
+                    ")";
+                    $params[$paramName] = '%' . $word . '%';
+                }
+            }
+
+            if (!empty($searchConditions)) {
+                $query .= " AND (" . implode(' AND ', $searchConditions) . ")";
+            }
         }
-        
+
         // Add status filter
         if ($status !== 'all') {
             $query .= " AND ci.Status = :status";
             $params[':status'] = $status;
         }
-        
+
         $query .= " ORDER BY ci.created_at DESC";
-        
+
         $stmt = $connect->prepare($query);
         foreach ($params as $key => $value) {
             $stmt->bindValue($key, $value);
         }
         $stmt->execute();
-        
+
         $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
+        // Remove binary fields (e.g., BLOBs) that can break json_encode
+        if (!empty($customers)) {
+            foreach ($customers as &$c) {
+                if (isset($c['valid_id_image'])) {
+                    unset($c['valid_id_image']);
+                }
+            }
+            unset($c);
+        }
+
+        if (ob_get_level() > 0) ob_end_clean();
         echo json_encode(['success' => true, 'customers' => $customers]);
-        
+        exit();
+
     } catch (PDOException $e) {
         error_log("Get customers error: " . $e->getMessage());
-        echo json_encode(['success' => false, 'message' => 'Database error']);
+        if (ob_get_level() > 0) ob_end_clean();
+        echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+        exit();
     }
 }
-?>

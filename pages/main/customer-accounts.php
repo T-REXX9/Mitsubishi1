@@ -158,47 +158,156 @@ try {
 
     .filters-section {
       background: white;
-      padding: 20px;
+      padding: 25px;
       border-radius: 12px;
       box-shadow: var(--shadow-light);
       margin-bottom: 25px;
+      border: 1px solid var(--border-light);
+    }
+
+    .filters-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--primary-light);
+    }
+
+    .filters-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+
+    .filters-title i {
+      color: var(--primary-red);
+      font-size: 20px;
+    }
+
+    .results-count {
+      background: var(--primary-light);
+      color: var(--primary-red);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .btn-clear-filters {
+      background: transparent;
+      border: 2px solid var(--border-light);
+      color: var(--text-light);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-clear-filters:hover {
+      border-color: var(--primary-red);
+      color: var(--primary-red);
+      background: rgba(214, 0, 0, 0.05);
     }
 
     .filter-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
       align-items: end;
     }
 
     .filter-group {
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 8px;
+    }
+
+    .filter-group.search-group {
+      position: relative;
     }
 
     .filter-group label {
       font-size: 14px;
       font-weight: 600;
       color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .filter-group label i {
+      color: var(--primary-red);
+      font-size: 13px;
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
     }
 
     .filter-input, .filter-select {
-      padding: 10px 12px;
-      border: 1px solid var(--border-light);
-      border-radius: 6px;
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid var(--border-light);
+      border-radius: 8px;
       font-size: 14px;
+      transition: all 0.3s ease;
+      background: white;
     }
 
-    .filter-btn {
-      padding: 10px 20px;
-      background: var(--accent-blue);
-      color: white;
+    .filter-input:focus, .filter-select:focus {
+      outline: none;
+      border-color: var(--primary-red);
+      box-shadow: 0 0 0 3px rgba(214, 0, 0, 0.1);
+    }
+
+    .filter-input::placeholder {
+      color: #aaa;
+    }
+
+    .search-input-wrapper .filter-input {
+      padding-right: 40px;
+    }
+
+    .clear-search-btn {
+      position: absolute;
+      right: 10px;
+      background: transparent;
       border: none;
-      border-radius: 6px;
+      color: var(--text-light);
       cursor: pointer;
-      font-weight: 600;
-      height: fit-content;
+      padding: 5px;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .clear-search-btn:hover {
+      background: var(--primary-light);
+      color: var(--primary-red);
+    }
+
+    .filter-select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 35px;
     }
 
     .customers-table {
@@ -343,6 +452,25 @@ try {
         gap: 15px;
       }
 
+      .filters-section {
+        padding: 15px;
+      }
+
+      .filters-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .filters-title {
+        font-size: 16px;
+      }
+
+      .btn-clear-filters {
+        width: 100%;
+        justify-content: center;
+      }
+
       .filter-row {
         grid-template-columns: 1fr;
         gap: 15px;
@@ -369,7 +497,7 @@ try {
       }
 
       .filter-row {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr;
       }
 
       .table th,
@@ -719,13 +847,34 @@ try {
       </div>
 
       <div class="filters-section">
-        <div class="filter-row">
-          <div class="filter-group">
-            <label for="customer-search">Search Customers</label>
-            <input type="text" id="customer-search" class="filter-input" placeholder="Name, email or phone">
+        <div class="filters-header">
+          <div class="filters-title">
+            <i class="fas fa-filter"></i>
+            <span>Filter & Search</span>
+            <span class="results-count" id="resultsCount"></span>
           </div>
+          <button class="btn-clear-filters" id="clearFiltersBtn" style="display: none;">
+            <i class="fas fa-times-circle"></i> Clear All
+          </button>
+        </div>
+
+        <div class="filter-row">
+          <div class="filter-group search-group">
+            <label for="customer-search">
+              <i class="fas fa-search"></i> Search Customers
+            </label>
+            <div class="search-input-wrapper">
+              <input type="text" id="customer-search" class="filter-input" placeholder="Search by name, email, phone, or address...">
+              <button class="clear-search-btn" id="clearSearchBtn" style="display: none;">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+
           <div class="filter-group">
-            <label for="customer-status">Status</label>
+            <label for="customer-status">
+              <i class="fas fa-check-circle"></i> Status
+            </label>
             <select id="customer-status" class="filter-select">
               <option value="all">All Statuses</option>
               <option value="Approved">Approved</option>
@@ -733,7 +882,6 @@ try {
               <option value="Rejected">Rejected</option>
             </select>
           </div>
-          <button class="filter-btn" onclick="applyFilters()">Apply Filters</button>
         </div>
       </div>
 
@@ -1037,6 +1185,72 @@ try {
 
             document.getElementById('age').value = age;
           });
+
+          // Real-time filtering with debouncing
+          let filterTimeout;
+          const searchInput = document.getElementById('customer-search');
+          const statusSelect = document.getElementById('customer-status');
+          const clearSearchBtn = document.getElementById('clearSearchBtn');
+          const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+
+          // Debounced filter function
+          function debouncedFilter() {
+            clearTimeout(filterTimeout);
+            filterTimeout = setTimeout(() => {
+              applyFilters();
+            }, 300); // 300ms delay
+          }
+
+          // Search input event listener
+          searchInput.addEventListener('input', function() {
+            // Show/hide clear search button
+            clearSearchBtn.style.display = this.value ? 'flex' : 'none';
+            updateClearFiltersButton();
+            debouncedFilter();
+          });
+
+          // Clean pasted text to remove hidden characters
+          searchInput.addEventListener('paste', function(e) {
+            setTimeout(() => {
+              // Trim and remove extra whitespace from pasted content
+              this.value = this.value.trim().replace(/\s+/g, ' ');
+              clearSearchBtn.style.display = this.value ? 'flex' : 'none';
+              updateClearFiltersButton();
+              debouncedFilter();
+            }, 0);
+          });
+
+          // Status select event listener
+          statusSelect.addEventListener('change', function() {
+            updateClearFiltersButton();
+            applyFilters();
+          });
+
+          // Clear search button
+          clearSearchBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            this.style.display = 'none';
+            updateClearFiltersButton();
+            applyFilters();
+          });
+
+          // Clear all filters button
+          clearFiltersBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            statusSelect.value = 'all';
+            clearSearchBtn.style.display = 'none';
+            this.style.display = 'none';
+            applyFilters();
+          });
+
+          // Update clear filters button visibility
+          function updateClearFiltersButton() {
+            const hasFilters = searchInput.value || statusSelect.value !== 'all';
+            clearFiltersBtn.style.display = hasFilters ? 'flex' : 'none';
+          }
+
+          // Initial check
+          updateClearFiltersButton();
         });
 
         // Handle form submission
@@ -1311,19 +1525,94 @@ try {
 
         // Apply filters function
         function applyFilters() {
-          const search = document.getElementById('customer-search').value;
+          // Clean search input to handle pasted text with hidden characters
+          const searchValue = document.getElementById('customer-search').value;
+          const cleanedSearch = searchValue.trim().replace(/\s+/g, ' ');
           const status = document.getElementById('customer-status').value;
-          
-          fetch(`customer-accounts-ajax.php?action=get_customers&search=${encodeURIComponent(search)}&status=${status}`)
-            .then(response => response.json())
+
+          // Show loading state
+          const tbody = document.getElementById('customersTableBody');
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 40px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: var(--primary-red);"></i>
+                <p style="margin-top: 10px; color: var(--text-light);">Loading customers...</p>
+              </td>
+            </tr>
+          `;
+
+          fetch(`customer-accounts-ajax.php?action=get_customers&search=${encodeURIComponent(cleanedSearch)}&status=${status}`)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+              // Get the response text first to debug
+              return response.text().then(text => {
+                try {
+                  return JSON.parse(text);
+                } catch (e) {
+                  console.error('Invalid JSON response:', text);
+                  console.error('First 500 chars:', text.substring(0, 500));
+                  console.error('Response length:', text.length);
+                  // Show detailed error with first part of response
+                  alert('JSON Parse Error!\n\nFirst 200 characters of response:\n' + text.substring(0, 200) + '\n\nCheck console for full response.');
+                  throw new Error('Invalid JSON response from server');
+                }
+              });
+            })
             .then(data => {
               if (data.success) {
                 updateCustomersTable(data.customers);
+                updateResultsCount(data.customers.length);
+              } else {
+                console.error('Error from server:', data.message);
+                tbody.innerHTML = `
+                  <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px;">
+                      <i class="fas fa-exclamation-circle" style="font-size: 24px; color: var(--primary-red);"></i>
+                      <p style="margin-top: 10px; color: var(--text-light);">${data.message || 'Failed to load customers'}</p>
+                    </td>
+                  </tr>
+                `;
+                Swal.fire({
+                  title: 'Error',
+                  text: data.message || 'Failed to load customers',
+                  icon: 'error',
+                  confirmButtonColor: '#d60000',
+                  confirmButtonText: 'OK'
+                });
               }
             })
             .catch(error => {
               console.error('Error applying filters:', error);
+              tbody.innerHTML = `
+                <tr>
+                  <td colspan="7" style="text-align: center; padding: 40px;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 24px; color: var(--primary-red);"></i>
+                    <p style="margin-top: 10px; color: var(--text-light);">Failed to load customers. Please try again.</p>
+                  </td>
+                </tr>
+              `;
+              Swal.fire({
+                title: 'Error',
+                text: 'Failed to load customers. Please try again.',
+                icon: 'error',
+                confirmButtonColor: '#d60000',
+                confirmButtonText: 'OK'
+              });
             });
+        }
+
+        // Update results count
+        function updateResultsCount(count) {
+          const resultsCount = document.getElementById('resultsCount');
+          if (count === 0) {
+            resultsCount.textContent = 'No results';
+          } else if (count === 1) {
+            resultsCount.textContent = '1 customer';
+          } else {
+            resultsCount.textContent = `${count} customers`;
+          }
         }
 
         // Update customers table
