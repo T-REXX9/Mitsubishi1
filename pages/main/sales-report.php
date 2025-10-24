@@ -689,7 +689,7 @@ if (!$pdo) {
         <div class="page-header">
           <h1 class="page-title">
             <i class="fas fa-chart-line icon-gradient"></i>
-            Sales Report & Analytics
+            Sales Report
           </h1>
           <div class="page-subtitle">Generate and view monthly performance reports and KPIs for the dealership</div>
         </div>
