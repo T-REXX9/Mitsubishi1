@@ -12,7 +12,7 @@ try {
 // Function to get pending account approvals
 function getPendingApprovals($connect)
 {
-  $query = "SELECT 
+  $query = "SELECT
         a.Id as account_id,
         a.Username,
         a.Email,
@@ -42,11 +42,11 @@ function getPendingApprovals($connect)
         ci.created_at
     FROM accounts a
     LEFT JOIN customer_information ci ON a.Id = ci.account_id
-    WHERE a.Role = 'Customer' 
+    WHERE a.Role = 'Customer'
     AND (a.Status = 'Pending' OR a.Status IS NULL)
     AND (ci.Status = 'Pending' OR ci.Status IS NULL OR ci.cusID IS NULL)
     ORDER BY a.CreatedAt DESC";
-    
+
   $stmt = $connect->prepare($query);
   $stmt->execute();
   return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -62,7 +62,7 @@ function getApprovedAccounts($connect)
   $statusColumnExists = $stmt->fetch();
 
   if ($statusColumnExists) {
-    $query = "SELECT 
+    $query = "SELECT
             ci.cusID,
             ci.account_id,
             ci.firstname,
@@ -88,12 +88,12 @@ function getApprovedAccounts($connect)
             a.LastLoginAt
         FROM customer_information ci
         INNER JOIN accounts a ON ci.account_id = a.Id
-        WHERE a.Role = 'Customer' 
+        WHERE a.Role = 'Customer'
         AND (ci.Status = 'Approved' OR a.Status = 'Approved')
         ORDER BY ci.updated_at DESC, ci.created_at DESC";
   } else {
     // If Status column doesn't exist, show all customers with approved accounts
-    $query = "SELECT 
+    $query = "SELECT
             ci.cusID,
             ci.account_id,
             ci.firstname,
@@ -132,7 +132,7 @@ function getApprovedAccounts($connect)
 function getRejectedAccounts($connect)
 {
   // Enhanced query to get all rejected accounts with proper handling of missing customer_information
-  $query = "SELECT 
+  $query = "SELECT
         ci.cusID,
         a.Id as account_id,
         COALESCE(ci.firstname, a.FirstName) as firstname,
@@ -164,12 +164,12 @@ function getRejectedAccounts($connect)
     FROM accounts a
     LEFT JOIN customer_information ci ON a.Id = ci.account_id
     LEFT JOIN admin_actions aa ON (
-        (ci.cusID IS NOT NULL AND ci.cusID = aa.target_id) OR 
+        (ci.cusID IS NOT NULL AND ci.cusID = aa.target_id) OR
         (ci.cusID IS NULL AND a.Id = aa.target_id)
     ) AND aa.action_type = 'REJECT_CUSTOMER'
-    WHERE a.Role = 'Customer' 
+    WHERE a.Role = 'Customer'
     AND (
-        (ci.Status = 'Rejected') OR 
+        (ci.Status = 'Rejected') OR
         (a.Status = 'Rejected') OR
         (aa.action_type = 'REJECT_CUSTOMER')
     )
@@ -178,10 +178,10 @@ function getRejectedAccounts($connect)
   $stmt = $connect->prepare($query);
   $stmt->execute();
   $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-  
+
   // Debug: Let's see what we're getting
   error_log("Rejected accounts query results: " . print_r($results, true));
-  
+
   return $results;
 }
 
@@ -206,7 +206,7 @@ function isProfileComplete($customer)
     'Email'
   ];
 
-  // Check if customer_information record exists 
+  // Check if customer_information record exists
   if (!isset($customer['cusID'])) {
     return false;
   }
@@ -241,18 +241,18 @@ function getAccountStats($connect)
 
   if ($statusColumnExists) {
     // Get total customer accounts (base for percentage calculation)
-    $query = "SELECT COUNT(*) as total_customers 
-              FROM accounts a 
+    $query = "SELECT COUNT(*) as total_customers
+              FROM accounts a
               WHERE a.Role = 'Customer'";
     $stmt = $connect->prepare($query);
     $stmt->execute();
     $stats['total_customers'] = $stmt->fetch(PDO::FETCH_ASSOC)['total_customers'];
 
     // Pending reviews count - accounts that are still pending
-    $query = "SELECT COUNT(*) as pending_count 
-                  FROM accounts a 
+    $query = "SELECT COUNT(*) as pending_count
+                  FROM accounts a
                   LEFT JOIN customer_information ci ON a.Id = ci.account_id
-                  WHERE a.Role = 'Customer' 
+                  WHERE a.Role = 'Customer'
                   AND (a.Status = 'Pending' OR a.Status IS NULL)
                   AND (ci.Status = 'Pending' OR ci.Status IS NULL OR ci.cusID IS NULL)";
     $stmt = $connect->prepare($query);
@@ -260,26 +260,26 @@ function getAccountStats($connect)
     $stats['pending_count'] = $stmt->fetch(PDO::FETCH_ASSOC)['pending_count'];
 
     // Total approved accounts
-    $query = "SELECT COUNT(*) as approved_count 
-                  FROM accounts a 
+    $query = "SELECT COUNT(*) as approved_count
+                  FROM accounts a
                   LEFT JOIN customer_information ci ON a.Id = ci.account_id
-                  WHERE a.Role = 'Customer' 
+                  WHERE a.Role = 'Customer'
                   AND (ci.Status = 'Approved' OR a.Status = 'Approved')";
     $stmt = $connect->prepare($query);
     $stmt->execute();
     $stats['approved_count'] = $stmt->fetch(PDO::FETCH_ASSOC)['approved_count'];
 
     // Total rejected accounts - simplified query to match what we're displaying
-    $query = "SELECT COUNT(*) as rejected_count 
-                  FROM accounts a 
+    $query = "SELECT COUNT(*) as rejected_count
+                  FROM accounts a
                   LEFT JOIN customer_information ci ON a.Id = ci.account_id
                   LEFT JOIN admin_actions aa ON (
-                      (ci.cusID IS NOT NULL AND ci.cusID = aa.target_id) OR 
+                      (ci.cusID IS NOT NULL AND ci.cusID = aa.target_id) OR
                       (ci.cusID IS NULL AND a.Id = aa.target_id)
                   ) AND aa.action_type = 'REJECT_CUSTOMER'
-                  WHERE a.Role = 'Customer' 
+                  WHERE a.Role = 'Customer'
                   AND (
-                      (ci.Status = 'Rejected') OR 
+                      (ci.Status = 'Rejected') OR
                       (a.Status = 'Rejected') OR
                       (aa.action_type = 'REJECT_CUSTOMER')
                   )";
@@ -292,16 +292,16 @@ function getAccountStats($connect)
     $stats['rejected_percentage'] = $stats['total_customers'] > 0 ? round(($stats['rejected_count'] / $stats['total_customers']) * 100, 1) : 0;
 
     // This month rejected count
-    $query = "SELECT COUNT(*) as rejected_this_month 
-                  FROM accounts a 
+    $query = "SELECT COUNT(*) as rejected_this_month
+                  FROM accounts a
                   LEFT JOIN customer_information ci ON a.Id = ci.account_id
                   LEFT JOIN admin_actions aa ON (
-                      (ci.cusID IS NOT NULL AND ci.cusID = aa.target_id) OR 
+                      (ci.cusID IS NOT NULL AND ci.cusID = aa.target_id) OR
                       (ci.cusID IS NULL AND a.Id = aa.target_id)
                   ) AND aa.action_type = 'REJECT_CUSTOMER'
-                  WHERE a.Role = 'Customer' 
+                  WHERE a.Role = 'Customer'
                   AND (
-                      (ci.Status = 'Rejected') OR 
+                      (ci.Status = 'Rejected') OR
                       (a.Status = 'Rejected') OR
                       (aa.action_type = 'REJECT_CUSTOMER')
                   )
@@ -327,16 +327,16 @@ function getAccountStats($connect)
     $stats['common_rejection_reason'] = $commonReason ? $commonReason['description'] : 'N/A';
   } else {
     // If Status column doesn't exist, set defaults
-    $query = "SELECT COUNT(*) as total_customers 
-              FROM accounts a 
+    $query = "SELECT COUNT(*) as total_customers
+              FROM accounts a
               WHERE a.Role = 'Customer'";
     $stmt = $connect->prepare($query);
     $stmt->execute();
     $stats['total_customers'] = $stmt->fetch(PDO::FETCH_ASSOC)['total_customers'];
 
-    $query = "SELECT COUNT(*) as pending_count 
-                  FROM customer_information ci 
-                  INNER JOIN accounts a ON ci.account_id = a.Id 
+    $query = "SELECT COUNT(*) as pending_count
+                  FROM customer_information ci
+                  INNER JOIN accounts a ON ci.account_id = a.Id
                   WHERE a.Role = 'Customer' AND a.Status = 'Pending'";
     $stmt = $connect->prepare($query);
     $stmt->execute();
@@ -351,9 +351,9 @@ function getAccountStats($connect)
   }
 
   // Today's registrations
-  $query = "SELECT COUNT(*) as today_count 
-              FROM customer_information ci 
-              INNER JOIN accounts a ON ci.account_id = a.Id 
+  $query = "SELECT COUNT(*) as today_count
+              FROM customer_information ci
+              INNER JOIN accounts a ON ci.account_id = a.Id
               WHERE a.Role = 'Customer' AND DATE(ci.created_at) = CURDATE()";
   $stmt = $connect->prepare($query);
   $stmt->execute();
@@ -874,7 +874,7 @@ $accountStats = getAccountStats($connect);
           </div>
           <div class="form-group">
             <label class="form-label">Financing Terms</label>
-            <input type="text" class="form-control" id="adminFinancingTerms" name="financing_terms">
+            <input type="number" class="form-control" id="adminFinancingTerms" name="financing_terms" min="1" step="1" placeholder="e.g., 12 (months)">
           </div>
         </div>
 
@@ -1021,7 +1021,7 @@ $accountStats = getAccountStats($connect);
       <form id="rejectCustomerForm">
         <input type="hidden" id="rejectCustomerId" name="customer_id">
         <input type="hidden" id="rejectAccountId" name="account_id">
-        
+
         <div class="form-group">
           <label class="form-label">Reason for Rejection <span style="color: red;">*</span></label>
           <select class="form-select" name="rejection_reason" id="rejectionReason" required>
@@ -1033,7 +1033,7 @@ $accountStats = getAccountStats($connect);
             <option value="other">Other</option>
           </select>
         </div>
-        
+
         <div class="form-group">
           <label class="form-label">Additional Comments</label>
           <textarea class="form-input" name="rejection_comments" id="rejectionComments" rows="4" placeholder="Enter additional comments or specific details..."></textarea>
@@ -1332,7 +1332,7 @@ $accountStats = getAccountStats($connect);
   function updatePendingStats(payments) {
     const count = payments.length;
     const totalAmount = payments.reduce((sum, payment) => sum + parseFloat(payment.amount_paid), 0);
-    
+
     document.getElementById('pendingCount').textContent = count;
     document.getElementById('pendingAmount').textContent = '₱' + totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
   }
@@ -1359,7 +1359,7 @@ $accountStats = getAccountStats($connect);
 
   function displayVerifiedPayments(payments) {
     const tbody = document.getElementById('verifiedPaymentsTable');
-    
+
     if (payments.length === 0) {
       tbody.innerHTML = '<tr><td colspan="8" class="text-center">No verified payments found</td></tr>';
       return;
@@ -1386,7 +1386,7 @@ $accountStats = getAccountStats($connect);
   function updateVerifiedStats(payments) {
     const count = payments.length;
     const totalAmount = payments.reduce((sum, payment) => sum + parseFloat(payment.amount_paid), 0);
-    
+
     document.getElementById('verifiedCount').textContent = count;
     document.getElementById('verifiedAmount').textContent = '₱' + totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
   }
@@ -1420,15 +1420,15 @@ $accountStats = getAccountStats($connect);
     }
 
     tbody.innerHTML = customers.map(customer => {
-      const statusClass = customer.payment_status === 'overdue' ? 'status rejected' : 
-                         customer.payment_status === 'completed' ? 'status approved' : 
-                         customer.payment_status === 'in_progress' ? 'status pending' : 
+      const statusClass = customer.payment_status === 'overdue' ? 'status rejected' :
+                         customer.payment_status === 'completed' ? 'status approved' :
+                         customer.payment_status === 'in_progress' ? 'status pending' :
                          'status';
-      
-      const progressColor = customer.payment_status === 'overdue' ? '#dc3545' : 
-                           customer.payment_status === 'completed' ? '#28a745' : 
+
+      const progressColor = customer.payment_status === 'overdue' ? '#dc3545' :
+                           customer.payment_status === 'completed' ? '#28a745' :
                            '#ffc107';
-      
+
       return `
         <tr>
           <td>${customer.order_number}</td>
@@ -1456,7 +1456,7 @@ $accountStats = getAccountStats($connect);
     const totalCount = customers.length;
     const activeCount = customers.filter(c => c.payment_status === 'in_progress' || c.payment_status === 'pending').length;
     const overdueCount = customers.filter(c => c.payment_status === 'overdue').length;
-    
+
     document.getElementById('loanCustomersCount').textContent = totalCount;
     document.getElementById('activeLoansCount').textContent = activeCount;
     document.getElementById('overdueCount').textContent = overdueCount;
@@ -1576,13 +1576,13 @@ $accountStats = getAccountStats($connect);
       .then(data => {
         if (data.success) {
           const payment = data.data;
-          
+
           // Build receipt section
           let receiptSection = '';
           if (payment.has_receipt && payment.receipt_filename) {
             const receiptUrl = payment.receipt_url;
             const isImage = /\.(jpg|jpeg|png|gif)$/i.test(payment.receipt_filename);
-            
+
             if (isImage) {
               receiptSection = `
                 <p><strong>Receipt:</strong></p>
@@ -1593,7 +1593,7 @@ $accountStats = getAccountStats($connect);
               `;
             } else {
               receiptSection = `
-                <p><strong>Receipt:</strong> 
+                <p><strong>Receipt:</strong>
                   <a href="${receiptUrl}" target="_blank" style="color: #dc143c; text-decoration: none;">
                     📄 ${payment.receipt_filename}
                   </a>
@@ -1603,7 +1603,7 @@ $accountStats = getAccountStats($connect);
           } else {
             receiptSection = '<p><strong>Receipt:</strong> <span style="color: #999;">No receipt uploaded</span></p>';
           }
-          
+
           Swal.fire({
             title: 'Payment Details',
             html: `
@@ -1742,6 +1742,62 @@ $accountStats = getAccountStats($connect);
       // Hide and reset progress bar immediately
       document.getElementById('adminUploadProgressContainer').style.display = 'none';
       resetAdminProgressBar();
+    };
+
+    // Prevent letters in number-only fields in the Add Vehicle modal
+    let adminNumericRestrictionsInitialized = false;
+    function setupAdminNumericInputRestrictions() {
+      if (adminNumericRestrictionsInitialized) return;
+      adminNumericRestrictionsInitialized = true;
+
+      const integerIds = ['adminYearModel', 'adminSeatingCapacity', 'adminStockQuantity', 'adminMinStockAlert', 'adminFinancingTerms'];
+      const decimalIds = ['adminBasePrice', 'adminPromotionalPrice', 'adminMinDownpayment'];
+
+      const allowControlKeys = ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'Home', 'End', 'ArrowLeft', 'ArrowRight'];
+      const preventKeys = ['e', 'E', '+', '-'];
+
+      const attachInteger = (el) => {
+        if (!el) return;
+        el.setAttribute('inputmode', 'numeric');
+        el.addEventListener('keydown', (e) => {
+          if (allowControlKeys.includes(e.key) || (e.ctrlKey || e.metaKey)) return;
+          if (preventKeys.includes(e.key) || e.key === '.') e.preventDefault();
+        });
+        el.addEventListener('input', (e) => {
+          e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        });
+      };
+
+      const attachDecimal = (el) => {
+        if (!el) return;
+        el.setAttribute('inputmode', 'decimal');
+        el.addEventListener('keydown', (e) => {
+          if (allowControlKeys.includes(e.key) || (e.ctrlKey || e.metaKey)) return;
+          if (preventKeys.includes(e.key)) e.preventDefault();
+          if (e.key === '.' && e.target.value.includes('.')) e.preventDefault();
+        });
+        el.addEventListener('input', (e) => {
+          let v = e.target.value.replace(/[^0-9.]/g, '');
+          const firstDot = v.indexOf('.');
+          if (firstDot !== -1) {
+            v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, '');
+          }
+          e.target.value = v;
+        });
+      };
+
+      integerIds.forEach(id => attachInteger(document.getElementById(id)));
+      decimalIds.forEach(id => attachDecimal(document.getElementById(id)));
+    }
+
+    // Initialize once on load and also when opening the modal (safe due to guard)
+    setupAdminNumericInputRestrictions();
+    const originalOpenAddVehicleModal = window.openAddVehicleModal;
+    window.openAddVehicleModal = function() {
+      setupAdminNumericInputRestrictions();
+      if (typeof originalOpenAddVehicleModal === 'function') {
+        return originalOpenAddVehicleModal();
+      }
     };
 
     // Color-model add button for admin form
@@ -2091,11 +2147,11 @@ $accountStats = getAccountStats($connect);
 
           // Clean the response text by removing any non-JSON content
           let cleanText = text.trim();
-          
+
           // Find the JSON part if there's extra output
           const jsonStart = cleanText.indexOf('{');
           const jsonEnd = cleanText.lastIndexOf('}') + 1;
-          
+
           if (jsonStart === -1 || jsonEnd <= jsonStart) {
             throw new Error('Invalid response format - no JSON data found');
           }
@@ -2158,7 +2214,7 @@ $accountStats = getAccountStats($connect);
             <span class="customer-details-label">Registration Date:</span>
             <span class="customer-details-value">${customer.CreatedAt || customer.created_at ? new Date(customer.CreatedAt || customer.created_at).toLocaleDateString() : 'Not available'}</span>
           </div>
-          
+
           <h4 style="margin-top: 20px;">Personal Information</h4>
           <div class="customer-details-row">
             <span class="customer-details-label">Full Name:</span>
@@ -2193,7 +2249,7 @@ $accountStats = getAccountStats($connect);
             <span class="customer-details-label">Mobile Number:</span>
             <span class="customer-details-value">${customer.mobile_number || 'Not provided'}</span>
           </div>
-          
+
           <h4 style="margin-top: 20px;">Employment Information</h4>
           <div class="customer-details-row">
             <span class="customer-details-label">Employment Status:</span>
@@ -2211,7 +2267,7 @@ $accountStats = getAccountStats($connect);
             <span class="customer-details-label">Monthly Income:</span>
             <span class="customer-details-value">${customer.monthly_income ? '₱' + parseFloat(customer.monthly_income).toLocaleString() : 'Not provided'}</span>
           </div>
-          
+
           <h4 style="margin-top: 20px;">Identification</h4>
           <div class="customer-details-row">
             <span class="customer-details-label">Valid ID Type:</span>
@@ -2227,7 +2283,7 @@ $accountStats = getAccountStats($connect);
           </div>
         </div>
       `;
-      
+
       document.getElementById('customerReviewContent').innerHTML = content;
     }
 
@@ -2259,7 +2315,7 @@ $accountStats = getAccountStats($connect);
     window.submitRejection = function() {
       const form = document.getElementById('rejectCustomerForm');
       const formData = new FormData(form);
-      
+
       // Validate required fields
       const reason = document.getElementById('rejectionReason').value;
       if (!reason) {
@@ -2444,11 +2500,11 @@ $accountStats = getAccountStats($connect);
             let cleanText = text.trim();
             const jsonStart = cleanText.indexOf('{');
             const jsonEnd = cleanText.lastIndexOf('}') + 1;
-            
+
             if (jsonStart !== -1 && jsonEnd > jsonStart) {
               cleanText = cleanText.substring(jsonStart, jsonEnd);
             }
-            
+
             data = JSON.parse(cleanText);
           } catch (parseError) {
             throw new Error('Unable to parse server response');
@@ -2519,11 +2575,11 @@ $accountStats = getAccountStats($connect);
             let cleanText = text.trim();
             const jsonStart = cleanText.indexOf('{');
             const jsonEnd = cleanText.lastIndexOf('}') + 1;
-            
+
             if (jsonStart !== -1 && jsonEnd > jsonStart) {
               cleanText = cleanText.substring(jsonStart, jsonEnd);
             }
-            
+
             data = JSON.parse(cleanText);
           } catch (parseError) {
             throw new Error('Unable to parse server response');
