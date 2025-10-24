@@ -290,11 +290,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 <button class="btn btn-small btn-view" onclick="viewCustomerInfo(<?php echo (int)$row['AccountId']; ?>)" title="View Customer Details">
                   <i class="fas fa-eye"></i>
                 </button>
-                <?php if (!empty($row['agent_id']) && intval($row['agent_id']) > 0): ?>
-                <button class="btn btn-small btn-outline" onclick="viewSalesAgentInfo(<?php echo (int)$row['agent_id']; ?>)" title="View Assigned Agent">
+                <button class="btn btn-small btn-outline" onclick="viewSalesAgentInfo(<?php echo !empty($row['agent_id']) && intval($row['agent_id']) > 0 ? (int)$row['agent_id'] : 'null'; ?>)" title="View Assigned Agent">
                   Agent
                 </button>
-                <?php endif; ?>
                 <button class="btn btn-small btn-primary" onclick="openReassignModal(<?php echo (int)$row['AccountId']; ?>, <?php echo !empty($row['agent_id']) && intval($row['agent_id']) > 0 ? (int)$row['agent_id'] : 'null'; ?>)" title="Reassign to Sales Agent">
                   Reassign
                 </button>
@@ -601,11 +599,9 @@ $activeAgents = $customerOp->getActiveSalesAgents();
                 <button class="btn btn-small btn-view" onclick="viewCustomerInfo(<?php echo (int)$row['AccountId']; ?>)" title="View Customer Details">
                   <i class="fas fa-eye"></i>
                 </button>
-                <?php if (!empty($row['agent_id']) && intval($row['agent_id']) > 0): ?>
-                <button class="btn btn-small btn-outline" onclick="viewSalesAgentInfo(<?php echo (int)$row['agent_id']; ?>)" title="View Assigned Agent">
+                <button class="btn btn-small btn-outline" onclick="viewSalesAgentInfo(<?php echo !empty($row['agent_id']) && intval($row['agent_id']) > 0 ? (int)$row['agent_id'] : 'null'; ?>)" title="View Assigned Agent">
                   Agent
                 </button>
-                <?php endif; ?>
                 <button class="btn btn-small btn-primary" onclick="openReassignModal(<?php echo (int)$row['AccountId']; ?>, <?php echo !empty($row['agent_id']) && intval($row['agent_id']) > 0 ? (int)$row['agent_id'] : 'null'; ?>)" title="Reassign to Sales Agent">
                   Reassign
                 </button>
@@ -1285,6 +1281,13 @@ $activeAgents = $customerOp->getActiveSalesAgents();
 
     // View sales agent information function
     function viewSalesAgentInfo(accountId) {
+      // If no agent is assigned, show the "no agent" message immediately
+      if (!accountId || accountId === 'null' || accountId === null) {
+        displayNoSalesAgentInfo();
+        openModal('salesAgentInfoModal');
+        return;
+      }
+
       const formData = new FormData();
       formData.append('action', 'view_sales_agent');
       formData.append('account_id', accountId);
@@ -1593,9 +1596,9 @@ $activeAgents = $customerOp->getActiveSalesAgents();
       const content = document.getElementById('salesAgentInfoContent');
       content.innerHTML = `
         <div class="no-customer-info">
-          <i class="fas fa-info-circle" style="font-size: 48px; color: var(--text-light); margin-bottom: 20px;"></i>
-          <h4>No Sales Agent Information Available</h4>
-          <p>This sales agent has not completed their profile information yet.</p>
+          <i class="fas fa-user-slash" style="font-size: 48px; color: var(--text-light); margin-bottom: 20px;"></i>
+          <h4>No Agent Assigned Yet</h4>
+          <p>This customer has not been assigned to a sales agent. Use the "Reassign" button to assign them to an agent.</p>
         </div>
       `;
     }
