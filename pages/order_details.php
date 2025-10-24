@@ -1473,8 +1473,8 @@ if (!$customerProfile) {
             if (order.payment_method !== 'financing' || !order.financing_term || !order.monthly_payment) {
                 return '<div class="no-data">Amortization table is only available for financing orders.</div>';
             }
-            
-            const principal = parseFloat(order.total_price) - parseFloat(order.down_payment || 0);
+
+            const principal = parseFloat(order.total_amount) - parseFloat(order.down_payment || 0);
             const monthlyPayment = parseFloat(order.monthly_payment);
             const annualRate = 0.12; // 12% annual interest rate
             const monthlyRate = annualRate / 12;
@@ -1526,22 +1526,29 @@ if (!$customerProfile) {
             `;
             
             let remainingBalance = principal;
-            
+
+            // Calculate start date for payments (typically 1 month after order date)
+            const orderDate = new Date(order.created_at);
+
             for (let i = 1; i <= months; i++) {
                 const interestPayment = remainingBalance * monthlyRate;
                 const principalPayment = monthlyPayment - interestPayment;
                 remainingBalance = Math.max(0, remainingBalance - principalPayment);
-                
-                // Find corresponding schedule entry
+
+                // Calculate due date (add i months to order date)
+                const dueDate = new Date(orderDate);
+                dueDate.setMonth(dueDate.getMonth() + i);
+                const dueDateStr = dueDate.toLocaleDateString();
+
+                // Find corresponding schedule entry for status
                 const scheduleEntry = schedule.find(s => s.payment_number == i);
                 const status = scheduleEntry ? scheduleEntry.status : 'Pending';
-                const dueDate = scheduleEntry ? new Date(scheduleEntry.due_date).toLocaleDateString() : 'N/A';
                 const statusClass = status.toLowerCase();
-                
+
                 html += `
                     <tr>
                         <td>${i}</td>
-                        <td>${dueDate}</td>
+                        <td>${dueDateStr}</td>
                         <td>₱${monthlyPayment.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                         <td>₱${principalPayment.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                         <td>₱${interestPayment.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
@@ -1557,25 +1564,30 @@ if (!$customerProfile) {
 
         function showTab(orderId, tabName) {
             const orderCard = document.querySelector(`[data-order-id="${orderId}"]`);
-            
+
             // Hide all tab contents
             orderCard.querySelectorAll('.tab-content').forEach(content => {
                 content.style.display = 'none';
             });
-            
+
             // Remove active class from all tabs
             orderCard.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            
+
             // Show selected tab content
             const selectedContent = orderCard.querySelector(`#${tabName}-${orderId}`);
             if (selectedContent) {
                 selectedContent.style.display = 'block';
             }
-            
-            // Add active class to selected tab
-            event.target.classList.add('active');
+
+            // Add active class to the clicked tab button
+            const activeBtn = Array.from(orderCard.querySelectorAll('.tab-btn')).find(btn =>
+                btn.getAttribute('onclick').includes(`'${tabName}'`)
+            );
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+            }
         }
 
         function viewPaymentHistory(orderId) {

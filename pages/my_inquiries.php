@@ -923,12 +923,7 @@ function getInquiryResponses($connect, $inquiryId) {
                                 </div>
 
                                 <?php
-                                    // Determine principal: Prefer PV from monthly payment, else vehicle price - down payment
-                                    $rate = isset($loan['interest_rate']) ? (float)$loan['interest_rate'] : 0.0; // APR %
-                                    $term = isset($loan['financing_term']) ? (int)$loan['financing_term'] : 0;
-                                    $startAt = !empty($loan['application_date']) ? $loan['application_date'] : date('Y-m-d');
-                                    $monthly = isset($loan['monthly_payment']) && (float)$loan['monthly_payment'] > 0 ? (float)$loan['monthly_payment'] : null;
-
+                                    // Use consistent calculation method as agent side
                                     // Vehicle price precedence: effective > promo > base
                                     $vEff = isset($loan['vehicle_effective_price']) ? (float)$loan['vehicle_effective_price'] : null;
                                     $vPromo = isset($loan['vehicle_promotional_price']) ? (float)$loan['vehicle_promotional_price'] : null;
@@ -936,20 +931,15 @@ function getInquiryResponses($connect, $inquiryId) {
                                     $vehiclePrice = $vEff ?: ($vPromo ?: $vBase);
                                     $down = isset($loan['down_payment']) ? (float)$loan['down_payment'] : 0.0;
 
-                                    // Default principal from price - down payment
+                                    // Calculate principal (loan amount) consistently
                                     $principal = max(0.0, (float)$vehiclePrice - $down);
 
-                                    // If monthly payment available, derive principal via PV of annuity
-                                    if ($monthly !== null && $term > 0) {
-                                        $r = max(0.0, $rate) / 100.0 / 12.0;
-                                        if ($r > 0) {
-                                            $principal = $monthly * (1 - pow(1 + $r, -$term)) / $r;
-                                        } else {
-                                            $principal = $monthly * $term;
-                                        }
-                                    }
+                                    $rate = isset($loan['interest_rate']) ? (float)$loan['interest_rate'] : 0.0; // APR %
+                                    $term = isset($loan['financing_term']) ? (int)$loan['financing_term'] : 0;
+                                    $startAt = !empty($loan['application_date']) ? $loan['application_date'] : date('Y-m-d');
 
-                                    $schedule = computeAmortization((float)$principal, (float)$rate, (int)$term, $startAt, $monthly);
+                                    // Use centralized calculation (no reverse-calculation from monthly payment)
+                                    $schedule = computeAmortization((float)$principal, (float)$rate, (int)$term, $startAt, null);
                                 ?>
                                 <div id="amortization-<?php echo $loan['id']; ?>" class="amortization-panel">
                                     <div class="amortization-title">Amortization Schedule</div>
@@ -1104,8 +1094,12 @@ function getInquiryResponses($connect, $inquiryId) {
                                             <i class="fas fa-clock"></i> Under Review
                                         </span>
                                     <?php elseif ($test_drive['test_drive_status'] === 'Rejected'): ?>
+                                        <?php
+                                        // Check if it was cancelled by customer
+                                        $isCancelledByCustomer = !empty($test_drive['notes']) && strpos($test_drive['notes'], '[CUSTOMER_CANCELLED]') !== false;
+                                        ?>
                                         <span class="btn btn-danger" style="opacity: 0.9; cursor: default;">
-                                            <i class="fas fa-times-circle"></i> Request Rejected
+                                            <i class="fas fa-times-circle"></i> <?php echo $isCancelledByCustomer ? 'Request Cancelled' : 'Request Rejected'; ?>
                                         </span>
                                     <?php elseif ($test_drive['test_drive_status'] === 'Completed'): ?>
                                         <span class="btn btn-success" style="opacity: 0.9; cursor: default;">
@@ -1127,6 +1121,9 @@ function getInquiryResponses($connect, $inquiryId) {
             </div>
         </div>
     </div>
+
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
     // Make showTab globally available
@@ -1289,31 +1286,99 @@ function getInquiryResponses($connect, $inquiryId) {
             });
         });
     });
-    
+
     // Function to cancel test drive
     function cancelTestDrive(testDriveId) {
-        if (confirm('Are you sure you want to cancel this test drive?')) {
-            fetch('cancel_test_drive.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'test_drive_id=' + encodeURIComponent(testDriveId)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Test drive has been cancelled successfully.');
-                    location.reload();
-                } else {
-                    alert('Failed to cancel test drive: ' + (data.message || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while processing your request.');
-            });
-        }
+        Swal.fire({
+            title: 'Cancel Test Drive?',
+            text: 'Are you sure you want to cancel this test drive booking?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d60000',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, cancel it',
+            cancelButtonText: 'No, keep it',
+            allowOutsideClick: true,
+            allowEscapeKey: true,
+            backdrop: true,
+            heightAuto: false,
+            width: '400px'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Show loading
+                Swal.fire({
+                    title: 'Cancelling...',
+                    text: 'Please wait while we process your request.',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                fetch('cancel_test_drive.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'test_drive_id=' + encodeURIComponent(testDriveId)
+                })
+                .then(response => {
+                    // Log the response for debugging
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers);
+
+                    // Always try to parse the response as JSON, even if status is not ok
+                    return response.text().then(text => {
+                        console.log('Response text:', text);
+                        try {
+                            const data = JSON.parse(text);
+                            // Return both the data and the status
+                            return { data: data, status: response.status, ok: response.ok };
+                        } catch (e) {
+                            console.error('JSON parse error:', e);
+                            console.error('Response was:', text.substring(0, 500));
+                            throw new Error('Invalid JSON response from server: ' + text.substring(0, 100));
+                        }
+                    });
+                })
+                .then(result => {
+                    const data = result.data;
+
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Cancelled!',
+                            text: 'Your test drive has been cancelled successfully.',
+                            icon: 'success',
+                            confirmButtonColor: '#28a745',
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        // Show the actual error message from the server
+                        let errorMsg = data.message || 'Unknown error';
+                        Swal.fire({
+                            title: 'Cancellation Failed',
+                            text: errorMsg,
+                            icon: 'error',
+                            confirmButtonColor: '#d60000',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'An error occurred while processing your request: ' + error.message,
+                        icon: 'error',
+                        confirmButtonColor: '#d60000',
+                        confirmButtonText: 'OK'
+                    });
+                });
+            }
+        });
     }
     </script>
   </body>

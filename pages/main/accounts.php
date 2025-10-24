@@ -1,19 +1,21 @@
 <?php
-include_once(dirname(dirname(__DIR__)) . '/includes/init.php');
-include_once(dirname(dirname(__DIR__)) . '/includes/database/accounts_operations.php');
-include_once(dirname(dirname(__DIR__)) . '/includes/database/customer_operations.php');
-
-// Check if user is Admin
-if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'Admin') {
-    header("Location: ../../pages/login.php");
-    exit();
-}
-
-$accountsOp = new AccountsOperations();
-$customerOp = new CustomerOperations();
-
-// Handle AJAX requests
+// Handle AJAX requests FIRST before any output
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    // Clean output buffer and start fresh
+    while (ob_get_level()) {
+        ob_end_clean();
+    }
+    ob_start();
+
+    // Include dependencies
+    include_once(dirname(dirname(__DIR__)) . '/includes/init.php');
+    include_once(dirname(dirname(__DIR__)) . '/includes/database/accounts_operations.php');
+    include_once(dirname(dirname(__DIR__)) . '/includes/database/customer_operations.php');
+
+    $accountsOp = new AccountsOperations();
+    $customerOp = new CustomerOperations();
+
+    // Set JSON header
     header('Content-Type: application/json');
     
     switch ($_POST['action']) {
@@ -24,18 +26,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 require_once(dirname(dirname(__DIR__)) . '/includes/api/notification_api.php');
                 createNotification(null, 'Admin', 'Account Created', 'A new account has been created: ' . ($_POST['username'] ?? ''), 'account');
             }
+            ob_clean();
             echo json_encode(['success' => $result, 'message' => $message]);
             exit;
-            
+
         case 'update':
             $result = $accountsOp->updateAccount($_POST['id'], $_POST);
-if ($result) {
-    require_once(dirname(dirname(__DIR__)) . '/includes/api/notification_api.php');
-    createNotification(null, 'Admin', 'Account Updated', 'Account updated: ' . ($_POST['username'] ?? ''), 'account');
-}
-echo json_encode(['success' => $result, 'message' => $result ? 'Account updated successfully' : 'Failed to update account']);
-exit;
-            
+            if ($result) {
+                require_once(dirname(dirname(__DIR__)) . '/includes/api/notification_api.php');
+                createNotification(null, 'Admin', 'Account Updated', 'Account updated: ' . ($_POST['username'] ?? ''), 'account');
+            }
+            ob_clean();
+            echo json_encode(['success' => $result, 'message' => $result ? 'Account updated successfully' : 'Failed to update account']);
+            exit;
+
         case 'delete':
             $delId = intval($_POST['id'] ?? 0);
             // If deleting a SalesAgent, reassign their customers first
@@ -44,36 +48,125 @@ exit;
                 $reassigned = $customerOp->reassignCustomersFromAgent($delId);
             }
             $result = $accountsOp->deleteAccount($delId);
-if ($result) {
-    require_once(dirname(dirname(__DIR__)) . '/includes/api/notification_api.php');
-    createNotification(null, 'Admin', 'Account Deleted', 'Account deleted: ID ' . $delId, 'account');
-}
-echo json_encode(['success' => $result, 'message' => $result ? 'Account deleted successfully' : 'Failed to delete account']);
-exit;
-            
+            if ($result) {
+                require_once(dirname(dirname(__DIR__)) . '/includes/api/notification_api.php');
+                createNotification(null, 'Admin', 'Account Deleted', 'Account deleted: ID ' . $delId, 'account');
+            }
+            ob_clean();
+            echo json_encode(['success' => $result, 'message' => $result ? 'Account deleted successfully' : 'Failed to delete account']);
+            exit;
+
         case 'get_account':
             $account = $accountsOp->getAccountById($_POST['id']);
+            ob_clean();
             echo json_encode(['success' => !!$account, 'data' => $account]);
             exit;
             
         case 'view_customer':
-            $customer = $customerOp->getCustomerByAccountId($_POST['account_id']);
-            echo json_encode(['success' => !!$customer, 'data' => $customer]);
+            $accountId = intval($_POST['account_id'] ?? 0);
+
+            // First, get the account information
+            $account = $accountsOp->getAccountById($accountId);
+            if (!$account) {
+                // Clean all output buffers
+                while (ob_get_level()) {
+                    ob_end_clean();
+                }
+                ob_start();
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Account not found']);
+                exit;
+            }
+
+            // Try to get customer information (may not exist if profile incomplete)
+            $customer = $customerOp->getCustomerByAccountId($accountId);
+
+            // Debug logging (goes to error log, not output)
+            error_log("view_customer: accountId={$accountId}, has_customer_data=" . ($customer ? 'yes' : 'no'));
+
+            // If customer_information doesn't exist, create a basic data structure from account
+            if (!$customer) {
+                $customer = [
+                    'account_id' => $account['Id'],
+                    'Username' => $account['Username'],
+                    'Email' => $account['Email'],
+                    'Role' => $account['Role'],
+                    'FirstName' => $account['FirstName'] ?? '',
+                    'LastName' => $account['LastName'] ?? '',
+                    'CreatedAt' => $account['CreatedAt'] ?? '',
+                    'LastLoginAt' => $account['LastLoginAt'] ?? '',
+                    'Status' => 'Incomplete Profile',
+                    'profile_incomplete' => true
+                ];
+            } else {
+                // Sanitize all string fields to ensure valid UTF-8
+                foreach ($customer as $key => $value) {
+                    if (is_string($value)) {
+                        // Remove invalid UTF-8 characters and convert to UTF-8
+                        $customer[$key] = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+                    }
+                }
+            }
+
+            // Clean all output buffers and ensure clean JSON response
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            ob_start();
+            header('Content-Type: application/json; charset=UTF-8');
+
+            // Encode with error handling and UTF-8 options
+            $jsonData = json_encode(
+                ['success' => true, 'data' => $customer],
+                JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE
+            );
+
+            if ($jsonData === false) {
+                // JSON encoding failed - log the error
+                error_log("JSON encoding error for account_id={$accountId}: " . json_last_error_msg());
+                error_log("Customer data keys: " . implode(', ', array_keys($customer)));
+
+                // Try to identify problematic fields
+                foreach ($customer as $key => $value) {
+                    $testEncode = json_encode($value);
+                    if ($testEncode === false) {
+                        error_log("Problematic field: {$key} (type: " . gettype($value) . ")");
+                        if (is_string($value)) {
+                            error_log("  - Length: " . strlen($value));
+                            error_log("  - First 100 chars: " . substr($value, 0, 100));
+                        }
+                    }
+                }
+
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Error encoding customer data: ' . json_last_error_msg()
+                ]);
+            } else {
+                echo $jsonData;
+            }
+
+            ob_end_flush();
             exit;
             
         case 'view_admin':
             $admin = $accountsOp->getAccountById($_POST['account_id']);
+            ob_clean();
             echo json_encode(['success' => !!$admin, 'data' => $admin]);
             exit;
-            
+
         case 'view_sales_agent':
-            // Get account info and sales agent profile
+            // Get account info only (all needed info is in accounts table)
             $account = $accountsOp->getAccountById($_POST['account_id']);
-            $agentProfile = $accountsOp->getSalesAgentProfile($_POST['account_id']);
+            if (!$account) {
+                ob_clean();
+                echo json_encode(['success' => false, 'message' => 'Sales agent not found']);
+                exit;
+            }
+            ob_clean();
             echo json_encode([
-                'success' => !!$account, 
-                'account' => $account,
-                'profile' => $agentProfile
+                'success' => true,
+                'account' => $account
             ]);
             exit;
 
@@ -92,6 +185,7 @@ exit;
                     }
                 }
             }
+            ob_clean();
             echo json_encode(['success' => $ok, 'message' => $ok ? (($disabled ? 'Account disabled' : 'Account enabled') . $extraMsg) : 'Failed to update account status']);
             exit;
 
@@ -100,6 +194,7 @@ exit;
             $acctId = intval($_POST['account_id'] ?? 0);
             $agentId = intval($_POST['agent_id'] ?? 0);
             if ($acctId <= 0 || $agentId <= 0) {
+                ob_clean();
                 echo json_encode(['success' => false, 'message' => 'Invalid parameters']);
                 exit;
             }
@@ -114,8 +209,10 @@ exit;
                         break;
                     }
                 }
+                ob_clean();
                 echo json_encode(['success' => true, 'message' => 'Customer reassigned successfully', 'agent_label' => $label]);
             } else {
+                ob_clean();
                 echo json_encode(['success' => false, 'message' => 'Failed to reassign customer. Ensure the agent is active.']);
             }
             exit;
@@ -193,12 +290,12 @@ exit;
                 <button class="btn btn-small btn-view" onclick="viewCustomerInfo(<?php echo (int)$row['AccountId']; ?>)" title="View Customer Details">
                   <i class="fas fa-eye"></i>
                 </button>
-                <?php if (!empty($row['agent_id'])): ?>
+                <?php if (!empty($row['agent_id']) && intval($row['agent_id']) > 0): ?>
                 <button class="btn btn-small btn-outline" onclick="viewSalesAgentInfo(<?php echo (int)$row['agent_id']; ?>)" title="View Assigned Agent">
                   Agent
                 </button>
                 <?php endif; ?>
-                <button class="btn btn-small btn-primary" onclick="openReassignModal(<?php echo (int)$row['AccountId']; ?>, <?php echo !empty($row['agent_id']) ? (int)$row['agent_id'] : 'null'; ?>)" title="Reassign to Sales Agent">
+                <button class="btn btn-small btn-primary" onclick="openReassignModal(<?php echo (int)$row['AccountId']; ?>, <?php echo !empty($row['agent_id']) && intval($row['agent_id']) > 0 ? (int)$row['agent_id'] : 'null'; ?>)" title="Reassign to Sales Agent">
                   Reassign
                 </button>
               </td>
@@ -209,7 +306,25 @@ exit;
             echo json_encode(['success' => true, 'rowsHtml' => $rowsHtml]);
             exit;
     }
+
+    // If we reach here, unknown action - return error
+    echo json_encode(['success' => false, 'message' => 'Unknown action']);
+    exit;
 }
+
+// Normal page load - include dependencies
+include_once(dirname(dirname(__DIR__)) . '/includes/init.php');
+include_once(dirname(dirname(__DIR__)) . '/includes/database/accounts_operations.php');
+include_once(dirname(dirname(__DIR__)) . '/includes/database/customer_operations.php');
+
+// Check if user is Admin
+if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'Admin') {
+    header("Location: ../../pages/login.php");
+    exit();
+}
+
+$accountsOp = new AccountsOperations();
+$customerOp = new CustomerOperations();
 
 // Get filter parameters with enhanced search
 $role_filter = $_GET['role'] ?? 'all';
@@ -486,12 +601,12 @@ $activeAgents = $customerOp->getActiveSalesAgents();
                 <button class="btn btn-small btn-view" onclick="viewCustomerInfo(<?php echo (int)$row['AccountId']; ?>)" title="View Customer Details">
                   <i class="fas fa-eye"></i>
                 </button>
-                <?php if (!empty($row['agent_id'])): ?>
+                <?php if (!empty($row['agent_id']) && intval($row['agent_id']) > 0): ?>
                 <button class="btn btn-small btn-outline" onclick="viewSalesAgentInfo(<?php echo (int)$row['agent_id']; ?>)" title="View Assigned Agent">
                   Agent
                 </button>
                 <?php endif; ?>
-                <button class="btn btn-small btn-primary" onclick="openReassignModal(<?php echo (int)$row['AccountId']; ?>, <?php echo !empty($row['agent_id']) ? (int)$row['agent_id'] : 'null'; ?>)" title="Reassign to Sales Agent">
+                <button class="btn btn-small btn-primary" onclick="openReassignModal(<?php echo (int)$row['AccountId']; ?>, <?php echo !empty($row['agent_id']) && intval($row['agent_id']) > 0 ? (int)$row['agent_id'] : 'null'; ?>)" title="Reassign to Sales Agent">
                   Reassign
                 </button>
               </td>
@@ -1107,22 +1222,36 @@ $activeAgents = $customerOp->getActiveSalesAgents();
       const formData = new FormData();
       formData.append('action', 'view_customer');
       formData.append('account_id', accountId);
-      
+
       fetch('', {
         method: 'POST',
         body: formData
       })
       .then(response => response.json())
       .then(data => {
+        // Debug logging
+        console.log('Customer data received:', data);
+        if (data.data) {
+          console.log('Customer data keys:', Object.keys(data.data));
+          console.log('Sample fields:', {
+            firstname: data.data.firstname,
+            lastname: data.data.lastname,
+            account_id: data.data.account_id,
+            Status: data.data.Status
+          });
+        }
+
         if (data.success && data.data) {
           displayCustomerInfo(data.data);
+          openModal('customerInfoModal');
         } else {
+          console.error('Failed to fetch customer info:', data.message || 'Unknown error');
           displayNoCustomerInfo();
+          openModal('customerInfoModal');
         }
-        openModal('customerInfoModal');
       })
       .catch(error => {
-        console.error('Error:', error);
+        console.error('Error fetching customer info:', error);
         displayNoCustomerInfo();
         openModal('customerInfoModal');
       });
@@ -1159,22 +1288,24 @@ $activeAgents = $customerOp->getActiveSalesAgents();
       const formData = new FormData();
       formData.append('action', 'view_sales_agent');
       formData.append('account_id', accountId);
-      
+
       fetch('', {
         method: 'POST',
         body: formData
       })
       .then(response => response.json())
       .then(data => {
-        if (data.success) {
-          displaySalesAgentInfo(data.account, data.profile);
+        if (data.success && data.account) {
+          displaySalesAgentInfo(data.account);
+          openModal('salesAgentInfoModal');
         } else {
+          console.error('Failed to fetch sales agent info:', data.message || 'Unknown error');
           displayNoSalesAgentInfo();
+          openModal('salesAgentInfoModal');
         }
-        openModal('salesAgentInfoModal');
       })
       .catch(error => {
-        console.error('Error:', error);
+        console.error('Error fetching sales agent info:', error);
         displayNoSalesAgentInfo();
         openModal('salesAgentInfoModal');
       });
@@ -1183,6 +1314,55 @@ $activeAgents = $customerOp->getActiveSalesAgents();
     // Display customer information in modal
     function displayCustomerInfo(customer) {
       const content = document.getElementById('customerInfoContent');
+
+      // Check if this is an incomplete profile (account exists but no customer_information)
+      if (customer.profile_incomplete) {
+        content.innerHTML = `
+          <div class="alert alert-warning" style="margin-bottom: 20px;">
+            <i class="fas fa-exclamation-triangle"></i> This customer has not completed their profile information yet.
+          </div>
+          <div class="customer-info-grid">
+            <div class="info-section">
+              <h4><i class="fas fa-user"></i> Basic Account Information</h4>
+              <div class="info-item">
+                <span class="info-label">Account ID:</span>
+                <span class="info-value">${customer.account_id || 'N/A'}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Username:</span>
+                <span class="info-value">${customer.Username || 'N/A'}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Email:</span>
+                <span class="info-value">${customer.Email || 'N/A'}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Name:</span>
+                <span class="info-value">${customer.FirstName || ''} ${customer.LastName || ''}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Role:</span>
+                <span class="info-value"><span class="status customer">${customer.Role || 'Customer'}</span></span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Account Created:</span>
+                <span class="info-value">${customer.CreatedAt ? new Date(customer.CreatedAt).toLocaleDateString() : 'N/A'}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Last Login:</span>
+                <span class="info-value">${customer.LastLoginAt ? new Date(customer.LastLoginAt).toLocaleDateString() : 'Never'}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Profile Status:</span>
+                <span class="info-value"><span class="status warning">${customer.Status || 'Incomplete Profile'}</span></span>
+              </div>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // Display full customer information for complete profiles
       content.innerHTML = `
         <div class="customer-info-grid">
           <div class="info-section">
@@ -1212,7 +1392,7 @@ $activeAgents = $customerOp->getActiveSalesAgents();
               <span class="info-value">${customer.nationality || 'N/A'}</span>
             </div>
           </div>
-          
+
           <div class="info-section">
             <h4><i class="fas fa-phone"></i> Contact Information</h4>
             <div class="info-item">
@@ -1228,7 +1408,7 @@ $activeAgents = $customerOp->getActiveSalesAgents();
               <span class="info-value">${customer.Username || 'N/A'}</span>
             </div>
           </div>
-          
+
           <div class="info-section">
             <h4><i class="fas fa-briefcase"></i> Employment Details</h4>
             <div class="info-item">
@@ -1252,7 +1432,7 @@ $activeAgents = $customerOp->getActiveSalesAgents();
               <span class="info-value">${customer.valid_id_type || 'N/A'}</span>
             </div>
           </div>
-          
+
           <div class="info-section">
             <h4><i class="fas fa-clock"></i> Account Information</h4>
             <div class="info-item">
@@ -1269,11 +1449,11 @@ $activeAgents = $customerOp->getActiveSalesAgents();
             </div>
             <div class="info-item">
               <span class="info-label">Status:</span>
-              <span class="info-value"><span class="status ${customer.Status ? customer.Status.toLowerCase() : 'pending'}">${customer.Status || 'Pending'}</span></span>
+              <span class="info-value"><span class="status ${customer.Status ? customer.Status.toLowerCase().replace(' ', '-') : 'pending'}">${customer.Status || 'Pending'}</span></span>
             </div>
             <div class="info-item">
               <span class="info-label">Created:</span>
-              <span class="info-value">${customer.created_at ? new Date(customer.created_at).toLocaleDateString() : 'N/A'}</span>
+              <span class="info-value">${customer.created_at ? new Date(customer.created_at).toLocaleDateString() : (customer.CreatedAt ? new Date(customer.CreatedAt).toLocaleDateString() : 'N/A')}</span>
             </div>
             <div class="info-item">
               <span class="info-label">Last Updated:</span>
@@ -1349,7 +1529,7 @@ $activeAgents = $customerOp->getActiveSalesAgents();
     }
 
     // Display sales agent information in modal
-    function displaySalesAgentInfo(account, profile) {
+    function displaySalesAgentInfo(account) {
       const content = document.getElementById('salesAgentInfoContent');
       content.innerHTML = `
         <div class="customer-info-grid">
@@ -1360,51 +1540,27 @@ $activeAgents = $customerOp->getActiveSalesAgents();
               <span class="info-value">${account.FirstName || 'N/A'} ${account.LastName || 'N/A'}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">Display Name:</span>
-              <span class="info-value">${profile?.display_name || 'N/A'}</span>
-            </div>
-            <div class="info-item">
               <span class="info-label">Username:</span>
-              <span class="info-value">${account.Username}</span>
+              <span class="info-value">${account.Username || 'N/A'}</span>
             </div>
             <div class="info-item">
               <span class="info-label">Email:</span>
-              <span class="info-value">${account.Email}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Contact Number:</span>
-              <span class="info-value">${profile?.contact_number || 'N/A'}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Date of Birth:</span>
-              <span class="info-value">${account.DateOfBirth ? new Date(account.DateOfBirth).toLocaleDateString() : 'N/A'}</span>
+              <span class="info-value">${account.Email || 'N/A'}</span>
             </div>
           </div>
-          
-          <div class="info-section">
-            <h4><i class="fas fa-id-badge"></i> Agent Information</h4>
-            <div class="info-item">
-              <span class="info-label">Agent ID Number:</span>
-              <span class="info-value">${profile?.agent_id_number || 'N/A'}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Bio:</span>
-              <span class="info-value" style="white-space: pre-wrap;">${profile?.bio || 'N/A'}</span>
-            </div>
-          </div>
-          
+
           <div class="info-section">
             <h4><i class="fas fa-shield-alt"></i> Account Information</h4>
             <div class="info-item">
               <span class="info-label">Account ID:</span>
-              <span class="info-value">${account.Id}</span>
+              <span class="info-value">${account.Id || 'N/A'}</span>
             </div>
             <div class="info-item">
               <span class="info-label">Role:</span>
-              <span class="info-value"><span class="status salesagent">${account.Role}</span></span>
+              <span class="info-value"><span class="status salesagent">${account.Role || 'SalesAgent'}</span></span>
             </div>
             <div class="info-item">
-              <span class="info-label">Created:</span>
+              <span class="info-label">Account Created:</span>
               <span class="info-value">${account.CreatedAt ? new Date(account.CreatedAt).toLocaleDateString() : 'N/A'}</span>
             </div>
             <div class="info-item">
@@ -1412,8 +1568,8 @@ $activeAgents = $customerOp->getActiveSalesAgents();
               <span class="info-value">${account.LastLoginAt ? new Date(account.LastLoginAt).toLocaleString() : 'Never'}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">Profile Updated:</span>
-              <span class="info-value">${profile?.updated_at ? new Date(profile.updated_at).toLocaleDateString() : 'N/A'}</span>
+              <span class="info-label">Account Status:</span>
+              <span class="info-value"><span class="status ${account.IsDisabled ? 'error' : 'success'}">${account.IsDisabled ? 'Disabled' : 'Active'}</span></span>
             </div>
           </div>
         </div>

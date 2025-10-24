@@ -34,7 +34,12 @@ try {
         case 'get_templates':
             getEmailTemplates($pdo, $user_id);
             break;
-            
+
+        case 'delete_template':
+            $template_id = intval($_POST['template_id'] ?? 0);
+            deleteEmailTemplate($pdo, $template_id, $user_id);
+            break;
+
         case 'delete_email':
             $email_id = intval($_POST['email_id'] ?? 0);
             deleteEmail($pdo, $email_id, $user_id, $user_role);
@@ -63,15 +68,15 @@ try {
 function getEmailHistory($pdo, $user_id, $user_role) {
     try {
         // Get filter parameters
-        $page = intval($_GET['page'] ?? 1);
-        $limit = intval($_GET['limit'] ?? 20);
+        $page = max(1, intval($_GET['page'] ?? 1));
+        $limit = max(1, min(100, intval($_GET['limit'] ?? 20))); // Ensure limit is between 1 and 100
         $search = $_GET['search'] ?? '';
         $status_filter = $_GET['status'] ?? '';
         $type_filter = $_GET['type'] ?? '';
         $date_from = $_GET['date_from'] ?? '';
         $date_to = $_GET['date_to'] ?? '';
-        
-        $offset = ($page - 1) * $limit;
+
+        $offset = max(0, ($page - 1) * $limit); // Ensure offset is not negative
         
         // Build WHERE clause
         $where_conditions = [];
@@ -124,18 +129,21 @@ function getEmailHistory($pdo, $user_id, $user_role) {
         $total_records = $count_stmt->fetch(PDO::FETCH_ASSOC)['total'];
         
         // Get paginated results
-        $sql = "SELECT id, sender_id, sender_name, recipient, subject, 
-                       LEFT(message, 100) as message_preview, 
-                       email_type, priority, sent_at, status, delivery_status, 
+        // Note: LIMIT and OFFSET are directly interpolated as integers (already validated with intval())
+        // to avoid PDO quoting them as strings which causes SQL syntax errors
+        // Explicitly cast to int to ensure they're not treated as strings
+        $limit_int = (int)$limit;
+        $offset_int = (int)$offset;
+
+        $sql = "SELECT id, sender_id, sender_name, recipient, subject,
+                       LEFT(message, 100) as message_preview,
+                       email_type, priority, sent_at, status, delivery_status,
                        error_message, opened_at, clicked_at
-                FROM email_logs 
-                $where_clause 
-                ORDER BY sent_at DESC 
-                LIMIT ? OFFSET ?";
-        
-        $params[] = $limit;
-        $params[] = $offset;
-        
+                FROM email_logs
+                $where_clause
+                ORDER BY sent_at DESC
+                LIMIT {$limit_int} OFFSET {$offset_int}";
+
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $emails = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -267,6 +275,38 @@ function getEmailTemplates($pdo, $user_id) {
         
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'message' => 'Error fetching templates: ' . $e->getMessage()]);
+    }
+}
+
+/**
+ * Delete an email template
+ */
+function deleteEmailTemplate($pdo, $template_id, $user_id) {
+    try {
+        if (!$template_id) {
+            echo json_encode(['success' => false, 'message' => 'Template ID is required']);
+            return;
+        }
+
+        // Check if template exists and belongs to user
+        $check_sql = "SELECT id FROM email_templates WHERE id = ? AND user_id = ?";
+        $check_stmt = $pdo->prepare($check_sql);
+        $check_stmt->execute([$template_id, $user_id]);
+
+        if ($check_stmt->rowCount() === 0) {
+            echo json_encode(['success' => false, 'message' => 'Template not found or access denied']);
+            return;
+        }
+
+        // Soft delete by setting is_active to 0
+        $delete_sql = "UPDATE email_templates SET is_active = 0 WHERE id = ? AND user_id = ?";
+        $delete_stmt = $pdo->prepare($delete_sql);
+        $delete_stmt->execute([$template_id, $user_id]);
+
+        echo json_encode(['success' => true, 'message' => 'Template deleted successfully']);
+
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'Error deleting template: ' . $e->getMessage()]);
     }
 }
 

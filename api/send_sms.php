@@ -3,6 +3,45 @@
 
 header('Content-Type: application/json; charset=utf-8');
 
+// Initialize session and database connection
+require_once __DIR__ . '/../includes/init.php';
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    http_response_code(401);
+    echo json_encode([
+        'success' => false,
+        'response' => null,
+        'error' => 'Unauthorized. Please log in.'
+    ]);
+    exit;
+}
+
+// Get user information from session
+$user_id = $_SESSION['user_id'];
+$user_role = $_SESSION['user_role'] ?? 'User';
+
+// Get user name from database
+$user_name = 'User';
+try {
+    if ($pdo) {
+        $stmt = $pdo->prepare("SELECT FirstName, LastName, Username FROM accounts WHERE Id = ?");
+        $stmt->execute([$user_id]);
+        $user_data = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($user_data) {
+            if (!empty($user_data['FirstName']) && !empty($user_data['LastName'])) {
+                $user_name = $user_data['FirstName'] . ' ' . $user_data['LastName'];
+            } elseif (!empty($user_data['FirstName'])) {
+                $user_name = $user_data['FirstName'];
+            } else {
+                $user_name = $user_data['Username'];
+            }
+        }
+    }
+} catch (Exception $e) {
+    error_log('[SMS DEBUG] Error fetching user name: ' . $e->getMessage());
+}
+
 // [SMS DEBUG] Log request method and input
 error_log('[SMS DEBUG] Incoming request: method=' . $_SERVER['REQUEST_METHOD'] . ' | POST=' . json_encode($_POST)); // DEBUG LOG
 
@@ -174,6 +213,71 @@ $result = PhilSmsSender::sendSms($cleanNumbers, $message, $senderName);
 
 // Output only JSON
 error_log('[SMS DEBUG] SMS send result: ' . json_encode($result)); // DEBUG LOG
+
+// Log SMS to database
+try {
+    if ($pdo) {
+        // Calculate message metadata
+        $message_length = mb_strlen($message);
+        $is_unicode = !preg_match('/^[\x00-\x7F]*$/', $message); // Check if contains non-ASCII
+
+        // Calculate segments (GSM-7: 160 chars single, 153 concat; Unicode: 70 single, 67 concat)
+        if ($is_unicode) {
+            $segment_count = $message_length <= 70 ? 1 : ceil($message_length / 67);
+        } else {
+            $segment_count = $message_length <= 160 ? 1 : ceil($message_length / 153);
+        }
+
+        // Determine status and delivery status
+        $status = $result['success'] ? 'sent' : 'failed';
+        $delivery_status = $result['success'] ? 'pending' : 'failed';
+
+        // Extract API response data
+        $api_response = isset($result['response']) ? json_encode($result['response']) : null;
+        $api_message_id = null;
+        if ($result['success'] && isset($result['response']['data']['id'])) {
+            $api_message_id = $result['response']['data']['id'];
+        }
+
+        $error_message = $result['error'] ?? null;
+
+        // Resolve sender ID name
+        $sender_id_name = $senderName ?? 'PhilSMS';
+
+        // Log each recipient separately
+        foreach ($cleanNumbers as $recipient) {
+            $log_sql = "INSERT INTO sms_logs (
+                sender_id, sender_name, recipient, message,
+                message_length, segment_count, is_unicode,
+                sender_id_name, provider, status, delivery_status,
+                api_response, api_message_id, error_message, sent_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+
+            $stmt = $pdo->prepare($log_sql);
+            $stmt->execute([
+                $user_id,
+                $user_name,
+                $recipient,
+                $message,
+                $message_length,
+                $segment_count,
+                $is_unicode ? 1 : 0,
+                $sender_id_name,
+                'PhilSMS',
+                $status,
+                $delivery_status,
+                $api_response,
+                $api_message_id,
+                $error_message
+            ]);
+
+            error_log('[SMS DEBUG] SMS logged to database for recipient: ' . $recipient);
+        }
+    }
+} catch (Exception $e) {
+    error_log('[SMS DEBUG] Error logging SMS to database: ' . $e->getMessage());
+    // Don't fail the request if logging fails
+}
 
 echo json_encode([
     'success' => $result['success'],

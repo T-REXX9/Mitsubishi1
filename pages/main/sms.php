@@ -238,6 +238,18 @@ $current_page = 'sms';
       background: var(--primary-light);
       color: var(--text-dark);
     }
+    .status-badge.success {
+      background: #d4edda;
+      color: #155724;
+    }
+    .status-badge.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .status-badge.pending {
+      background: #fff3cd;
+      color: #856404;
+    }
 
     /* Empty / Loading / Error states */
     .state {
@@ -571,6 +583,11 @@ $current_page = 'sms';
         });
         activeTabIndex = index;
         if (setFocus) tabs[index].focus();
+
+        // Load history when History tab is activated
+        if (index === 2) { // History tab is index 2
+          loadSmsHistory();
+        }
       }
 
       tabs.forEach((tab, index) => {
@@ -885,57 +902,78 @@ $current_page = 'sms';
 
       let historyPage = 1;
       const pageSize = 10;
+      let historyData = []; // Store fetched history data
 
-      historySearch?.addEventListener('input', renderHistory);
-      historyStatus?.addEventListener('change', renderHistory);
-      historySort?.addEventListener('change', renderHistory);
-      prevPageBtn?.addEventListener('click', () => { historyPage = Math.max(1, historyPage - 1); renderHistory(); });
-      nextPageBtn?.addEventListener('click', () => { historyPage += 1; renderHistory(); });
+      historySearch?.addEventListener('input', () => { historyPage = 1; loadSmsHistory(); });
+      historyStatus?.addEventListener('change', () => { historyPage = 1; loadSmsHistory(); });
+      historySort?.addEventListener('change', () => { historyPage = 1; loadSmsHistory(); });
+      prevPageBtn?.addEventListener('click', () => { historyPage = Math.max(1, historyPage - 1); loadSmsHistory(); });
+      nextPageBtn?.addEventListener('click', () => { historyPage += 1; loadSmsHistory(); });
 
-      function sortHistory(arr) {
-        const mode = historySort.value;
-        const copy = arr.slice();
-        switch (mode) {
-          case 'date_asc': return copy.sort((a,b) => a.date.localeCompare(b.date));
-          case 'date_desc':
-          default: return copy.sort((a,b) => b.date.localeCompare(a.date));
+      // Load SMS history from API
+      async function loadSmsHistory() {
+        try {
+          // Show loading state
+          historyState.style.display = 'block';
+          historyState.textContent = 'Loading...';
+          historyTbody.innerHTML = '';
+          historyCards.innerHTML = '';
+
+          // Build query parameters
+          const params = new URLSearchParams({
+            action: 'get_history',
+            page: historyPage,
+            limit: pageSize
+          });
+
+          const search = historySearch?.value?.trim();
+          if (search) params.append('search', search);
+
+          const status = historyStatus?.value;
+          if (status) params.append('status', status);
+
+          // Fetch from API
+          const response = await fetch(`../../api/sms_history_api.php?${params.toString()}`);
+          const data = await response.json();
+
+          if (data.success) {
+            historyData = data.data;
+            renderHistory(data.data, data.pagination);
+          } else {
+            historyState.style.display = 'block';
+            historyState.textContent = 'Error loading history: ' + (data.message || 'Unknown error');
+          }
+        } catch (error) {
+          console.error('Error loading SMS history:', error);
+          historyState.style.display = 'block';
+          historyState.textContent = 'Error loading history. Please try again.';
         }
       }
 
-      function filterHistory(arr) {
-        const q = (historySearch.value || '').toLowerCase();
-        const status = historyStatus.value;
-        return arr.filter(h => {
-          const matchesQ = (h.recipient || '').toLowerCase().includes(q) || (h.message || '').toLowerCase().includes(q);
-          const matchesStatus = !status || (h.status === status);
-          return matchesQ && matchesStatus;
-        });
-      }
+      function renderHistory(smsData, pagination) {
+        // Update pagination info
+        if (pagination) {
+          const totalPages = pagination.total_pages || 1;
+          pageInfo.textContent = `Page ${pagination.current_page} of ${totalPages}`;
 
-      function renderHistory() {
-        const all = readLS(LS_HISTORY, []);
-        const filtered = filterHistory(sortHistory(all));
-
-        // Pagination
-        const total = filtered.length;
-        const totalPages = Math.max(1, Math.ceil(total / pageSize));
-        if (historyPage > totalPages) historyPage = totalPages;
-        const start = (historyPage - 1) * pageSize;
-        const pageItems = filtered.slice(start, start + pageSize);
-        pageInfo.textContent = `Page ${historyPage} of ${totalPages}`;
+          // Update button states
+          if (prevPageBtn) prevPageBtn.disabled = pagination.current_page <= 1;
+          if (nextPageBtn) nextPageBtn.disabled = pagination.current_page >= totalPages;
+        }
 
         // State
-        historyState.style.display = pageItems.length === 0 ? 'block' : 'none';
-        historyState.textContent = pageItems.length === 0 ? 'No messages found.' : '';
+        historyState.style.display = smsData.length === 0 ? 'block' : 'none';
+        historyState.textContent = smsData.length === 0 ? 'No messages found.' : '';
 
         // Table
         historyTbody.innerHTML = '';
-        pageItems.forEach(h => {
+        smsData.forEach(h => {
           const tr = document.createElement('tr');
+          const statusClass = h.status === 'sent' ? 'success' : (h.status === 'failed' ? 'error' : 'pending');
           tr.innerHTML = `
             <td>${escapeHtml(h.recipient)}</td>
-            <td><span class="status-badge">${escapeHtml(h.status)}</span></td>
-            <td>${formatDate(h.date)}</td>
+            <td><span class="status-badge ${statusClass}">${escapeHtml(h.status.toUpperCase())}</span></td>
+            <td>${h.formatted_date}</td>
             <td><button class="btn-secondary" data-view="${h.id}" aria-label="View details">View</button></td>
           `;
           historyTbody.appendChild(tr);
@@ -943,13 +981,14 @@ $current_page = 'sms';
 
         // Cards
         historyCards.innerHTML = '';
-        pageItems.forEach(h => {
+        smsData.forEach(h => {
           const card = document.createElement('div');
           card.className = 'card';
+          const statusClass = h.status === 'sent' ? 'success' : (h.status === 'failed' ? 'error' : 'pending');
           card.innerHTML = `
             <div class="card-row"><span class="card-label">Recipient</span><span class="card-value">${escapeHtml(h.recipient)}</span></div>
-            <div class="card-row"><span class="card-label">Status</span><span class="card-value">${escapeHtml(h.status)}</span></div>
-            <div class="card-row"><span class="card-label">Date/Time</span><span class="card-value">${formatDate(h.date)}</span></div>
+            <div class="card-row"><span class="card-label">Status</span><span class="card-value"><span class="status-badge ${statusClass}">${escapeHtml(h.status.toUpperCase())}</span></span></div>
+            <div class="card-row"><span class="card-label">Date/Time</span><span class="card-value">${h.formatted_date}</span></div>
             <div class="card-row"><span class="card-label">Actions</span><span class="card-value"><button class="btn-secondary" data-view="${h.id}" aria-label="View details">View</button></span></div>
           `;
           historyCards.appendChild(card);
@@ -963,22 +1002,48 @@ $current_page = 'sms';
       const drawerCloseBtn = document.getElementById('drawerCloseBtn');
       const drawerContent = document.getElementById('drawerContent');
 
-      function openDrawer(id) {
-        const all = readLS(LS_HISTORY, []);
-        const item = all.find(h => String(h.id) === String(id));
-        if (!item) return;
-        drawerContent.innerHTML = `
-          <div style="display:grid;gap:10px">
-            <div><strong>Recipient:</strong> ${escapeHtml(item.recipient)}</div>
-            <div><strong>Status:</strong> ${escapeHtml(item.status)}</div>
-            <div><strong>Date/Time:</strong> ${formatDate(item.date)}</div>
-            <div><strong>Segments:</strong> ${item.segments || 1}</div>
-            <div><strong>Message:</strong><br><pre style="white-space:pre-wrap;font-size:13px;color:var(--text-dark);background:var(--primary-light);padding:10px;border-radius:8px;border:1px solid var(--border-light)">${escapeHtml(item.message)}</pre></div>
-          </div>
-        `;
-        drawerOverlay.style.display = 'flex';
-        drawerOverlay.setAttribute('aria-hidden', 'false');
+      async function openDrawer(id) {
+        try {
+          // Show loading in drawer
+          drawerContent.innerHTML = '<div style="text-align:center;padding:20px;">Loading...</div>';
+          drawerOverlay.style.display = 'flex';
+          drawerOverlay.setAttribute('aria-hidden', 'false');
+
+          // Fetch SMS details from API
+          const response = await fetch(`../../api/sms_history_api.php?action=get_sms_details&sms_id=${id}`);
+          const data = await response.json();
+
+          if (data.success) {
+            const item = data.data;
+            const statusClass = item.status === 'sent' ? 'success' : (item.status === 'failed' ? 'error' : 'pending');
+            const deliveryClass = item.delivery_status === 'delivered' ? 'success' : (item.delivery_status === 'failed' ? 'error' : 'pending');
+
+            drawerContent.innerHTML = `
+              <div style="display:grid;gap:10px">
+                <div><strong>Recipient:</strong> ${escapeHtml(item.recipient)}</div>
+                <div><strong>Sender:</strong> ${escapeHtml(item.sender_name)}</div>
+                <div><strong>Sender ID:</strong> ${escapeHtml(item.sender_id_name)}</div>
+                <div><strong>Status:</strong> <span class="status-badge ${statusClass}">${escapeHtml(item.status.toUpperCase())}</span></div>
+                <div><strong>Delivery Status:</strong> <span class="status-badge ${deliveryClass}">${escapeHtml(item.delivery_status.toUpperCase())}</span></div>
+                <div><strong>Sent:</strong> ${item.formatted_date}</div>
+                ${item.delivered_at ? `<div><strong>Delivered:</strong> ${item.formatted_delivered_at}</div>` : ''}
+                <div><strong>Message Length:</strong> ${item.message_length} characters</div>
+                <div><strong>Segments:</strong> ${item.segment_count}</div>
+                <div><strong>Encoding:</strong> ${item.is_unicode ? 'Unicode' : 'GSM-7'}</div>
+                <div><strong>Provider:</strong> ${escapeHtml(item.provider)}</div>
+                ${item.error_message ? `<div><strong>Error:</strong> <span style="color:#dc143c;">${escapeHtml(item.error_message)}</span></div>` : ''}
+                <div><strong>Message:</strong><br><pre style="white-space:pre-wrap;font-size:13px;color:var(--text-dark);background:var(--primary-light);padding:10px;border-radius:8px;border:1px solid var(--border-light)">${escapeHtml(item.message)}</pre></div>
+              </div>
+            `;
+          } else {
+            drawerContent.innerHTML = `<div style="text-align:center;padding:20px;color:#dc143c;">Error: ${escapeHtml(data.message || 'Failed to load details')}</div>`;
+          }
+        } catch (error) {
+          console.error('Error loading SMS details:', error);
+          drawerContent.innerHTML = '<div style="text-align:center;padding:20px;color:#dc143c;">Error loading details. Please try again.</div>';
+        }
       }
+
       function closeDrawer() {
         drawerOverlay.style.display = 'none';
         drawerOverlay.setAttribute('aria-hidden', 'true');
@@ -1014,11 +1079,7 @@ $current_page = 'sms';
         renderTemplates();
       })();
 
-      (async function initHistory() {
-        await showLoading(historyState, 250);
-        historyState.style.display = 'none';
-        renderHistory();
-      })();
+      // History will be loaded when tab is activated (see setActiveTab function)
 
       // Send handler (integrated with backend API)
       document.getElementById('sendForm')?.addEventListener('submit', async function (e) {
@@ -1101,7 +1162,10 @@ $current_page = 'sms';
             // Optionally clear message only
             messageInput.value = '';
             updateMessageCounters();
-            renderHistory();
+            // Reload history if on history tab
+            if (activeTabIndex === 2) {
+              loadSmsHistory();
+            }
           } else {
             // DEBUG LOG: SMS send failed
             console.log('[SMS DEBUG] SMS send failed', data); // DEBUG LOG

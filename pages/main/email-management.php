@@ -233,37 +233,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
           </button>
         </div>
 
-        <div class="templates-grid">
-          <div class="template-card" onclick="useTemplate('inquiry_response')">
-            <div class="template-icon">
-              <i class="fas fa-question-circle"></i>
+        <!-- Default Templates Section -->
+        <div class="templates-section">
+          <h3 class="section-title">
+            <i class="fas fa-star"></i> Default Templates
+          </h3>
+          <div class="templates-grid">
+            <div class="template-card" onclick="useTemplate('inquiry_response')">
+              <div class="template-icon">
+                <i class="fas fa-question-circle"></i>
+              </div>
+              <h3>Inquiry Response</h3>
+              <p>Standard response to customer inquiries</p>
             </div>
-            <h3>Inquiry Response</h3>
-            <p>Standard response to customer inquiries</p>
-          </div>
 
-          <div class="template-card" onclick="useTemplate('quote_follow_up')">
-            <div class="template-icon">
-              <i class="fas fa-calculator"></i>
+            <div class="template-card" onclick="useTemplate('quote_follow_up')">
+              <div class="template-icon">
+                <i class="fas fa-calculator"></i>
+              </div>
+              <h3>Quote Follow-up</h3>
+              <p>Follow up on vehicle quotes and pricing</p>
             </div>
-            <h3>Quote Follow-up</h3>
-            <p>Follow up on vehicle quotes and pricing</p>
-          </div>
 
-          <div class="template-card" onclick="useTemplate('test_drive_confirmation')">
-            <div class="template-icon">
-              <i class="fas fa-car"></i>
+            <div class="template-card" onclick="useTemplate('test_drive_confirmation')">
+              <div class="template-icon">
+                <i class="fas fa-car"></i>
+              </div>
+              <h3>Test Drive Confirmation</h3>
+              <p>Confirm test drive appointments</p>
             </div>
-            <h3>Test Drive Confirmation</h3>
-            <p>Confirm test drive appointments</p>
-          </div>
 
-          <div class="template-card" onclick="useTemplate('payment_reminder')">
-            <div class="template-icon">
-              <i class="fas fa-credit-card"></i>
+            <div class="template-card" onclick="useTemplate('payment_reminder')">
+              <div class="template-icon">
+                <i class="fas fa-credit-card"></i>
+              </div>
+              <h3>Payment Reminder</h3>
+              <p>Remind customers about pending payments</p>
             </div>
-            <h3>Payment Reminder</h3>
-            <p>Remind customers about pending payments</p>
+          </div>
+        </div>
+
+        <!-- Saved Templates Section -->
+        <div class="templates-section">
+          <h3 class="section-title">
+            <i class="fas fa-save"></i> My Saved Templates
+          </h3>
+          <div id="savedTemplatesContainer" class="saved-templates-container">
+            <p class="loading-text">Loading saved templates...</p>
           </div>
         </div>
       </div>
@@ -345,18 +361,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
   <script src="../../includes/js/common-scripts.js"></script>
   <script>
     // Email Management JavaScript
+
+    // Utility function to escape HTML
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
     function showEmailInterface(type) {
       // Hide all interfaces first
       document.querySelectorAll('.interface-container').forEach(container => {
         container.style.display = 'none';
       });
-      
+
       // Show the selected interface
       const interfaceId = type + 'Interface';
       const interface = document.getElementById(interfaceId);
       if (interface) {
         interface.style.display = 'block';
         interface.scrollIntoView({ behavior: 'smooth' });
+
+        // Load email history when history interface is shown
+        if (type === 'history') {
+          loadEmailHistory();
+        }
+
+        // Load saved templates when templates interface is shown
+        if (type === 'templates') {
+          loadSavedTemplates();
+        }
       }
     }
 
@@ -500,6 +535,127 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         });
     }
 
+    // Load saved templates from database
+    function loadSavedTemplates() {
+      const container = document.getElementById('savedTemplatesContainer');
+      container.innerHTML = '<p class="loading-text">Loading saved templates...</p>';
+
+      fetch('../../api/email_history_api.php?action=get_templates')
+        .then(response => response.json())
+        .then(data => {
+          console.log('Templates API Response:', data); // Debug log
+          if (data.success) {
+            console.log('Number of templates:', data.data ? data.data.length : 0); // Debug log
+            displaySavedTemplates(data.data);
+          } else {
+            container.innerHTML = '<p class="no-templates-text">Error loading templates: ' + data.message + '</p>';
+          }
+        })
+        .catch(error => {
+          console.error('Error loading saved templates:', error);
+          container.innerHTML = '<p class="no-templates-text">Error loading saved templates</p>';
+        });
+    }
+
+    // Display saved templates
+    function displaySavedTemplates(templates) {
+      const container = document.getElementById('savedTemplatesContainer');
+
+      console.log('displaySavedTemplates called with:', templates); // Debug log
+
+      if (!templates || templates.length === 0) {
+        console.log('No templates to display'); // Debug log
+        container.innerHTML = '<p class="no-templates-text"><i class="fas fa-info-circle"></i> No saved templates yet. Check the "Save as template" box when sending an email to create one.</p>';
+        return;
+      }
+
+      console.log('Displaying', templates.length, 'templates'); // Debug log
+      container.innerHTML = '';
+
+      templates.forEach(template => {
+        const card = document.createElement('div');
+        card.className = 'saved-template-card';
+        card.innerHTML = `
+          <div class="saved-template-header">
+            <div class="saved-template-icon">
+              <i class="fas fa-envelope"></i>
+            </div>
+            <div class="saved-template-info">
+              <h4>${escapeHtml(template.template_name)}</h4>
+              <p class="template-meta">
+                <span><i class="fas fa-tag"></i> ${escapeHtml(template.email_type.replace('_', ' '))}</span>
+                <span><i class="fas fa-clock"></i> ${new Date(template.created_at).toLocaleDateString()}</span>
+              </p>
+            </div>
+          </div>
+          <div class="saved-template-body">
+            <p class="template-subject"><strong>Subject:</strong> ${escapeHtml(template.subject)}</p>
+            <p class="template-preview">${escapeHtml(template.message.substring(0, 100))}${template.message.length > 100 ? '...' : ''}</p>
+          </div>
+          <div class="saved-template-actions">
+            <button class="btn btn-small btn-primary" onclick="useSavedTemplate(${template.id})">
+              <i class="fas fa-paper-plane"></i> Use Template
+            </button>
+            <button class="btn btn-small btn-outline" onclick="deleteSavedTemplate(${template.id})">
+              <i class="fas fa-trash"></i> Delete
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Use a saved template
+    function useSavedTemplate(templateId) {
+      fetch(`../../api/email_history_api.php?action=get_templates`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const template = data.data.find(t => t.id == templateId);
+            if (template) {
+              document.getElementById('subject').value = template.subject;
+              document.getElementById('message').value = template.message;
+              document.getElementById('emailType').value = template.email_type;
+              showEmailInterface('compose');
+              showNotification('Template loaded successfully!', 'success');
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Error loading template:', error);
+          showNotification('Error loading template', 'error');
+        });
+    }
+
+    // Delete a saved template
+    function deleteSavedTemplate(templateId) {
+      if (!confirm('Are you sure you want to delete this template?')) {
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('action', 'delete_template');
+      formData.append('template_id', templateId);
+
+      fetch('../../api/email_history_api.php', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showNotification('Template deleted successfully', 'success');
+          loadSavedTemplates(); // Reload the templates list
+        } else {
+          showNotification('Error: ' + data.message, 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error deleting template', 'error');
+      });
+    }
+
     // Update email history table
     function updateEmailHistoryTable(emails) {
       const tbody = document.getElementById('emailHistoryTable');
@@ -571,54 +727,89 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 
     function showEmailDetailsModal(email) {
-      const modal = document.createElement('div');
-      modal.className = 'modal';
-      modal.innerHTML = `
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>Email Details</h3>
-            <button class="modal-close" onclick="this.closest('.modal').remove()">
+      const modalOverlay = document.createElement('div');
+      modalOverlay.className = 'email-modal-overlay';
+      modalOverlay.innerHTML = `
+        <div class="email-modal">
+          <div class="email-modal-header">
+            <h3><i class="fas fa-envelope"></i> Email Details</h3>
+            <button class="email-modal-close" onclick="this.closest('.email-modal-overlay').remove()">
               <i class="fas fa-times"></i>
             </button>
           </div>
-          <div class="modal-body">
-            <div class="email-details">
-              <div class="detail-row">
-                <strong>From:</strong> ${email.sender_name}
+          <div class="email-modal-body">
+            <div class="email-details-grid">
+              <div class="detail-item">
+                <label>From</label>
+                <div class="detail-value">${escapeHtml(email.sender_name)}</div>
               </div>
-              <div class="detail-row">
-                <strong>To:</strong> ${email.recipient}
+              <div class="detail-item">
+                <label>To</label>
+                <div class="detail-value">${escapeHtml(email.recipient)}</div>
               </div>
-              <div class="detail-row">
-                <strong>Subject:</strong> ${email.subject}
+              <div class="detail-item full-width">
+                <label>Subject</label>
+                <div class="detail-value">${escapeHtml(email.subject)}</div>
               </div>
-              <div class="detail-row">
-                <strong>Type:</strong> ${email.email_type.replace('_', ' ').toUpperCase()}
+              <div class="detail-item">
+                <label>Type</label>
+                <div class="detail-value">${escapeHtml(email.email_type.replace('_', ' ').toUpperCase())}</div>
               </div>
-              <div class="detail-row">
-                <strong>Priority:</strong> ${email.priority.toUpperCase()}
+              <div class="detail-item">
+                <label>Priority</label>
+                <div class="detail-value priority-${email.priority}">${escapeHtml(email.priority.toUpperCase())}</div>
               </div>
-              <div class="detail-row">
-                <strong>Sent:</strong> ${email.formatted_date}
+              <div class="detail-item">
+                <label>Status</label>
+                <div class="detail-value"><span class="status-badge ${email.status === 'sent' ? 'success' : 'error'}">${escapeHtml(email.status.toUpperCase())}</span></div>
               </div>
-              <div class="detail-row">
-                <strong>Status:</strong> <span class="status ${email.status}">${email.status.toUpperCase()}</span>
+              <div class="detail-item">
+                <label>Delivery Status</label>
+                <div class="detail-value"><span class="status-badge ${email.delivery_status === 'delivered' ? 'success' : (email.delivery_status === 'failed' ? 'error' : 'pending')}">${escapeHtml(email.delivery_status.toUpperCase())}</span></div>
               </div>
-              ${email.error_message ? `<div class="detail-row"><strong>Error:</strong> <span style="color: #dc143c;">${email.error_message}</span></div>` : ''}
-              <div class="detail-row">
-                <strong>Message:</strong>
+              <div class="detail-item">
+                <label>Sent At</label>
+                <div class="detail-value">${email.formatted_date}</div>
+              </div>
+              ${email.opened_at ? `
+              <div class="detail-item">
+                <label>Opened At</label>
+                <div class="detail-value">${new Date(email.opened_at).toLocaleString()}</div>
+              </div>` : ''}
+              ${email.clicked_at ? `
+              <div class="detail-item">
+                <label>Clicked At</label>
+                <div class="detail-value">${new Date(email.clicked_at).toLocaleString()}</div>
+              </div>` : ''}
+              ${email.error_message ? `
+              <div class="detail-item full-width">
+                <label>Error Message</label>
+                <div class="detail-value error-message">${escapeHtml(email.error_message)}</div>
+              </div>` : ''}
+              <div class="detail-item full-width">
+                <label>Message</label>
                 <div class="email-message-content">${email.message.replace(/\n/g, '<br>')}</div>
               </div>
             </div>
           </div>
-          <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
+          <div class="email-modal-footer">
+            <button class="btn btn-secondary" onclick="this.closest('.email-modal-overlay').remove()">
+              <i class="fas fa-times"></i> Close
+            </button>
           </div>
         </div>
       `;
-      
-      document.body.appendChild(modal);
-      modal.style.display = 'flex';
+
+      document.body.appendChild(modalOverlay);
+      // Trigger animation
+      setTimeout(() => modalOverlay.classList.add('active'), 10);
+
+      // Close on overlay click
+      modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+          modalOverlay.remove();
+        }
+      });
     }
 
     function deleteEmail(emailId) {
@@ -649,14 +840,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
       });
     }
 
-    // Load email history when the history interface is shown
-    const originalShowEmailInterface = showEmailInterface;
-    showEmailInterface = function(type) {
-      originalShowEmailInterface(type);
-      if (type === 'history') {
-        loadEmailHistory();
-      }
-    };
+    // This override is no longer needed since showEmailInterface already handles loading
+    // The function at line 373 already loads history and templates appropriately
 
     // Add event listener for email type dropdown to prefill subject
     document.addEventListener('DOMContentLoaded', function() {
@@ -961,87 +1146,365 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
       font-size: 14px;
       margin: 0;
     }
-    
-    .modal {
+
+    /* Templates Section Styles */
+    .templates-section {
+      margin-bottom: 40px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-dark);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--border-light);
+    }
+
+    .section-title i {
+      color: var(--primary-red);
+    }
+
+    /* Saved Templates Container */
+    .saved-templates-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .loading-text,
+    .no-templates-text {
+      text-align: center;
+      color: var(--text-light);
+      padding: 40px 20px;
+      font-size: 14px;
+      grid-column: 1 / -1;
+    }
+
+    .no-templates-text i {
+      margin-right: 8px;
+      color: var(--accent-blue);
+    }
+
+    /* Saved Template Card */
+    .saved-template-card {
+      background: white;
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: var(--transition);
+      box-shadow: var(--shadow-light);
+    }
+
+    .saved-template-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-medium);
+      border-color: var(--primary-red);
+    }
+
+    .saved-template-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 15px;
+      padding: 20px;
+      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .saved-template-icon {
+      width: 45px;
+      height: 45px;
+      background: linear-gradient(135deg, var(--primary-red), #b91c3c);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .saved-template-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .saved-template-info h4 {
+      margin: 0 0 8px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-dark);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .template-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 0;
+      font-size: 12px;
+      color: var(--text-light);
+    }
+
+    .template-meta span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .template-meta i {
+      font-size: 11px;
+    }
+
+    .saved-template-body {
+      padding: 20px;
+    }
+
+    .template-subject {
+      margin: 0 0 12px 0;
+      font-size: 13px;
+      color: var(--text-dark);
+    }
+
+    .template-subject strong {
+      color: var(--primary-red);
+    }
+
+    .template-preview {
+      margin: 0;
+      font-size: 13px;
+      color: var(--text-light);
+      line-height: 1.6;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .saved-template-actions {
+      padding: 15px 20px;
+      background: #f8f9fa;
+      border-top: 1px solid var(--border-light);
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .saved-template-actions .btn {
+      font-size: 13px;
+      padding: 8px 16px;
+    }
+
+    /* Email Details Modal */
+    .email-modal-overlay {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 2000;
+      z-index: 10000;
+      opacity: 0;
+      transition: opacity 0.3s ease;
     }
-    
-    .modal-content {
+
+    .email-modal-overlay.active {
+      opacity: 1;
+    }
+
+    .email-modal {
       background: white;
-      border-radius: 10px;
-      max-width: 600px;
+      border-radius: 12px;
+      max-width: 800px;
       width: 90%;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      max-height: 85vh;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      display: flex;
+      flex-direction: column;
+      animation: modalSlideIn 0.3s ease;
     }
-    
-    .modal-header {
-      padding: 20px;
+
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .email-modal-header {
+      padding: 20px 25px;
       border-bottom: 1px solid var(--border-light);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
     }
-    
-    .modal-header h3 {
+
+    .email-modal-header h3 {
       margin: 0;
+      font-size: 1.5rem;
       color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
-    
-    .modal-close {
+
+    .email-modal-header h3 i {
+      color: var(--primary-red);
+    }
+
+    .email-modal-close {
       background: none;
       border: none;
-      font-size: 18px;
+      font-size: 1.5rem;
       cursor: pointer;
       color: var(--text-light);
-      padding: 5px;
-      border-radius: 4px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
       transition: all 0.2s ease;
     }
-    
-    .modal-close:hover {
-      color: var(--text-dark);
-      background: #f5f5f5;
+
+    .email-modal-close:hover {
+      color: var(--primary-red);
+      background: #f8f9fa;
     }
-    
-    .modal-body {
-      padding: 20px;
+
+    .email-modal-body {
+      padding: 25px;
+      overflow-y: auto;
+      flex: 1;
     }
-    
-    .email-details {
+
+    .email-details-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .detail-item {
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 6px;
     }
-    
-    .detail-row {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
+
+    .detail-item.full-width {
+      grid-column: 1 / -1;
     }
-    
-    .detail-row strong {
+
+    .detail-item label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .detail-value {
+      font-size: 1rem;
       color: var(--text-dark);
+      padding: 10px 12px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+
+    .detail-value.error-message {
+      color: #dc143c;
+      background: #fff5f5;
+      border-color: #ffcdd2;
+    }
+
+    .priority-high {
+      color: #dc143c;
       font-weight: 600;
     }
-    
+
+    .priority-normal {
+      color: #2196F3;
+    }
+
+    .priority-low {
+      color: #4CAF50;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .status-badge.success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status-badge.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .status-badge.pending {
+      background: #fff3cd;
+      color: #856404;
+    }
+
     .email-message-content {
-      background: #f8f9fa;
-      padding: 1rem;
-      border-radius: 4px;
+      background: #ffffff;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
       border-left: 4px solid var(--primary-red);
-      margin-top: 0.5rem;
       line-height: 1.6;
+      color: var(--text-dark);
+      min-height: 100px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .email-modal-footer {
+      padding: 15px 25px;
+      border-top: 1px solid var(--border-light);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-shrink: 0;
+      background: #f8f9fa;
+    }
+
+    @media (max-width: 768px) {
+      .email-details-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .email-modal {
+        max-width: 95%;
+        max-height: 90vh;
+      }
+
+      .email-modal-header h3 {
+        font-size: 1.25rem;
+      }
     }
     
     /* Notification Styles */

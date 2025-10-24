@@ -677,6 +677,10 @@ function getApplicationDetails($pdo)
 		'vehicle_name' => $vehicleData['name'],
 		'loan_amount' => $vehicleData['base_price'] ?? 0, // Use loan_amount as field name
 		'base_price' => $vehicleData['base_price'] ?? 0, // Keep both for compatibility
+		// Vehicle pricing fields from stored application data
+		'vehicle_base_price' => $vehicleData['base_price'] ?? 0,
+		'vehicle_promotional_price' => $vehicleData['promotional_price'] ?? null,
+		'vehicle_effective_price' => $vehicleData['effective_price'] ?? ($vehicleData['base_price'] ?? 0),
 		'reviewer_name' => $reviewerData['name'] ?? '',
 		// Personal information from application
 		'first_name' => $application['first_name'] ?? '',

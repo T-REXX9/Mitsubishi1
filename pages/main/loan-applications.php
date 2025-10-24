@@ -1113,9 +1113,18 @@ if (!$pdo) {
     }
 
     function generateAmortizationSchedule(applicationId, application) {
-      // Calculate loan amount (vehicle price - down payment)
-      const loanAmount = parseFloat(application.base_price) - parseFloat(application.down_payment || 0);
-      
+      // Calculate loan amount using vehicle effective price (same hierarchy as customer side)
+      // Priority: effective_price > promotional_price > base_price
+      let vehiclePrice = parseFloat(application.vehicle_effective_price || 0);
+      if (!vehiclePrice || vehiclePrice <= 0) {
+        vehiclePrice = parseFloat(application.vehicle_promotional_price || 0);
+      }
+      if (!vehiclePrice || vehiclePrice <= 0) {
+        vehiclePrice = parseFloat(application.base_price || 0);
+      }
+
+      const loanAmount = vehiclePrice - parseFloat(application.down_payment || 0);
+
       fetch('../../includes/backend/loan_backend.php?action=amortization', {
         method: 'POST',
         headers: {

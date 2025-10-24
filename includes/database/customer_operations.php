@@ -40,16 +40,64 @@ class CustomerOperations {
      */
     public function getCustomerByAccountId($account_id) {
         try {
+            // Cast to int to ensure proper comparison
+            $account_id = intval($account_id);
+
+            error_log("getCustomerByAccountId: Starting query for account_id={$account_id}");
+
+            // First, try exact match with proper JOIN
             $stmt = $this->pdo->prepare("
-                SELECT ci.*, a.Username, a.Email, a.Role 
-                FROM customer_information ci 
-                LEFT JOIN accounts a ON ci.account_id = a.Id 
-                WHERE ci.account_id = ?
+                SELECT ci.*, a.Username, a.Email, a.Role
+                FROM customer_information ci
+                LEFT JOIN accounts a ON ci.account_id = a.Id
+                WHERE ci.account_id = :account_id
             ");
-            $stmt->execute([$account_id]);
-            return $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmt->bindParam(':account_id', $account_id, PDO::PARAM_INT);
+            $stmt->execute();
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($result) {
+                error_log("getCustomerByAccountId: First query SUCCESS. Keys: " . implode(', ', array_keys($result)));
+                error_log("getCustomerByAccountId: Sample data - firstname: " . ($result['firstname'] ?? 'NULL') . ", lastname: " . ($result['lastname'] ?? 'NULL') . ", account_id: " . ($result['account_id'] ?? 'NULL'));
+                return $result;
+            }
+
+            // If not found, try alternative query to debug
+            error_log("getCustomerByAccountId: First query returned no result for account_id={$account_id}");
+
+            // Try without JOIN to see if customer_information record exists
+            $stmt2 = $this->pdo->prepare("SELECT * FROM customer_information WHERE account_id = :account_id");
+            $stmt2->bindParam(':account_id', $account_id, PDO::PARAM_INT);
+            $stmt2->execute();
+            $ciOnly = $stmt2->fetch(PDO::FETCH_ASSOC);
+
+            if ($ciOnly) {
+                error_log("getCustomerByAccountId: Found customer_information record without JOIN. cusID=" . ($ciOnly['cusID'] ?? 'NULL'));
+                error_log("getCustomerByAccountId: Keys from customer_information: " . implode(', ', array_keys($ciOnly)));
+
+                // Get account info separately
+                $stmt3 = $this->pdo->prepare("SELECT Username, Email, Role FROM accounts WHERE Id = :account_id");
+                $stmt3->bindParam(':account_id', $account_id, PDO::PARAM_INT);
+                $stmt3->execute();
+                $accountInfo = $stmt3->fetch(PDO::FETCH_ASSOC);
+
+                if ($accountInfo) {
+                    // Merge the results
+                    $result = array_merge($ciOnly, $accountInfo);
+                    error_log("getCustomerByAccountId: Successfully merged customer_information and accounts data");
+                    return $result;
+                } else {
+                    error_log("getCustomerByAccountId: Found customer_information but no matching account for Id={$account_id}");
+                    return $ciOnly;
+                }
+            } else {
+                error_log("getCustomerByAccountId: No customer_information record found for account_id={$account_id}");
+            }
+
+            return false;
         } catch (PDOException $e) {
             error_log("Error getting customer info: " . $e->getMessage());
+            error_log("Error trace: " . $e->getTraceAsString());
             return false;
         }
     }
@@ -332,4 +380,3 @@ class CustomerOperations {
         }
     }
 }
-?>

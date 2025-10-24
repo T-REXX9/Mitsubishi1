@@ -40,7 +40,7 @@ try {
     $message = trim($_POST['message'] ?? '');
     $email_type = $_POST['email_type'] ?? 'general';
     $priority = $_POST['priority'] ?? 'normal';
-    $save_template = isset($_POST['save_template']) ? 1 : 0;
+    $save_template = (isset($_POST['save_template']) && $_POST['save_template'] == '1') ? 1 : 0;
     
     // Validation
     if (empty($recipient) || empty($subject) || empty($message)) {

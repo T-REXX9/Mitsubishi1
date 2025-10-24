@@ -396,20 +396,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
                 // Insert customer message
                 $insertMessage = $connect->prepare("
-                    INSERT INTO messages (conversation_id, sender_id, sender_type, message_text) 
+                    INSERT INTO messages (conversation_id, sender_id, sender_type, message_text)
                     VALUES (?, ?, 'Customer', ?)
                 ");
                 $insertMessage->execute([$conversation_id, $customer_id, $message_text]);
 
-                // Generate bot response
-                $botResponse = getBotResponse($message_text);
-
-                // Insert bot response (using sender_id = 0 for bot)
-                $insertBotMessage = $connect->prepare("
-                    INSERT INTO messages (conversation_id, sender_id, sender_type, message_text) 
-                    VALUES (?, 0, 'SalesAgent', ?)
+                // Check if conversation has been taken over by an agent
+                $checkAgent = $connect->prepare("
+                    SELECT agent_id FROM conversations WHERE conversation_id = ?
                 ");
-                $insertBotMessage->execute([$conversation_id, $botResponse]);
+                $checkAgent->execute([$conversation_id]);
+                $conv = $checkAgent->fetch(PDO::FETCH_ASSOC);
+
+                // Only generate bot response if no agent has taken over (agent_id is NULL)
+                if ($conv && $conv['agent_id'] === null) {
+                    // Generate bot response
+                    $botResponse = getBotResponse($message_text);
+
+                    // Insert bot response (using sender_id = 0 for bot)
+                    $insertBotMessage = $connect->prepare("
+                        INSERT INTO messages (conversation_id, sender_id, sender_type, message_text)
+                        VALUES (?, 0, 'SalesAgent', ?)
+                    ");
+                    $insertBotMessage->execute([$conversation_id, $botResponse]);
+                }
 
                 // Update conversation last message time
                 $updateConv = $connect->prepare("UPDATE conversations SET last_message_at = NOW() WHERE conversation_id = ?");
