@@ -295,9 +295,9 @@ if (!in_array($_SESSION['user_role'], ['Customer', 'SalesAgent', 'Admin'])) {
             ?>
             <button class="filter-tab<?php echo ($filter === 'all') ? ' active' : ''; ?>">All</button>
             <button class="filter-tab<?php echo ($filter === 'unread') ? ' active' : ''; ?>">Unread</button>
-            <button class="filter-tab<?php echo ($filter === 'orders') ? ' active' : ''; ?>">Orders</button>
+            <!--<button class="filter-tab<?php echo ($filter === 'orders') ? ' active' : ''; ?>">Orders</button>
             <button class="filter-tab<?php echo ($filter === 'customers') ? ' active' : ''; ?>">Customers</button>
-            <button class="filter-tab<?php echo ($filter === 'system') ? ' active' : ''; ?>">System</button>
+            <button class="filter-tab<?php echo ($filter === 'system') ? ' active' : ''; ?>">System</button>-->
           </div>
         </div>
 
