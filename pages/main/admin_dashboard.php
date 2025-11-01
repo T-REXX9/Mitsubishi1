@@ -1423,36 +1423,48 @@ $accountStats = getAccountStats($connect);
       carListingInterface.style.display = 'none';
     }
 
-    // Toggle interfaces
-    accountReviewBtn.addEventListener('click', function() {
-      hideAllInterfaces();
-      accountReviewInterface.style.display = 'block';
-    });
+    // Toggle interfaces (guard against missing elements)
+    if (accountReviewBtn && accountReviewInterface) {
+      accountReviewBtn.addEventListener('click', function() {
+        hideAllInterfaces();
+        accountReviewInterface.style.display = 'block';
+      });
+    }
 
-    transactionUpdateBtn.addEventListener('click', function() {
-      hideAllInterfaces();
-      transactionUpdateInterface.style.display = 'block';
-    });
+    if (transactionUpdateBtn && transactionUpdateInterface) {
+      transactionUpdateBtn.addEventListener('click', function() {
+        hideAllInterfaces();
+        transactionUpdateInterface.style.display = 'block';
+      });
+    }
 
-    carListingBtn.addEventListener('click', function() {
-      hideAllInterfaces();
-      carListingInterface.style.display = 'block';
-      // If "Add New Vehicle" is the only tab, it's already active by HTML.
-      // No specific JS needed here to activate it unless there were multiple tabs.
-    });
+    if (carListingBtn && carListingInterface) {
+      carListingBtn.addEventListener('click', function() {
+        hideAllInterfaces();
+        carListingInterface.style.display = 'block';
+        // If "Add New Vehicle" is the only tab, it's already active by HTML.
+        // No specific JS needed here to activate it unless there were multiple tabs.
+      });
+    }
 
     // Close buttons
-    closeAccountReview.addEventListener('click', function() {
-      accountReviewInterface.style.display = 'none';
-    });
+    if (closeAccountReview && accountReviewInterface) {
+      closeAccountReview.addEventListener('click', function() {
+        accountReviewInterface.style.display = 'none';
+      });
+    }
 
-    closeTransactionUpdate.addEventListener('click', function() {
-      transactionUpdateInterface.style.display = 'none';
-    });
+    if (closeTransactionUpdate && transactionUpdateInterface) {
+      closeTransactionUpdate.addEventListener('click', function() {
+        transactionUpdateInterface.style.display = 'none';
+      });
+    }
 
-    closeCarListing.addEventListener('click', function() {
-      carListingInterface.style.display = 'none';
-    });
+    if (closeCarListing && carListingInterface) {
+      closeCarListing.addEventListener('click', function() {
+        carListingInterface.style.display = 'none';
+      });
+    }
 
     // Tab switching functionality
     document.querySelectorAll('.tab-button').forEach(button => {

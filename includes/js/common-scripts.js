@@ -249,22 +249,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 });
-  }
-
-  if (profileBtn && profileDropdown) {
-    profileBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      profileDropdown.style.display = profileDropdown.style.display === 'block' ? 'none' : 'block';
-      if (notificationDropdown) notificationDropdown.style.display = 'none';
-    });
-  }
-
-  // Hide dropdowns when clicking outside
-  document.addEventListener('click', function() {
-    if (notificationDropdown) notificationDropdown.style.display = 'none';
-    if (profileDropdown) profileDropdown.style.display = 'none';
-  });
-});
 
 // Close sidebar when clicking on menu items on mobile
 document.querySelectorAll('.menu-item').forEach(item => {
