@@ -57,13 +57,11 @@ body, html {
 }
 
 
-/* Mobile Menu Toggle */
+/* Mobile Menu Toggle - FIXED: Now inside topbar instead of floating on top */
 .menu-toggle {
   display: none;
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  z-index: 1001;
+  position: relative; /* Changed from fixed to relative */
+  z-index: 1; /* Lower z-index since it's inside topbar */
   background: var(--primary-red);
   color: white;
   border: none;
@@ -72,6 +70,8 @@ body, html {
   cursor: pointer;
   box-shadow: var(--shadow-medium);
   transition: var(--transition);
+  margin-right: 15px; /* Add spacing between hamburger and breadcrumb */
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
 .menu-toggle.menu-toggle--hidden {
@@ -233,6 +233,15 @@ body, html {
   align-items: center;
   box-shadow: var(--shadow-light);
   border-bottom: 3px solid var(--primary-red);
+  position: relative; /* For proper stacking context */
+  z-index: 100; /* Lower than sidebar overlay but above content */
+}
+
+/* Container for hamburger + breadcrumb on mobile */
+.topbar > .breadcrumb {
+  display: flex;
+  align-items: center;
+  flex: 1;
 }
 
 .breadcrumb {
@@ -658,12 +667,16 @@ body, html {
     align-items: center;
     justify-content: center;
     gap: 6px;
-    position: fixed;
-    top: 16px;
-    left: 16px;
-    z-index: 1100;
+    /* REMOVED: position: fixed; - Now inside topbar */
+    /* REMOVED: top: 16px; left: 16px; - No longer needed */
+    z-index: 1; /* Lower since it's inside topbar */
     padding: 10px 12px;
     font-size: 16px;
+  }
+  
+  /* Adjust topbar padding to accommodate hamburger button */
+  .topbar {
+    padding: 0 20px !important; /* Reduce left padding since hamburger is now inside */
   }
 
   .sidebar {
@@ -717,8 +730,7 @@ body, html {
 /* Extra Small Devices (max-width: 575px) */
 @media (max-width: 575px) {
   .menu-toggle {
-    top: 12px;
-    left: 12px;
+    /* REMOVED: top, left positioning - now inside topbar */
     padding: 8px 10px;
     font-size: 14px;
   }
@@ -835,10 +847,7 @@ body, html {
 
 /* Medium Devices (768px to 991px) */
 @media (min-width: 768px) and (max-width: 991px) {
-  .menu-toggle {
-    left: 24px;
-    top: 18px;
-  }
+  /* REMOVED: .menu-toggle positioning - now inside topbar */
 
   .sidebar {
     width: 300px;
@@ -849,7 +858,7 @@ body, html {
   }
 
   .topbar {
-    padding: 0 32px 0 88px;
+    padding: 0 32px !important; /* Adjusted since hamburger is now inside */
     height: 74px;
   }
 }

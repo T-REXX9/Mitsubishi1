@@ -12,8 +12,12 @@ require_once '../includes/init.php';
   <link rel="icon" type="image/png" href="../includes/images/mitsubishi_logo.png">
   <link rel="icon" type="image/x-icon" href="../includes/images/mitsubishi_logo.png">
   
-  <!-- Enhanced Mobile Fix CSS -->
-  <link rel="stylesheet" href="../css/mobile-fix-enhanced.css">
+  <?php 
+  // Mobile Responsive Include - Optimized 2025 Standards
+  $css_path = '../css/';
+  $js_path = '../js/';
+  include '../includes/components/mobile-responsive-include.php'; 
+  ?>
   <style>
     * {
       margin: 0;
@@ -217,6 +221,8 @@ require_once '../includes/init.php';
   
   <!-- Load Enhanced Mobile Fix JavaScript -->
   <script src="../js/mobile-fix-enhanced.js" defer></script>
+  <!-- Load Comprehensive Mobile Responsive Fix JavaScript -->
+  <script src="../js/mobile-responsive-fix.js" defer></script>
   
   <!-- Load Phone Validation JavaScript -->
   <script src="../js/phone-validation.js" defer></script>

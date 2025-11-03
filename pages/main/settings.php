@@ -14,6 +14,14 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'Admin') {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Settings - Mitsubishi</title>
+  
+  <?php
+  // Mobile Responsiveness Fix
+  $css_path = '../../css/';
+  $js_path = '../../js/';
+  include '../../includes/components/mobile-responsive-include.php';
+  ?>
+  
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link href="../../includes/css/common-styles.css" rel="stylesheet">
   <style>
@@ -27,9 +35,7 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'Admin') {
       scroll-behavior: smooth;
     }
     
-    body {
-      zoom: 85%;
-    }
+    /* REMOVED zoom: 85% - causes mobile layout issues, not supported by Firefox */
     
     /* Custom scrollbar styling */
     ::-webkit-scrollbar {

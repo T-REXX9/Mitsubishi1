@@ -113,9 +113,10 @@ $user_role = isset($_SESSION['user_role']) ? $_SESSION['user_role'] : 'SalesAgen
   }
 </style>
 
-<button class="menu-toggle" onclick="toggleSidebar()">
+<!-- REMOVED: Hamburger button - moved to topbar.php -->
+<!-- <button class="menu-toggle" onclick="toggleSidebar()">
   <i class="fas fa-bars"></i>
-</button>
+</button> -->
 
 <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 

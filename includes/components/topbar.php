@@ -202,6 +202,10 @@ if ($user_id && $user_role) {
 
 <div class="topbar">
   <div class="breadcrumb">
+    <!-- Hamburger menu button - now inside topbar instead of floating -->
+    <button class="menu-toggle" onclick="toggleSidebar()">
+      <i class="fas fa-bars"></i>
+    </button>
     <span class="page-title"><?php echo $page_title; ?></span>
   </div>
   

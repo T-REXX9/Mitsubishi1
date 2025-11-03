@@ -22,9 +22,22 @@ if ($user_role === 'Sales Agent') {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title><?php echo $user_role; ?> Inventory - Mitsubishi</title>
+  
+  <?php
+  // Mobile Responsiveness Fix
+  $css_path = '../../css/';
+  $js_path = '../../js/';
+  include '../../includes/components/mobile-responsive-include.php';
+  ?>
+  
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link href="../../includes/css/common-styles.css" rel="stylesheet">
   <style>
+    /* Force proper box-sizing for all elements */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    
     html, body {
       height: 100%;
       width: 100%;
@@ -34,15 +47,23 @@ if ($user_role === 'Sales Agent') {
       overflow-y: auto;
     }
     
+    /* Ensure main-content container doesn't overflow */
+    .main-content {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    
     .page-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 30px;
+      flex-wrap: wrap;
+      gap: 15px;
     }
 
     .page-header h1 {
-      font-size: 2rem;
+      font-size: clamp(1.5rem, 4vw, 2rem);
       color: var(--text-dark);
       font-weight: 700;
     }
@@ -59,6 +80,7 @@ if ($user_role === 'Sales Agent') {
       display: flex;
       align-items: center;
       gap: 8px;
+      white-space: nowrap;
     }
 
     .add-btn:hover {
@@ -66,32 +88,39 @@ if ($user_role === 'Sales Agent') {
       box-shadow: var(--shadow-medium);
     }
 
+    /* FIXED: Responsive grid that prevents overflow */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
+      /* Use responsive grid columns that adapt to container width */
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+      gap: clamp(12px, 2vw, 20px);
       margin-bottom: 30px;
+      width: 100%;
+      max-width: 100%;
     }
 
     .stat-card {
       background: white;
-      padding: 25px;
+      padding: clamp(15px, 3vw, 25px);
       border-radius: 12px;
       box-shadow: var(--shadow-light);
       display: flex;
       align-items: center;
-      gap: 15px;
+      gap: clamp(10px, 2vw, 15px);
+      min-width: 0; /* Allow flex children to shrink */
+      max-width: 100%;
     }
 
     .stat-icon {
-      width: 50px;
-      height: 50px;
+      width: clamp(45px, 8vw, 50px);
+      height: clamp(45px, 8vw, 50px);
       border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 20px;
+      font-size: clamp(18px, 3vw, 20px);
       color: white;
+      flex-shrink: 0; /* Prevent icon from shrinking */
     }
 
     .stat-icon.red { background: var(--primary-red); }
@@ -99,15 +128,25 @@ if ($user_role === 'Sales Agent') {
     .stat-icon.green { background: var(--success-green); }
     .stat-icon.orange { background: var(--warning-orange); }
 
+    .stat-info {
+      flex: 1;
+      min-width: 0; /* Allow text to wrap */
+      overflow: hidden;
+    }
+
     .stat-info h3 {
-      font-size: 1.8rem;
+      font-size: clamp(1.3rem, 3vw, 1.8rem);
       color: var(--text-dark);
       margin-bottom: 5px;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
 
     .stat-info p {
       color: var(--text-light);
-      font-size: 14px;
+      font-size: clamp(12px, 2vw, 14px);
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
 
     .inventory-table {
@@ -115,25 +154,30 @@ if ($user_role === 'Sales Agent') {
       border-radius: 12px;
       box-shadow: var(--shadow-light);
       overflow: hidden;
+      max-width: 100%;
+      width: 100%;
     }
 
     .table-header {
-      padding: 20px 25px;
+      padding: clamp(15px, 3vw, 25px);
       background: var(--primary-light);
       border-bottom: 1px solid var(--border-light);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
     }
 
     .table-header h2 {
-      font-size: 1.3rem;
+      font-size: clamp(1.1rem, 2.5vw, 1.3rem);
       color: var(--text-dark);
     }
 
     .search-box {
       display: flex;
       gap: 10px;
+      flex-wrap: wrap;
     }
 
     .search-input {
@@ -141,7 +185,8 @@ if ($user_role === 'Sales Agent') {
       border: 1px solid var(--border-light);
       border-radius: 6px;
       font-size: 14px;
-      width: 200px;
+      width: min(200px, 100%);
+      max-width: 100%;
     }
 
     .filter-btn {
@@ -152,18 +197,22 @@ if ($user_role === 'Sales Agent') {
       border-radius: 6px;
       cursor: pointer;
       font-size: 14px;
+      white-space: nowrap;
     }
 
     .table {
       width: 100%;
       border-collapse: collapse;
+      table-layout: auto; /* Allow table to shrink if needed */
     }
 
     .table th,
     .table td {
-      padding: 15px 25px;
+      padding: clamp(10px, 2vw, 15px) clamp(12px, 2.5vw, 25px);
       text-align: left;
       border-bottom: 1px solid var(--border-light);
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
 
     .table th {
@@ -396,14 +445,19 @@ if ($user_role === 'Sales Agent') {
       }
 
       .stats-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
         gap: 15px;
+      }
+      
+      .stat-card {
+        padding: 15px !important;
       }
 
       .table-header {
         flex-direction: column;
         gap: 15px;
         align-items: stretch;
+        padding: 15px !important;
       }
 
       .search-box {
@@ -429,26 +483,47 @@ if ($user_role === 'Sales Agent') {
       }
     }
 
+    /* Small tablets (576px to 767px) */
     @media (min-width: 576px) and (max-width: 767px) {
       .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)) !important;
+        gap: 15px;
       }
 
       .table th,
       .table td {
-        padding: 12px 20px;
+        padding: 12px 18px;
+      }
+      
+      .stat-card {
+        padding: 18px !important;
       }
     }
 
+    /* Tablets (768px to 991px) */
     @media (min-width: 768px) and (max-width: 991px) {
       .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)) !important;
+        gap: 18px;
+      }
+      
+      .stat-card {
+        padding: 20px !important;
       }
     }
 
+    /* Small desktop (992px to 1199px) */
     @media (min-width: 992px) and (max-width: 1199px) {
       .stats-grid {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)) !important;
+      }
+    }
+    
+    /* Large desktop (1200px and up) */
+    @media (min-width: 1200px) {
+      .stats-grid {
+        /* Allow natural 4-column layout on large screens */
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
       }
     }
 
@@ -1078,6 +1153,63 @@ if ($user_role === 'Sales Agent') {
       object-fit: contain;
       /* margin-bottom: 15px; Removed as flex centering handles spacing */
     }
+    /* ========================================
+       FINAL CONTAINER OVERFLOW PREVENTION
+       Ensures NO elements get cut off
+       ======================================== */
+    
+    /* Force all containers to respect viewport width */
+    .main,
+    .main-content,
+    .page-header,
+    .stats-grid,
+    .inventory-table,
+    .table-header,
+    .search-box {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    
+    /* Ensure grid items don't overflow */
+    .stat-card,
+    .vehicle-card {
+      max-width: 100%;
+      min-width: 0;
+    }
+    
+    /* Prevent text overflow */
+    .stat-info h3,
+    .stat-info p,
+    .page-header h1,
+    .table-header h2 {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+    
+    /* Mobile-specific container fixes */
+    @media (max-width: 767px) {
+      .main-content {
+        padding: clamp(15px, 4vw, 24px) !important;
+      }
+      
+      .stats-grid {
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+      }
+      
+      .stat-card {
+        width: 100%;
+        max-width: 100%;
+      }
+    }
+    
+    /* Ensure proper box-sizing inheritance */
+    * {
+      box-sizing: border-box;
+    }
+    
   </style>
 </head>
 <body>

@@ -73,6 +73,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Email Management - Mitsubishi Dashboard</title>
+  
+  <?php
+  // Mobile Responsiveness Fix
+  $css_path = '../../css/';
+  $js_path = '../../js/';
+  include '../../includes/components/mobile-responsive-include.php';
+  ?>
+  
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link href="../../includes/css/common-styles.css" rel="stylesheet">
   <link rel="stylesheet" href="../../includes/css/dashboard-styles.css">
@@ -1015,9 +1023,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
   </script>
 
   <style>
+    /* ========================================
+       RESPONSIVE LAYOUT FIX - Email Management
+       Prevents elements from being cut off
+       ======================================== */
+    
+    /* Force proper box-sizing for all elements */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    
+    /* Ensure main-content container doesn't overflow */
+    .main-content {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    
     /* Email Management Specific Styles */
     .email-form {
-      max-width: 800px;
+      max-width: min(800px, 100%);
+      width: 100%;
     }
     
     .searchable-dropdown-container {
@@ -1093,22 +1118,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
       margin-top: 2px;
     }
     
+    /* FIXED: Responsive grid that prevents overflow */
     .templates-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
+      /* Use responsive grid columns that adapt to container width */
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+      gap: clamp(12px, 2vw, 20px);
       margin-top: 20px;
+      width: 100%;
+      max-width: 100%;
     }
     
     .template-card {
       background: white;
       border: 1px solid var(--border-light);
       border-radius: 10px;
-      padding: 20px;
+      padding: clamp(15px, 3vw, 20px);
       text-align: center;
       cursor: pointer;
       transition: var(--transition);
       box-shadow: var(--shadow-light);
+      min-width: 0;
+      max-width: 100%;
     }
     
     .template-card:hover {
@@ -1118,8 +1149,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
     
     .template-icon {
-      width: 50px;
-      height: 50px;
+      width: clamp(45px, 8vw, 50px);
+      height: clamp(45px, 8vw, 50px);
       background: linear-gradient(135deg, var(--primary-red), #b91c3c);
       border-radius: 50%;
       display: flex;
@@ -1127,19 +1158,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
       justify-content: center;
       margin: 0 auto 15px;
       color: white;
-      font-size: 20px;
+      font-size: clamp(18px, 3vw, 20px);
+      flex-shrink: 0;
     }
     
     .template-card h3 {
       color: var(--text-dark);
       margin-bottom: 10px;
-      font-size: 16px;
+      font-size: clamp(14px, 2.5vw, 16px);
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
     
     .template-card p {
       color: var(--text-light);
-      font-size: 14px;
+      font-size: clamp(12px, 2vw, 14px);
       margin: 0;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
 
     /* Templates Section Styles */
@@ -1163,12 +1199,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
       color: var(--primary-red);
     }
 
-    /* Saved Templates Container */
+    /* FIXED: Saved Templates Container - Responsive */
     .saved-templates-container {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-      gap: 20px;
+      /* Use responsive grid columns - 350px was too large! */
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+      gap: clamp(12px, 2vw, 20px);
       margin-top: 20px;
+      width: 100%;
+      max-width: 100%;
     }
 
     .loading-text,
@@ -1487,6 +1526,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
       background: #f8f9fa;
     }
 
+    /* ========================================
+       COMPREHENSIVE RESPONSIVE BREAKPOINTS
+       ======================================== */
+    
+    /* Extra Small Devices (phones, less than 576px) */
+    @media (max-width: 575px) {
+      .templates-grid,
+      .saved-templates-container {
+        grid-template-columns: 1fr !important;
+        gap: 15px;
+      }
+      
+      .template-card {
+        padding: 15px !important;
+      }
+      
+      .main-content {
+        padding: clamp(15px, 4vw, 24px) !important;
+      }
+    }
+    
+    /* Small tablets (576px to 767px) */
+    @media (min-width: 576px) and (max-width: 767px) {
+      .templates-grid,
+      .saved-templates-container {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)) !important;
+        gap: 15px;
+      }
+      
+      .template-card {
+        padding: 18px !important;
+      }
+    }
+    
+    /* Tablets (768px to 991px) */
     @media (max-width: 768px) {
       .email-details-grid {
         grid-template-columns: 1fr;
@@ -1499,6 +1573,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
       .email-modal-header h3 {
         font-size: 1.25rem;
+      }
+      
+      .templates-grid,
+      .saved-templates-container {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)) !important;
+        gap: 18px;
+      }
+      
+      .template-card {
+        padding: 20px !important;
+      }
+    }
+    
+    /* Desktop (992px to 1199px) */
+    @media (min-width: 992px) and (max-width: 1199px) {
+      .templates-grid,
+      .saved-templates-container {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)) !important;
+      }
+    }
+    
+    /* Large Desktop (1200px and up) */
+    @media (min-width: 1200px) {
+      .templates-grid {
+        /* Allow natural 4-column layout on large screens */
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+      }
+      
+      .saved-templates-container {
+        /* 3 columns for saved templates */
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
       }
     }
     
@@ -1605,7 +1710,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     
     @media (max-width: 768px) {
       .templates-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
       }
       
       .modal-content {
@@ -1613,6 +1718,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         margin: 10px;
       }
     }
+    
+    /* ========================================
+       FINAL CONTAINER OVERFLOW PREVENTION
+       Ensures NO elements get cut off
+       ======================================== */
+    
+    /* Force all containers to respect viewport width */
+    .main,
+    .main-content,
+    .welcome-section,
+    .dashboard-grid,
+    .templates-grid,
+    .saved-templates-container,
+    .interface-container,
+    .email-form {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    
+    /* Ensure grid items don't overflow */
+    .template-card,
+    .saved-template-card,
+    .dashboard-card {
+      max-width: 100%;
+      min-width: 0;
+    }
+    
+    /* Prevent text overflow */
+    .template-card h3,
+    .template-card p,
+    .dashboard-card .card-title,
+    .section-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+    
+    /* Mobile-specific container fixes */
+    @media (max-width: 767px) {
+      .main-content {
+        padding: clamp(15px, 4vw, 24px) !important;
+      }
+      
+      .templates-grid,
+      .saved-templates-container {
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+      }
+      
+      .template-card,
+      .dashboard-card {
+        width: 100%;
+        max-width: 100%;
+      }
+    }
+    
+    /* Ensure proper box-sizing inheritance */
+    * {
+      box-sizing: border-box;
+    }
+    
   </style>
   
   <!-- Notification System -->

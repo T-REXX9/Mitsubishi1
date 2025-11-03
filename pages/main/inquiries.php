@@ -143,6 +143,14 @@ $stats = getInquiryStats($pdo);
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Vehicle Inquiries - Mitsubishi</title>
+  
+  <?php
+  // Mobile Responsiveness Fix
+  $css_path = '../../css/';
+  $js_path = '../../js/';
+  include '../../includes/components/mobile-responsive-include.php';
+  ?>
+  
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link href="../../includes/css/common-styles.css" rel="stylesheet">
   <link href="../../includes/css/orders-styles.css" rel="stylesheet">
@@ -154,9 +162,7 @@ $stats = getInquiryStats($pdo);
       padding: 0;
     }
     
-    body {
-      zoom: 85%;
-    }
+    /* REMOVED zoom: 85% - causes mobile layout issues, not supported by Firefox */
 
     .inquiry-stats {
       display: grid;

@@ -22,14 +22,21 @@ $current_page = 'sms';
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SMS - Mitsubishi</title>
+  
+  <?php
+  // Mobile Responsiveness Fix
+  $css_path = '../../css/';
+  $js_path = '../../js/';
+  include '../../includes/components/mobile-responsive-include.php';
+  ?>
+  
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link href="../../includes/css/common-styles.css" rel="stylesheet">
 
   <style>
   
-  body{
-      zoom: 85%;
-  }
+  /* REMOVED zoom: 85% - causes mobile layout issues, not supported by Firefox */
+  
     /* Page header */
     .page-header {
       background: #fff;

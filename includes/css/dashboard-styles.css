@@ -42,8 +42,8 @@ body {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 28px;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: 1.75rem;
   margin-bottom: 40px;
 }
 
@@ -134,8 +134,8 @@ body {
 /* Responsive Design */
 @media (max-width: 575px) {
   .dashboard-grid {
-    grid-template-columns: 1fr;
-    gap: 25px;
+    grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+    gap: 1.5rem;
   }
 
   .action-buttons {
@@ -145,8 +145,8 @@ body {
 
 @media (min-width: 576px) and (max-width: 767px) {
   .dashboard-grid {
-    grid-template-columns: 1fr;
-    gap: 25px;
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+    gap: 1.5rem;
   }
 
   .action-buttons {
@@ -156,13 +156,13 @@ body {
 
 @media (min-width: 768px) and (max-width: 991px) {
   .dashboard-grid {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   }
 }
 
 @media (min-width: 992px) and (max-width: 1199px) {
   .dashboard-grid {
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   }
 }
 
@@ -172,7 +172,7 @@ body {
   }
 
   .dashboard-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
   }
 }
 
@@ -622,7 +622,8 @@ body {
 /* Responsive Design for Interface */
 @media (max-width: 991px) {
   .dashboard-grid {
-    gap: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+    gap: 1.5rem;
   }
 
   .action-buttons {
@@ -658,8 +659,8 @@ body {
 
 @media (max-width: 575px) {
   .dashboard-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+    gap: 1.25rem;
   }
 
   .action-buttons {
@@ -731,7 +732,7 @@ body {
   }
 
   .dashboard-grid {
-    grid-template-columns: repeat(2, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
   }
 
   .action-buttons {
@@ -750,7 +751,7 @@ body {
   }
 
   .dashboard-grid {
-    grid-template-columns: repeat(2, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   }
 
   .action-buttons {
@@ -778,7 +779,7 @@ body {
   }
 
   .dashboard-grid {
-    grid-template-columns: repeat(3, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   }
 
   .action-buttons {
@@ -788,7 +789,7 @@ body {
 
 @media (min-width: 1200px) and (max-width: 1365px) {
   .dashboard-grid {
-    grid-template-columns: repeat(3, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
   }
 
   .action-buttons {

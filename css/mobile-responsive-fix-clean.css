@@ -1,0 +1,131 @@
+/**
+ * Mobile Responsive Fix - Clean Approach
+ * Following CSS Best Practices 2024
+ * - Mobile-first methodology  
+ * - Minimal !important usage
+ * - Flexible units (em, rem, %)
+ * - Content-driven breakpoints
+ * Version: 3.0
+ */
+
+/* ===== BASE RESETS (Apply to all sizes) ===== */
+html {
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
+body {
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* Override inline zoom styles that cause layout issues */
+body[style*="zoom: 85"] {
+  zoom: 1 !important;
+}
+
+/* ===== FLEXIBLE CONTAINERS ===== */
+.container,
+.container-fluid,
+.main-content,
+.dashboard-grid,
+.welcome-section,
+.row {
+  max-width: 100%;
+}
+
+/* ===== TEXT WRAPPING ===== */
+h1, h2, h3, h4, h5, h6,
+p, span, label {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* ===== RESPONSIVE MEDIA ===== */
+img, video, iframe, svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ===== MOBILE FIRST (Default / Small screens) ===== */
+.main-content {
+  padding: 1rem;
+}
+
+/* Modern responsive grid using auto-fit and minmax */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: 1rem;
+}
+
+.container,
+.container-fluid {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Dashboard cards */
+.dashboard-card {
+  min-width: 0; /* Prevent overflow */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Tables: Allow horizontal scroll on small screens */
+.table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Forms */
+input, select, textarea {
+  max-width: 100%;
+  font-size: 1rem; /* Prevents zoom on iOS */
+}
+
+/* ===== TABLET (min-width: 48em / ~768px) ===== */
+@media (min-width: 48em) {
+  .main-content {
+    padding: 1.5rem 2rem;
+  }
+  
+  .dashboard-grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.25rem;
+  }
+  
+  .container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+/* ===== DESKTOP (min-width: 62em / ~992px) ===== */
+@media (min-width: 62em) {
+  .main-content {
+    padding: 2rem 2.5rem;
+  }
+  
+  .dashboard-grid {
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+/* ===== LARGE DESKTOP (min-width: 75em / ~1200px) ===== */
+@media (min-width: 75em) {
+  .dashboard-grid {
+    gap: 2rem;
+  }
+}

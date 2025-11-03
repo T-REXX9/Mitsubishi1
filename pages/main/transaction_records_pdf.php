@@ -96,6 +96,13 @@ header('Content-Type: text/html');
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <?php 
+    // Mobile Responsive Include - Optimized 2025 Standards
+    $css_path = '../../css/';
+    $js_path = '../../js/';
+    include '../../includes/components/mobile-responsive-include.php'; 
+    ?>
     <title>Transaction Records - Mitsubishi</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>

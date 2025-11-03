@@ -44,6 +44,14 @@ try {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Product Deliveries - Mitsubishi</title>
+  
+  <?php
+  // Mobile Responsiveness Fix
+  $css_path = '../../css/';
+  $js_path = '../../js/';
+  include '../../includes/components/mobile-responsive-include.php';
+  ?>
+  
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link href="../../includes/css/common-styles.css" rel="stylesheet">
   <link href="../../includes/css/orders-styles.css" rel="stylesheet">
@@ -55,9 +63,7 @@ try {
       padding: 0;
     }
     
-    body {
-      zoom: 85%;
-    }
+    /* REMOVED zoom: 85% - causes mobile layout issues, not supported by Firefox */
 
     .delivery-stats {
       display: grid;
@@ -69,12 +75,12 @@ try {
     .stat-card {
       background: white;
       border-radius: 12px;
-      padding: 25px;
+      padding: clamp(15px, 4vw, 25px); /* Responsive padding: 15px on mobile, 25px on desktop */
       box-shadow: 0 4px 6px rgba(0,0,0,0.05);
       border-left: 4px solid var(--primary-red);
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: clamp(10px, 3vw, 20px); /* Responsive gap */
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
@@ -715,6 +721,25 @@ try {
     .vehicle-autocomplete-list .autocomplete-item:hover { background: #f8fafc; }
     .vehicle-autocomplete-list .autocomplete-item .year { color: #6b7280; font-size: 0.85rem; }
     .vehicle-autocomplete-list .autocomplete-item.no-result { color: #6b7280; cursor: default; }
+    
+    /* Mobile-specific overrides for better spacing */
+    @media (max-width: 48em) {
+      .stat-card {
+        padding: 15px !important;
+        gap: 12px !important;
+      }
+      
+      .stat-icon {
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 20px !important;
+      }
+      
+      /* Reduce grid columns to 1 on mobile */
+      .delivery-stats {
+        grid-template-columns: 1fr !important;
+      }
+    }
   </style>
 </head>
 <body>
