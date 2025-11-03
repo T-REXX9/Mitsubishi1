@@ -180,9 +180,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $show_form) {
 		}
 
 		body {
-            background-image: none;
-            background-color: #222222;
-            /*background-image: url(../includes/images/logbg.jpg);*/
+            background-image: url(../includes/images/tritonbg.jpg);
+            background-color: #DC143C1A;
             background-size: cover; /* scales image to cover the whole area */
             background-position: center; /* centers the image */
             background-repeat: no-repeat;
@@ -271,8 +270,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $show_form) {
 		}
 
 		button.return-btn {
-			background-color: #ffd700;
-			color: #b80000;
+			background-color: #808080;
+			color: #FFFFFF;
 			font-weight: bold;
 		}
 
@@ -628,19 +627,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $show_form) {
 				<form method="POST" enctype="multipart/form-data" autocomplete="off">
 					<div class="form-group">
 						<label for="firstname">First Name *</label>
-						<input type="text" id="firstname" name="firstname" value="<?php echo htmlspecialchars($form_data['firstname']); ?>" required>
+						<input type="text" id="firstname" name="firstname" value="<?php echo htmlspecialchars($form_data['firstname']); ?>" required oninput="this.value = this.value.replace(/[0-9]/g, '')" onkeydown="if(/[0-9]/.test(event.key)) event.preventDefault();">
 					</div>
 					<div class="form-group">
 						<label for="middlename">Middle Name</label>
-						<input type="text" id="middlename" name="middlename" value="<?php echo htmlspecialchars($form_data['middlename']); ?>">
+						<input type="text" id="middlename" name="middlename" value="<?php echo htmlspecialchars($form_data['middlename']); ?>" oninput="this.value = this.value.replace(/[0-9]/g, '')" onkeydown="if(/[0-9]/.test(event.key)) event.preventDefault();">
 					</div>
 					<div class="form-group">
 						<label for="lastname">Last Name *</label>
-						<input type="text" id="lastname" name="lastname" value="<?php echo htmlspecialchars($form_data['lastname']); ?>" required>
+						<input type="text" id="lastname" name="lastname" value="<?php echo htmlspecialchars($form_data['lastname']); ?>" required oninput="this.value = this.value.replace(/[0-9]/g, '')" onkeydown="if(/[0-9]/.test(event.key)) event.preventDefault();">
 					</div>
 					<div class="form-group">
 						<label for="suffix">Suffix</label>
-						<input type="text" id="suffix" name="suffix" placeholder="e.g. Jr., Sr., III" value="<?php echo htmlspecialchars($form_data['suffix']); ?>">
+						<input type="text" id="suffix" name="suffix" placeholder="e.g. Jr., Sr., III" value="<?php echo htmlspecialchars($form_data['suffix']); ?>" oninput="this.value = this.value.replace(/[0-9]/g, '')" onkeydown="if(/[0-9]/.test(event.key)) event.preventDefault();">
 					</div>
 					<div class="form-group">
 						<label for="birthday">Date of Birth *</label>
@@ -671,11 +670,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $show_form) {
 					</div>
 					<div class="form-group">
 						<label for="nationality">Nationality *</label>
-						<input type="text" id="nationality" name="nationality" value="<?php echo htmlspecialchars($form_data['nationality']); ?>" required>
+						<input type="text" id="nationality" name="nationality" value="<?php echo htmlspecialchars($form_data['nationality']); ?>" required oninput="this.value = this.value.replace(/[0-9]/g, '')" onkeydown="if(/[0-9]/.test(event.key)) event.preventDefault();">
 					</div>
 					<div class="form-group">
 						<label for="mobile_number">Mobile Number *</label>
-						<input type="tel" id="mobile_number" name="mobile_number" value="<?php echo htmlspecialchars($form_data['mobile_number']); ?>" required placeholder="e.g. 09123456789">
+						<input type="tel" id="mobile_number" name="mobile_number" value="<?php echo htmlspecialchars($form_data['mobile_number']); ?>" required placeholder="e.g. 09123456789" oninput="this.value = this.value.replace(/[^0-9+]/g, '')" onkeydown="if(event.key === 'e' || event.key === 'E') event.preventDefault();">>
 					</div>
 					<div class="form-group full-width">
 						<label for="complete_address">Complete Address *</label>
@@ -697,11 +696,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $show_form) {
 					</div>
 					<div class="form-group">
 						<label for="position">Position</label>
-						<input type="text" id="position" name="position" value="<?php echo htmlspecialchars($form_data['position']); ?>">
+						<input type="text" id="position" name="position" value="<?php echo htmlspecialchars($form_data['position']); ?>" oninput="this.value = this.value.replace(/[0-9]/g, '')" onkeydown="if(/[0-9]/.test(event.key)) event.preventDefault();">
 					</div>
 					<div class="form-group">
 						<label for="monthly_income">Monthly Income (PHP)</label>
-						<input type="number" step="0.01" id="monthly_income" name="monthly_income" value="<?php echo htmlspecialchars($form_data['monthly_income']); ?>">
+						<input type="number" step="0.01" id="monthly_income" name="monthly_income" value="<?php echo htmlspecialchars($form_data['monthly_income']); ?>" oninput="this.value = this.value.replace(/[^0-9+]/g, '')"
+                                       onkeydown="if(event.key === 'e' || event.key === 'E') event.preventDefault();">>
 					</div>
 					<div class="form-group">
 						<label for="valid_id_type">Valid ID Type *</label>
