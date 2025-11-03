@@ -350,13 +350,16 @@ if (isset($_GET['conversation_id'])) {
       width: 100%;
       margin: 0;
       padding: 0;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
     }
     
     .main {
-      height: 100vh;
+      height: auto;
+      min-height: 100vh;
       width: 100%;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: visible;
       display: flex;
       flex-direction: column;
     }

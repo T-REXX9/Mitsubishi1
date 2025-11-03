@@ -23,11 +23,11 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'Admin') {
       width: 100%;
       margin: 0;
       padding: 0;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
     }
     
     body {
-      zoom:85%;
     }
     /* Admin Handled Records Specific Styles */
     .page-header {
@@ -341,11 +341,56 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'Admin') {
       .action-area {
         flex-direction: column;
       }
+      .page-header {
+        flex-direction: column;
+        gap: 15px;
+      }
+      .data-table {
+        font-size: 12px;
+      }
+      .data-table th,
+      .data-table td {
+        padding: 8px 5px;
+      }
+      .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      table {
+        min-width: 700px;
+      }
     }
 
     @media (min-width: 576px) and (max-width: 767px) {
       .info-cards {
         grid-template-columns: repeat(2, 1fr);
+      }
+      .filter-bar {
+        flex-wrap: wrap;
+      }
+      .table-responsive {
+        overflow-x: auto;
+      }
+      table {
+        min-width: 650px;
+      }
+    }
+
+    @media (min-width: 768px) and (max-width: 991px) {
+      .info-cards {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .filter-bar {
+        gap: 10px;
+      }
+      table {
+        font-size: 13px;
+      }
+    }
+
+    @media (min-width: 992px) and (max-width: 1199px) {
+      .info-cards {
+        grid-template-columns: repeat(3, 1fr);
       }
     }
 

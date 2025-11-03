@@ -30,7 +30,8 @@ if ($user_role === 'Sales Agent') {
       width: 100%;
       margin: 0;
       padding: 0;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
     }
     
     .page-header {

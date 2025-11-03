@@ -220,6 +220,9 @@ body, html {
   background: var(--primary-light);
   height: auto;
   min-height: 100vh;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
 }
 
 .topbar {
@@ -324,8 +327,11 @@ body, html {
   height: auto;
   max-height: none;
   overflow-y: auto;
+  overflow-x: hidden;
   background: var(--primary-light);
   padding-bottom: 20px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Dropdown Styles */

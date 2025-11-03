@@ -846,6 +846,107 @@ if (!$pdo) {
       background: #5a6268;
       transform: translateY(-1px);
     }
+
+    /* Responsive Design */
+    @media (max-width: 575px) {
+      .page-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start !important;
+      }
+
+      .filter-section {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .filter-section input,
+      .filter-section select {
+        width: 100%;
+      }
+
+      .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      table {
+        min-width: 800px;
+        font-size: 12px;
+      }
+
+      th, td {
+        padding: 8px 5px;
+      }
+
+      .modal {
+        width: 95% !important;
+        max-width: 100% !important;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr !important;
+      }
+
+      .modal-body {
+        padding: 15px;
+      }
+
+      .btn {
+        width: 100%;
+        margin-bottom: 5px;
+      }
+    }
+
+    @media (min-width: 576px) and (max-width: 767px) {
+      .filter-section {
+        flex-wrap: wrap;
+      }
+
+      .filter-section input,
+      .filter-section select {
+        min-width: 200px;
+      }
+
+      .table-container {
+        overflow-x: auto;
+      }
+
+      table {
+        min-width: 700px;
+      }
+
+      .modal {
+        width: 90%;
+        max-width: 550px;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (min-width: 768px) and (max-width: 991px) {
+      .modal {
+        width: 85%;
+        max-width: 700px;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      table {
+        font-size: 13px;
+      }
+    }
+
+    @media (min-width: 992px) and (max-width: 1199px) {
+      .modal {
+        width: 80%;
+        max-width: 800px;
+      }
+    }
   </style>
 </body>
 
