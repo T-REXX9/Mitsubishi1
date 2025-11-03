@@ -73,6 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
     }
   }
+}
 
   // Regenerate CSRF token after each attempt
   try {
@@ -108,8 +109,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     body {
       /*background-image: url(../includes/images/logbg.jpg);*/
-      background-image: none;
-      background-color: #222222;
+      background-image: url(../includes/images/tritonbg.jpg);
+      background-color: #DC143C1A;
       background-size: cover; /* scales image to cover the whole area */
       background-position: center; /* centers the image */
       background-repeat: no-repeat;

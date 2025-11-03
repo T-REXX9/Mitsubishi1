@@ -106,11 +106,12 @@ $remainingMinutes = floor($remainingSeconds / 60);
     }
     
     body {
-      background: linear-gradient(to bottom, #1c1c1c, #b80000);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      background-image: url(../includes/images/tritonbg.jpg);
+      background-color: #DC143C1A;
+      background-size: cover; /* scales image to cover the whole area */
+      background-position: center; /* centers the image */
+      background-repeat: no-repeat;
+      zoom: 90%;
     }
 
     .container {

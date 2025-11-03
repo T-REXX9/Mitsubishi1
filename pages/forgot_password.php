@@ -86,7 +86,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     body {
-      background: #000000;
+      background-image: url(../includes/images/tritonbg.jpg);
+      background-color: #DC143C1A;
+      background-size: cover; /* scales image to cover the whole area */
+      background-position: center; /* centers the image */
+      background-repeat: no-repeat;
+      zoom: 90%;
+      /*background: #000000;*/
       color: white;
       display: flex;
       align-items: center;
@@ -267,7 +273,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <input type="email" id="email" name="email" placeholder="Enter your email" required value="<?php echo isset($email) ? htmlspecialchars($email, ENT_QUOTES) : ''; ?>" />
         </div>
         <button type="submit">Send Verification Code</button>
-        <button type="button" style="background:#ffd700;color:#b80000;font-weight:bold;padding:12px 0;width:100%;border-radius:8px;border:none;cursor:pointer;font-size:1rem;" onclick="window.location.href='landingpage.php';return false;">
+        <button type="button" style="background:#808080;color:#FFFFFF;font-weight:bold;padding:12px 0;width:100%;border-radius:8px;border:none;cursor:pointer;font-size:1rem;" onclick="window.location.href='landingpage.php';return false;">
           Return to Landing Page
         </button>
         <p class="register">

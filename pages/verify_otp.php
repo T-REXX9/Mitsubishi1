@@ -104,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['resend_otp'])) {
         }
 
         body {
-            background-image: url(../includes/images/logbg.jpg);
+            background-image: url(../includes/images/tritonbg.jpg);
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -223,7 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['resend_otp'])) {
         }
 
         .resend-button:hover:not(:disabled) {
-            background-color: #ffed4e;
+            background-color: #3b3b3bff;
         }
 
         .message {

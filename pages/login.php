@@ -193,8 +193,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     body {
       /*wag po i-uncomment yung background image kasi pinapatanggal samin yun*/
-      /*background-image: url(../includes/images/logbg.jpg);*/
-      background-color: #222222;
+      background-image: url(../includes/images/tritonbg.jpg);
+      background-color: #DC143C1A;
       background-size: cover; /* scales image to cover the whole area */
       background-position: center; /* centers the image */
       background-repeat: no-repeat;
@@ -209,7 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     .login-box {
-      background-color: #5f5c5cd8;
+      background-color: #5f5c5cd0;
       margin: 0 auto;
       padding: 28px 24px;
       border-radius: 15px;
@@ -298,7 +298,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     .register a {
-      color: #FFCC33;
+      color: #ffce2cff;
       text-decoration: none;
     }
 
@@ -503,7 +503,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
         </div>
         <button type="submit">Log In</button>
-        <button type="button" style="background:#ffd700;color:#b80000;font-weight:bold;padding:12px 0;width:100%;border-radius:8px;border:none;cursor:pointer;font-size:1rem;" onclick="window.location.href='landingpage.php'">
+        <button type="button" style="background:#808080;color:#FFFFFF;font-weight:bold;padding:12px 0;width:100%;border-radius:8px;border:none;cursor:pointer;font-size:1rem;" onclick="window.location.href='landingpage.php'">
           Return to Landing Page
         </button>
         <p class="register">

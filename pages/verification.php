@@ -186,6 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $show_form) {
             background-size: cover; /* scales image to cover the whole area */
             background-position: center; /* centers the image */
             background-repeat: no-repeat;
+            zoom: 90%;
 		}
 
 		.container {
@@ -481,6 +482,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $show_form) {
 
 		/* Extra Small Devices (max-width: 575px) */
 		@media (max-width: 575px) {
+
+			html,
+			body {
+				zoom: 90%;
+			}
+
 			.login-box {
 				padding: 14px 6vw;
 				width: 95vw;
@@ -515,6 +522,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $show_form) {
 
 		/* Small Devices (min-width: 576px) and (max-width: 767px) */
 		@media (min-width: 576px) and (max-width: 767px) {
+
+			html,
+			body {
+				zoom: 85%;
+			}
+
 			.login-box {
 				padding: 30px;
 				max-width: 350px;
@@ -531,6 +544,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $show_form) {
 
 		/* Medium Devices (min-width: 768px) and (max-width: 991px) */
 		@media (min-width: 768px) and (max-width: 991px) {
+
+			html,
+			body {
+				zoom: 85%;
+			}
+
 			.login-box {
 				padding: 35px;
 				max-width: 380px;
@@ -547,6 +566,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $show_form) {
 
 		/* Large Devices (min-width: 992px) and (max-width: 1199px) */
 		@media (min-width: 992px) and (max-width: 1199px) {
+
+			html,
+			body {
+				zoom: 80%;
+			}
+
 			.login-box {
 				padding: 40px;
 				max-width: 400px;
@@ -563,6 +588,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $show_form) {
 
 		/* Large Devices (min-width: 992px) and (max-width: 1199px) */
 		@media (min-width: 1199px) and (max-width: 1440px) {
+
+			html,
+			body {
+				zoom: 85%;
+			}
+
 			.login-box {
 				padding: 40px;
 				max-width: 400px;
