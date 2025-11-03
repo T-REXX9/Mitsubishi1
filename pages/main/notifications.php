@@ -43,9 +43,6 @@ if (!in_array($_SESSION['user_role'], ['Customer', 'SalesAgent', 'Admin'])) {
       overflow-y: visible !important;
     }
     
-    body {
-      zoom: 80%;
-    }
     .page-header {
       display: flex;
       justify-content: space-between;

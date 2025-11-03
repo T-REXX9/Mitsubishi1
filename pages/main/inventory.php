@@ -33,9 +33,6 @@ if ($user_role === 'Sales Agent') {
       overflow: hidden;
     }
     
-    body {
-      zoom: 85%;
-    }
     .page-header {
       display: flex;
       justify-content: space-between;

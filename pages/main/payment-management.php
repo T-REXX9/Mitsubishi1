@@ -39,10 +39,6 @@ $agent_id = $_SESSION['user_id'] ?? null;
     <link href="../../includes/css/common-styles.css" rel="stylesheet">
     <link href="../../includes/css/orders-styles.css" rel="stylesheet">
     <style>
-    
-        body{
-            zoom: 85%;
-        }
         .payment-stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -417,9 +413,60 @@ $agent_id = $_SESSION['user_id'] ?? null;
             opacity: 0.7;
         }
 
+        /* Responsive Design */
+        @media (max-width: 575px) {
+            .payment-stats {
+                grid-template-columns: 1fr !important;
+                gap: 15px;
+            }
+
+            .filter-row {
+                grid-template-columns: 1fr !important;
+                gap: 15px;
+            }
+
+            .payments-table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .payments-table {
+                min-width: 800px;
+            }
+
+            .pm-modal {
+                width: 95% !important;
+                max-width: 100% !important;
+                padding: 15px !important;
+            }
+
+            .modal-header,
+            .modal-body,
+            .modal-footer {
+                padding: 15px !important;
+            }
+        }
+
+        @media (min-width: 576px) and (max-width: 767px) {
+            .payment-stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+
+            .filter-row {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .pm-modal {
+                width: 90%;
+                max-width: 550px;
+            }
+        }
+
         @media (max-width: 768px) {
             .payment-stats {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr);
             }
 
             .filter-row {
@@ -432,6 +479,17 @@ $agent_id = $_SESSION['user_id'] ?? null;
 
             .payments-table {
                 min-width: 800px;
+            }
+        }
+
+        @media (min-width: 768px) and (max-width: 991px) {
+            .payment-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .pm-modal {
+                width: 85%;
+                max-width: 700px;
             }
         }
     </style>
@@ -593,6 +651,7 @@ $agent_id = $_SESSION['user_id'] ?? null;
     </div>
 
     <script src="../../includes/jquery/dist/jquery.min.js"></script>
+    <script src="../../includes/js/common-scripts.js"></script>
     <script>
         let currentPage = 1;
         let currentPaymentId = null;

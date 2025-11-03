@@ -41,7 +41,6 @@ function getSetting($key, $default = '')
     background-position: center;
     /* centers the image */
     background-repeat: no-repeat;
-    zoom: 80%;
   }
 
   .container {

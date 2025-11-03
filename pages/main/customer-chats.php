@@ -353,10 +353,6 @@ if (isset($_GET['conversation_id'])) {
       overflow: hidden;
     }
     
-    body{
-        zoom: 85%;
-    }
-
     .main {
       height: 100vh;
       width: 100%;

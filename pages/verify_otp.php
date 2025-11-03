@@ -108,7 +108,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['resend_otp'])) {
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            zoom: 90%;
         }
 
         .container {

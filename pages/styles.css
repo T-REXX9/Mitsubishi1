@@ -21,7 +21,8 @@ body, html {
   background: transparent;
   text-align: center;
   padding: 20px;
-  width: 300px;
+  width: 90%;
+  max-width: 400px;
 }
 
 .logo {
@@ -74,4 +75,33 @@ button {
 .register a {
   color: #00aaff;
   text-decoration: none;
+}
+
+/* Responsive Design */
+@media (max-width: 575px) {
+  .login-box {
+    width: 95%;
+    padding: 15px;
+  }
+
+  .logo {
+    width: 60px;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+  }
+
+  input, button {
+    padding: 12px;
+    font-size: 16px; /* Prevents iOS zoom */
+  }
+}
+
+@media (min-width: 576px) and (max-width: 767px) {
+  .login-box {
+    width: 85%;
+    max-width: 350px;
+  }
 }

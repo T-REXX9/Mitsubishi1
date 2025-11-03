@@ -38,11 +38,6 @@ try {
   <link href="../../includes/css/orders-styles.css" rel="stylesheet">
 
 </head>
-<style>
-    body{
-        zoom: 85%;
-    }
-</style>
 
 <body>
   <?php include '../../includes/components/sidebar.php'; ?>

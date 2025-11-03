@@ -122,7 +122,6 @@ $maskedEmail = maskEmail($email);
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            zoom: 90%;
         }
 
         .container {

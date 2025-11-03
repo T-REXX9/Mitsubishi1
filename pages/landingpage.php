@@ -66,10 +66,8 @@ try {
 ?>
 
 <style>
-  /* Zoom out the entire page to 7% */
   body {
     background: #000000;
-    zoom: 90%;
   }
   
   /* Hero Banner Section */

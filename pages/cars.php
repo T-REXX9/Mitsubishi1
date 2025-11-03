@@ -27,7 +27,6 @@ $stmt = $connect->prepare("SELECT * FROM vehicles WHERE availability_status = 'a
     background-size: cover; /* scales image to cover the whole area */
     background-position: center; /* centers the image */
     background-repeat: no-repeat;
-    zoom: 90%;
 	}
 
 

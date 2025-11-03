@@ -88,7 +88,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     body {
       background: #000000;
       color: white;
-      zoom: 80%;
       display: flex;
       align-items: center;
       justify-content: center;

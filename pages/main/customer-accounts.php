@@ -92,9 +92,6 @@ try {
       overflow: hidden;
     }
     
-    body {
-      zoom: 85%;
-    }
     .page-header {
       display: flex;
       justify-content: space-between;

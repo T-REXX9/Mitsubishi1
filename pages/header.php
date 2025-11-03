@@ -12,8 +12,8 @@ require_once '../includes/init.php';
   <link rel="icon" type="image/png" href="../includes/images/mitsubishi_logo.png">
   <link rel="icon" type="image/x-icon" href="../includes/images/mitsubishi_logo.png">
   
-  <!-- Mobile Fix CSS -->
-  <link rel="stylesheet" href="../css/mobile-fix.css">
+  <!-- Enhanced Mobile Fix CSS -->
+  <link rel="stylesheet" href="../css/mobile-fix-enhanced.css">
   <style>
     * {
       margin: 0;
@@ -85,22 +85,41 @@ require_once '../includes/init.php';
       display: none;
       flex-direction: column;
       cursor: pointer;
-      padding: 5px;
+      padding: 8px;
       margin-left: auto;
-
+      background: transparent;
+      border: none;
+      z-index: 1002;
     }
+    
     .menu-toggle span {
-      width: 25px;
-      height: 3px;
+      width: 24px;
+      height: 2px;
       background-color: #ffd700;
-      margin: 3px 0;
-      transition: 0.3s;
+      margin: 2px 0;
+      transition: all 0.3s ease;
+      transform-origin: center;
+    }
+    
+    /* Menu Toggle Animation */
+    .menu-toggle.active span:nth-child(1) {
+      transform: translateY(6px) rotate(45deg);
+    }
+    
+    .menu-toggle.active span:nth-child(2) {
+      opacity: 0;
+      transform: scale(0);
+    }
+    
+    .menu-toggle.active span:nth-child(3) {
+      transform: translateY(-6px) rotate(-45deg);
     }
     .user-section {
       display: flex;
       align-items: center;
       gap: 10px;
     }
+    
     .user-section a {
       color: #ffd700;
       text-decoration: none;
@@ -113,14 +132,10 @@ require_once '../includes/init.php';
       border-radius: 20px;
       border: 1px solid #ffd700;
     }
+    
     .user-section a:hover {
       color: #111;
       background: #ffd700;
-    }
-
-    /* Menu Toggle Animation */
-    .menu-toggle.active span:nth-child(1) {
-      transform: rotate(-45deg) translate(-5px, 6px);
     }
     .menu-toggle.active span:nth-child(2) {
       opacity: 0;
@@ -200,8 +215,8 @@ require_once '../includes/init.php';
     }
   </style>
   
-  <!-- Load Mobile Fix JavaScript -->
-  <script src="../js/mobile-fix.js" defer></script>
+  <!-- Load Enhanced Mobile Fix JavaScript -->
+  <script src="../js/mobile-fix-enhanced.js" defer></script>
   
   <!-- Load Phone Validation JavaScript -->
   <script src="../js/phone-validation.js" defer></script>

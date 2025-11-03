@@ -9,7 +9,6 @@ include 'header.php';
     background-size: cover; /* scales image to cover the whole area */
     background-position: center; /* centers the image */
     background-repeat: no-repeat;
-    zoom: 90%;
   }
   .container {
     max-width: 1200px;
