@@ -31,10 +31,10 @@ if (!empty($agent['ProfileImage'])) {
     $profile_image_html = strtoupper(substr($displayName, 0, 1));
 }
 
-// Fetch PMS inquiries assigned to this agent
+// Fetch ALL PMS inquiries (both assigned and unassigned)
 try {
     $stmt_inquiries = $pdo->prepare("
-        SELECT 
+        SELECT
             pi.id as inquiry_id,
             pi.pms_id,
             pi.status,
@@ -55,14 +55,13 @@ try {
         FROM pms_inquiries pi
         LEFT JOIN car_pms_records cpr ON pi.pms_id = cpr.pms_id
         LEFT JOIN accounts acc ON cpr.customer_id = acc.Id
-        WHERE pi.assigned_agent_id = ? OR pi.assigned_agent_id IS NULL
         ORDER BY pi.created_at DESC
     ");
-    $stmt_inquiries->execute([$agent_id]);
+    $stmt_inquiries->execute();
     $inquiries = $stmt_inquiries->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $inquiries = [];
-    error_log("Database error: " . $e->getMessage());
+    error_log("Database error fetching PMS inquiries: " . $e->getMessage());
 }
 
 // Handle inquiry assignment

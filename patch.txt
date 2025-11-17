@@ -25,6 +25,7 @@ Modified Files:
 22. pages/agent_pms_inquiries.php (Fixed: removed header_ex.php include)
 23. pages/agent_pms_chat.php (Fixed: removed header_ex.php include)
 24. includes/css/dashboard-styles.css (Added orange color class for PMS card icon)
+25. pages/agent_pms_inquiries.php (Fixed: Changed query to show ALL PMS inquiries, not just assigned/unassigned)
 
 Created Files:
 ==============
