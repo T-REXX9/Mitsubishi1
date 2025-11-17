@@ -37,10 +37,11 @@ try {
             acc.FirstName,
             acc.LastName,
             acc.Email,
-            acc.PhoneNumber
+            ci.mobile_number as PhoneNumber
         FROM pms_inquiries pi
         LEFT JOIN car_pms_records cpr ON pi.pms_id = cpr.pms_id
         LEFT JOIN accounts acc ON pi.customer_id = acc.Id
+        LEFT JOIN customer_information ci ON pi.customer_id = ci.account_id
         ORDER BY pi.created_at DESC
     ");
     $stmt_inquiries->execute();

@@ -326,10 +326,12 @@ if (isset($pdo) && $pdo) {
         cpr.model,
         acc.FirstName,
         acc.LastName,
+        ci.mobile_number,
         (SELECT COUNT(*) FROM pms_messages WHERE inquiry_id = pi.id AND is_read = 0 AND sender_type = 'Customer') as unread_messages
       FROM pms_inquiries pi
       LEFT JOIN car_pms_records cpr ON pi.pms_id = cpr.pms_id
       LEFT JOIN accounts acc ON pi.customer_id = acc.Id
+      LEFT JOIN customer_information ci ON pi.customer_id = ci.account_id
       WHERE pi.assigned_agent_id = ? OR pi.assigned_agent_id IS NULL
       ORDER BY pi.created_at DESC
       LIMIT 100
