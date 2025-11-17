@@ -42,10 +42,10 @@ try {
         exit;
     }
 
-    // Extract license number from notes if available
+    // Extract license number from notes if available (same logic as PDF)
     $license_number = 'N/A';
     if (!empty($request['notes'])) {
-        if (preg_match('/License Number:\\s*(.+?)(?:\\n|$)/i', $request['notes'], $matches)) {
+        if (preg_match('/License Number:\s*(.+?)(?:\n|$)/i', $request['notes'], $matches)) {
             $license_number = trim($matches[1]);
         }
     }
