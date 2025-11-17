@@ -119,11 +119,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Create a PMS inquiry record (if table exists)
         try {
-            $stmt_inquiry = $connect->prepare("
-                INSERT INTO pms_inquiries (pms_id, customer_id, inquiry_type, status, created_at)
-                VALUES (?, ?, 'PMS', 'Open', NOW())
+            // Get the assigned agent for this customer
+            $stmt_agent = $connect->prepare("
+                SELECT agent_id FROM customer_information WHERE account_id = ?
             ");
-            $stmt_inquiry->execute([$pms_id, $_SESSION['user_id']]);
+            $stmt_agent->execute([$_SESSION['user_id']]);
+            $customer_info = $stmt_agent->fetch(PDO::FETCH_ASSOC);
+            $assigned_agent_id = $customer_info['agent_id'] ?? null;
+
+            $stmt_inquiry = $connect->prepare("
+                INSERT INTO pms_inquiries (pms_id, customer_id, inquiry_type, status, assigned_agent_id, created_at)
+                VALUES (?, ?, 'PMS', 'Open', ?, NOW())
+            ");
+            $stmt_inquiry->execute([$pms_id, $_SESSION['user_id'], $assigned_agent_id]);
 
             // Redirect to My PMS Inquiries page
             header("Location: my_pms_inquiries.php?success=1");

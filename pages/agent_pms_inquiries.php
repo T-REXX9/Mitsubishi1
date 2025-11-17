@@ -40,6 +40,7 @@ try {
             pi.status,
             pi.created_at,
             pi.updated_at,
+            pi.assigned_agent_id,
             cpr.plate_number,
             cpr.model,
             cpr.pms_info,

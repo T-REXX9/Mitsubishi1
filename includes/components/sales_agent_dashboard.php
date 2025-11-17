@@ -320,6 +320,7 @@ if (isset($pdo) && $pdo) {
         pi.id as inquiry_id,
         pi.status,
         pi.created_at,
+        pi.assigned_agent_id,
         cpr.plate_number,
         cpr.model,
         acc.FirstName,
