@@ -20,24 +20,25 @@ $agent_id = $_SESSION['user_id'];
 try {
     $stmt = $pdo->prepare("
         SELECT pi.*, cpr.plate_number, cpr.model, cpr.pms_info, cpr.customer_needs, cpr.current_odometer,
-               acc.FirstName, acc.LastName, acc.Email, acc.PhoneNumber
+               acc.FirstName, acc.LastName, acc.Email, ci.mobile_number as PhoneNumber
         FROM pms_inquiries pi
         LEFT JOIN car_pms_records cpr ON pi.pms_id = cpr.pms_id
-        LEFT JOIN accounts acc ON cpr.customer_id = acc.Id
+        LEFT JOIN accounts acc ON pi.customer_id = acc.Id
+        LEFT JOIN customer_information ci ON pi.customer_id = ci.account_id
         WHERE pi.id = ?
     ");
     $stmt->execute([$inquiry_id]);
     $inquiry = $stmt->fetch(PDO::FETCH_ASSOC);
-    
+
     if (!$inquiry) {
         header("Location: agent_pms_inquiries.php");
         exit;
     }
-    
+
     // Assign inquiry to agent if not assigned
     if (!$inquiry['assigned_agent_id']) {
         $stmt_assign = $pdo->prepare("
-            UPDATE pms_inquiries 
+            UPDATE pms_inquiries
             SET assigned_agent_id = ?, status = 'In Progress'
             WHERE id = ?
         ");
@@ -183,30 +184,33 @@ try {
             <div class="sidebar-title"><i class="fas fa-info-circle"></i> Inquiry Details</div>
             <div class="inquiry-info">
                 <div class="info-label">Customer</div>
-                <div class="info-value"><?php echo htmlspecialchars($inquiry['FirstName'] . ' ' . $inquiry['LastName']); ?></div>
-                
+                <div class="info-value"><?php
+                    $customer_name = trim(($inquiry['FirstName'] ?? '') . ' ' . ($inquiry['LastName'] ?? ''));
+                    echo htmlspecialchars($customer_name ?: 'Unknown Customer');
+                ?></div>
+
                 <div class="info-label">Email</div>
-                <div class="info-value"><?php echo htmlspecialchars($inquiry['Email']); ?></div>
-                
+                <div class="info-value"><?php echo htmlspecialchars($inquiry['Email'] ?? 'N/A'); ?></div>
+
                 <div class="info-label">Phone</div>
-                <div class="info-value"><?php echo htmlspecialchars($inquiry['PhoneNumber']); ?></div>
-                
+                <div class="info-value"><?php echo htmlspecialchars($inquiry['PhoneNumber'] ?? 'N/A'); ?></div>
+
                 <div class="info-label">Vehicle</div>
-                <div class="info-value"><?php echo htmlspecialchars($inquiry['model']); ?></div>
-                
+                <div class="info-value"><?php echo htmlspecialchars($inquiry['model'] ?? 'Unknown Model'); ?></div>
+
                 <div class="info-label">Plate Number</div>
-                <div class="info-value"><?php echo htmlspecialchars($inquiry['plate_number']); ?></div>
-                
+                <div class="info-value"><?php echo htmlspecialchars($inquiry['plate_number'] ?? 'N/A'); ?></div>
+
                 <div class="info-label">PMS Type</div>
-                <div class="info-value"><?php echo htmlspecialchars($inquiry['pms_info']); ?></div>
-                
+                <div class="info-value"><?php echo htmlspecialchars($inquiry['pms_info'] ?? 'PMS Service'); ?></div>
+
                 <div class="info-label">Status</div>
-                <div class="info-value" style="color: #E60012; font-weight: 600;"><?php echo htmlspecialchars($inquiry['status']); ?></div>
+                <div class="info-value" style="color: #E60012; font-weight: 600;"><?php echo htmlspecialchars($inquiry['status'] ?? 'Open'); ?></div>
             </div>
-            
+
             <div class="sidebar-title" style="margin-top: 20px;"><i class="fas fa-comment-dots"></i> Customer Needs</div>
             <div class="inquiry-info">
-                <div class="info-value"><?php echo nl2br(htmlspecialchars($inquiry['customer_needs'])); ?></div>
+                <div class="info-value"><?php echo nl2br(htmlspecialchars($inquiry['customer_needs'] ?? 'No specific needs mentioned')); ?></div>
             </div>
         </div>
 

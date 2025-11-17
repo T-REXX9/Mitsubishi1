@@ -33,6 +33,10 @@ Modified Files:
 30. pages/debug_pms_inquiries.php (Fixed: Changed JOIN from cpr.customer_id to pi.customer_id)
 31. pages/debug_agent_pms.php (Fixed: Changed JOIN from cpr.customer_id to pi.customer_id)
 32. includes/components/sales_agent_dashboard.php (Fixed: Changed JOIN from cpr.customer_id to pi.customer_id)
+33. pages/agent_pms_inquiries.php (Fixed: Added customer_information JOIN to get mobile_number, changed PhoneNumber to use ci.mobile_number)
+34. pages/debug_agent_pms.php (Fixed: Added customer_information JOIN to get mobile_number)
+35. includes/components/sales_agent_dashboard.php (Fixed: Added customer_information JOIN to get mobile_number)
+36. pages/agent_pms_chat.php (Fixed: Changed JOIN from cpr.customer_id to pi.customer_id, added customer_information JOIN, added NULL value handling)
 
 Created Files:
 ==============

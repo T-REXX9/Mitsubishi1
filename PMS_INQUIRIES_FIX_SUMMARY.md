@@ -45,10 +45,11 @@ SELECT
     acc.FirstName,
     acc.LastName,
     acc.Email,
-    acc.PhoneNumber
+    ci.mobile_number as PhoneNumber  -- Get phone from customer_information
 FROM pms_inquiries pi
 LEFT JOIN car_pms_records cpr ON pi.pms_id = cpr.pms_id
 LEFT JOIN accounts acc ON pi.customer_id = acc.Id  -- ✅ CORRECT!
+LEFT JOIN customer_information ci ON pi.customer_id = ci.account_id  -- Added for phone number
 ORDER BY pi.created_at DESC
 ```
 
@@ -66,6 +67,10 @@ ORDER BY pi.created_at DESC
    ```
 
 2. **Added customer_id to SELECT** to ensure we have the correct reference for the JOIN
+
+3. **Fixed PhoneNumber column issue** - The `accounts` table doesn't have a `PhoneNumber` column. Phone numbers are stored in `customer_information.mobile_number`, so we:
+   - Added a JOIN with `customer_information` table
+   - Changed the SELECT to use `ci.mobile_number as PhoneNumber`
 
 ## Files Modified
 - `pages/agent_pms_inquiries.php` - Fixed JOIN condition and added NULL handling
