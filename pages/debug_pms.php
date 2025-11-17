@@ -46,9 +46,30 @@ try {
 }
 
 // Check car_pms_records data
-echo "<h2>car_pms_records data (first 5):</h2>";
+echo "<h2>car_pms_records data (first 5, excluding receipt blob):</h2>";
 try {
-    $stmt = $pdo->query("SELECT * FROM car_pms_records LIMIT 5");
+    $stmt = $pdo->query("
+        SELECT
+            pms_id,
+            customer_id,
+            plate_number,
+            model,
+            transmission,
+            engine_type,
+            color,
+            current_odometer,
+            pms_info,
+            pms_date,
+            next_pms_due,
+            request_status,
+            created_at,
+            updated_at,
+            service_notes_findings,
+            CASE WHEN uploaded_receipt IS NULL THEN 0 ELSE 1 END AS has_receipt
+        FROM car_pms_records
+        ORDER BY created_at DESC
+        LIMIT 5
+    ");
     echo "<pre>";
     print_r($stmt->fetchAll(PDO::FETCH_ASSOC));
     echo "</pre>";

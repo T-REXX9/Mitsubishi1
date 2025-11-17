@@ -45,14 +45,10 @@ try {
             cpr.model,
             cpr.pms_info,
             cpr.pms_date,
-            cpr.customer_needs,
-            cpr.current_odometer,
             acc.FirstName,
             acc.LastName,
             acc.Email,
-            acc.PhoneNumber,
-            (SELECT COUNT(*) FROM pms_messages WHERE inquiry_id = pi.id AND is_read = 0 AND sender_type = 'Customer') as unread_messages,
-            (SELECT COUNT(*) FROM pms_messages WHERE inquiry_id = pi.id) as total_messages
+            acc.PhoneNumber
         FROM pms_inquiries pi
         LEFT JOIN car_pms_records cpr ON pi.pms_id = cpr.pms_id
         LEFT JOIN accounts acc ON cpr.customer_id = acc.Id
@@ -189,9 +185,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             <span class="inquiry-status status-<?php echo strtolower(str_replace(' ', '-', $inquiry['status'])); ?>">
                                 <?php echo htmlspecialchars($inquiry['status']); ?>
                             </span>
-                            <?php if ($inquiry['unread_messages'] > 0): ?>
-                                <span class="badge"><?php echo $inquiry['unread_messages']; ?> unread</span>
-                            <?php endif; ?>
                         </div>
                     </div>
                     
@@ -203,10 +196,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                         <div class="detail-item">
                             <span class="detail-label">Contact</span>
                             <span class="detail-value"><?php echo htmlspecialchars($inquiry['Email']); ?></span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Messages</span>
-                            <span class="detail-value"><?php echo $inquiry['total_messages']; ?> total</span>
                         </div>
                     </div>
 
