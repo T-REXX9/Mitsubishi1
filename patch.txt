@@ -7,7 +7,7 @@ Modified Files:
 4. pages/quote_amortization.php
 5. api/sales-report.php
 6. pages/main/sales-report.php
-7. includes/components/sales_agent_dashboard.php
+7. includes/components/sales_agent_dashboard.php (Added PMS Inquiries card and button to dashboard)
 8. pages/header_ex.php
 9. pages/test/test_drive_management.php
 10. includes/backend/test_drive_backend.php
@@ -24,6 +24,7 @@ Modified Files:
 21. pages/pms_inquiry_chat.php (Fixed: removed header_ex.php include)
 22. pages/agent_pms_inquiries.php (Fixed: removed header_ex.php include)
 23. pages/agent_pms_chat.php (Fixed: removed header_ex.php include)
+24. includes/css/dashboard-styles.css (Added orange color class for PMS card icon)
 
 Created Files:
 ==============
@@ -41,4 +42,5 @@ Created Files:
 11. QUICK_SQL_SETUP.sql
 12. pages/debug_pms.php (Debug page to check database structure)
 13. pages/test_pms_simple.php (Simple test page to verify PMS system)
+14. PMS_AGENT_GUIDE.md (Guide for sales agents on how to use PMS messaging system)
 
