@@ -136,6 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         .btn-primary:hover { background: #b80000; }
         .btn-secondary { background: #808080; color: #fff; }
         .btn-secondary:hover { background: #666; }
+        .back-btn { display: inline-block; margin-bottom: 20px; background: #808080; color: #fff; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-weight: 500; }
         .no-inquiries { text-align: center; padding: 60px 20px; }
         .no-inquiries i { font-size: 3rem; color: #ccc; margin-bottom: 20px; }
         .no-inquiries h3 { color: #666; margin-bottom: 10px; }
@@ -162,6 +163,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 <i class="fas fa-sign-out-alt"></i> Logout
             </button>
         </div>
+    </div>
+
+    <div style="max-width: 1200px; margin: 0 auto; padding: 20px 20px 0;">
+        <a href="/pages/main/dashboard.php" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
     </div>
 
     <div class="container">

@@ -131,7 +131,7 @@ try {
         .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: #ffd700; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #000; }
         .welcome-text { color: #fff; font-size: 1rem; }
         .logout-btn { background: #E60012; color: #fff; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: 600; }
-        .container { max-width: 900px; margin: 0 auto; padding: 20px; display: flex; gap: 20px; height: calc(100vh - 100px); }
+        .container { max-width: 900px; margin: 0 20px 0 auto; padding: 20px; display: flex; gap: 20px; height: calc(100vh - 100px); }
         .sidebar { background: #fff; border-radius: 12px; padding: 20px; width: 300px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow-y: auto; }
         .sidebar-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 15px; color: #333; }
         .inquiry-info { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem; }
@@ -154,7 +154,7 @@ try {
         .input-area button:hover { background: #b80000; }
         .back-btn { display: inline-block; margin-bottom: 20px; background: #808080; color: #fff; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-weight: 500; }
         @media (max-width: 1024px) {
-            .container { flex-direction: column; height: auto; }
+            .container { flex-direction: column; height: auto; margin: 0 10px 20px; }
             .sidebar { width: 100%; }
             .message-bubble { max-width: 100%; }
         }
