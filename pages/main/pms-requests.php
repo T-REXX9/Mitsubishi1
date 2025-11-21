@@ -248,7 +248,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             case 'view_details':
                 $pms_id = (int)$_POST['pms_id'];
                 $stmt = $pdo->prepare("
-                    SELECT 
+                    SELECT
                         p.*,
                         a.FirstName,
                         a.LastName,
@@ -265,10 +265,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                         ci.company_name,
                         ci.position,
                         ci.monthly_income,
-                        CONCAT('PMS-', YEAR(p.created_at), '-', LPAD(p.pms_id, 3, '0')) as request_id
+                        CONCAT('PMS-', YEAR(p.created_at), '-', LPAD(p.pms_id, 3, '0')) as request_id,
+                        CONCAT(approver.FirstName, ' ', approver.LastName) as approver_name
                     FROM car_pms_records p
                     LEFT JOIN accounts a ON p.customer_id = a.Id
                     LEFT JOIN customer_information ci ON p.customer_id = ci.account_id
+                    LEFT JOIN accounts approver ON p.approved_by = approver.Id
                     WHERE p.pms_id = ? AND ci.agent_id = ?
                 ");
                 $stmt->execute([$pms_id, $sales_agent_id]);
@@ -277,10 +279,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 if ($details) {
                     // Format the data for display
                     $details['has_receipt'] = !empty($details['uploaded_receipt']);
-                    
+
                     // Remove the actual blob data to avoid large response
                     unset($details['uploaded_receipt']);
-                    
+
                     echo json_encode(['success' => true, 'data' => $details]);
                 } else {
                     echo json_encode(['success' => false, 'message' => 'PMS request not found']);
@@ -615,9 +617,6 @@ $pms_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <button class="btn-small btn-view" title="Approve" onclick="approveRequest(<?php echo $request['pms_id']; ?>, '<?php echo $request['request_id']; ?>')">
                       <i class="fas fa-check"></i>
                     </button>
-                    <button class="btn-small btn-edit" title="Reschedule" onclick="rescheduleRequest(<?php echo $request['pms_id']; ?>, '<?php echo $request['request_id']; ?>')">
-                      <i class="fas fa-calendar-alt"></i>
-                    </button>
                     <button class="btn-small btn-delete" title="Reject" onclick="rejectRequest(<?php echo $request['pms_id']; ?>, '<?php echo $request['request_id']; ?>')" style="background: #e74c3c;">
                       <i class="fas fa-times"></i>
                     </button>
@@ -628,18 +627,12 @@ $pms_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <button class="btn-small btn-view" title="View Details" onclick="viewDetails(<?php echo $request['pms_id']; ?>)">
                       <i class="fas fa-eye"></i>
                     </button>
-                    <button class="btn-small btn-edit" title="Reschedule" onclick="rescheduleRequest(<?php echo $request['pms_id']; ?>, '<?php echo $request['request_id']; ?>')">
-                      <i class="fas fa-calendar-alt"></i>
-                    </button>
                     <button class="btn-small btn-success" title="Mark as Completed" onclick="markCompleted(<?php echo $request['pms_id']; ?>, '<?php echo $request['request_id']; ?>')" style="background: #27ae60;">
                       <i class="fas fa-check-circle"></i>
                     </button>
                     <?php elseif ($request['request_status'] === 'No Show'): ?>
                     <button class="btn-small btn-view" title="View Details" onclick="viewDetails(<?php echo $request['pms_id']; ?>)">
                       <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="btn-small btn-edit" title="Reschedule" onclick="rescheduleRequest(<?php echo $request['pms_id']; ?>, '<?php echo $request['request_id']; ?>')">
-                      <i class="fas fa-calendar-alt"></i>
                     </button>
                     <button class="btn-small btn-success" title="Mark as Completed" onclick="markCompleted(<?php echo $request['pms_id']; ?>, '<?php echo $request['request_id']; ?>')" style="background: #27ae60;">
                       <i class="fas fa-check-circle"></i>
@@ -648,11 +641,6 @@ $pms_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <button class="btn-small btn-view" title="View Details" onclick="viewDetails(<?php echo $request['pms_id']; ?>)">
                       <i class="fas fa-eye"></i>
                     </button>
-                    <?php if ($request['request_status'] !== 'Completed' && $request['request_status'] !== 'Rejected'): ?>
-                    <button class="btn-small btn-edit" title="Reschedule" onclick="rescheduleRequest(<?php echo $request['pms_id']; ?>, '<?php echo $request['request_id']; ?>')">
-                      <i class="fas fa-calendar-alt"></i>
-                    </button>
-                    <?php endif; ?>
                     <?php endif; ?>
                   </div>
                 </td>
@@ -840,7 +828,7 @@ $pms_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
   <!-- View Details Modal -->
   <div class="modal-overlay" id="viewDetailsModal">
-    <div class="modal" style="max-width: 800px;">
+    <div class="modal" style="max-width: 900px;">
       <div class="modal-header">
         <h3>PMS Request Details</h3>
         <button class="modal-close" onclick="closeViewDetailsModal()">
@@ -853,6 +841,9 @@ $pms_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
       </div>
       <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="printPMSDetails()" style="margin-right: 10px;">
+          <i class="fas fa-print"></i> Print
+        </button>
         <button type="button" class="btn btn-secondary" onclick="closeViewDetailsModal()">Close</button>
       </div>
     </div>
@@ -1034,7 +1025,13 @@ $pms_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
       });
     }
 
+    // Store current PMS data for printing
+    let currentPMSData = null;
+
     function displayPMSDetails(data) {
+      // Store data for printing
+      currentPMSData = data;
+
       // Build services list from new service checkboxes
       const services = [];
       if (data.service_eco_oil) services.push('ECO OIL');
@@ -1054,10 +1051,10 @@ $pms_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
       if (data.service_klima_fresh) services.push('KLIMA FRESH');
 
       const content = `
-        <div class="details-grid">
-          <!-- Request Information -->
+        <div class="details-grid" id="printableContent">
+          <!-- PMS Request Information -->
           <div class="detail-section">
-            <h4><i class="fas fa-info-circle"></i> Request Information</h4>
+            <h4><i class="fas fa-info-circle"></i> PMS REQUEST INFORMATION</h4>
             <div class="detail-row">
               <span class="label">Request ID:</span>
               <span class="value">${data.request_id}</span>
@@ -1070,16 +1067,14 @@ $pms_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
               <span class="label">Date Submitted:</span>
               <span class="value">${new Date(data.created_at).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'})}</span>
             </div>
-            ${data.rejection_reason ? `
             <div class="detail-row">
-              <span class="label">Rejection Reason:</span>
-              <span class="value" style="color: #e74c3c;">${data.rejection_reason}</span>
+              <span class="label">PMS Date:</span>
+              <span class="value">${data.pms_date ? new Date(data.pms_date).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'}) : 'N/A'}</span>
             </div>
-            ` : ''}
-            ${data.agent_notes ? `
+            ${data.pms_time ? `
             <div class="detail-row">
-              <span class="label">Agent Notes:</span>
-              <div class="value notes-content">${data.agent_notes}</div>
+              <span class="label">PMS Time:</span>
+              <span class="value">${data.pms_time}</span>
             </div>
             ` : ''}
           </div>
@@ -1137,7 +1132,7 @@ $pms_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
             ` : ''}
           </div>
 
-          <!-- Vehicle Information -->
+          <!-- Customer Vehicle Information -->
           <div class="detail-section">
             <h4><i class="fas fa-car"></i> CUSTOMER VEHICLE INFORMATION</h4>
             ${data.vehicle_no ? `
@@ -1218,32 +1213,10 @@ $pms_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
           </div>
 
-          <!-- PMS Information -->
-          <div class="detail-section">
-            <h4><i class="fas fa-calendar-alt"></i> PMS INFORMATION</h4>
-            <div class="detail-row">
-              <span class="label">PMS Date:</span>
-              <span class="value">${data.pms_date ? new Date(data.pms_date).toLocaleDateString() : 'N/A'}</span>
-            </div>
-            ${data.pms_time ? `
-            <div class="detail-row">
-              <span class="label">PMS Time:</span>
-              <span class="value">${data.pms_time}</span>
-            </div>
-            ` : ''}
-            ${data.service_adviser_id ? `
-            <div class="detail-row">
-              <span class="label">Service Adviser:</span>
-              <span class="value">${data.service_adviser_id}</span>
-            </div>
-            ` : ''}
-          </div>
-
           <!-- Services -->
           <div class="detail-section">
             <h4><i class="fas fa-tools"></i> SERVICES</h4>
             <div class="detail-row">
-              <span class="label">Selected Services:</span>
               <div class="value">
                 ${services.length > 0 ?
                   services.map(service => `<span class="service-tag">${service}</span>`).join(' ') :
@@ -1264,7 +1237,7 @@ $pms_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
           ` : ''}
 
           <!-- Receipt Information -->
-          <div class="detail-section">
+          <div class="detail-section no-print">
             <h4><i class="fas fa-receipt"></i> UPLOADED RECEIPT</h4>
             <div class="detail-row">
               <span class="label">Receipt:</span>
@@ -1278,6 +1251,22 @@ $pms_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
               </div>
             </div>
           </div>
+
+          <!-- Approver Information (for print) -->
+          ${data.request_status === 'Approved' && data.approver_name ? `
+          <div class="detail-section approver-section" style="margin-top: 40px; border-top: 2px solid #ddd; padding-top: 20px;">
+            <div class="detail-row">
+              <span class="label" style="font-weight: bold;">Approved by:</span>
+              <span class="value" style="font-weight: bold;">${data.approver_name}</span>
+            </div>
+            ${data.approved_at ? `
+            <div class="detail-row">
+              <span class="label">Date Approved:</span>
+              <span class="value">${new Date(data.approved_at).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'})}</span>
+            </div>
+            ` : ''}
+          </div>
+          ` : ''}
         </div>
       `;
 
@@ -1286,6 +1275,362 @@ $pms_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     function viewReceipt(pmsId) {
       window.open(`?download_receipt=1&pms_id=${pmsId}`, '_blank');
+    }
+
+    function printPMSDetails() {
+      if (!currentPMSData) {
+        alert('No PMS data available to print');
+        return;
+      }
+
+      // Create a new window for printing
+      const printWindow = window.open('', '_blank');
+
+      // Build services list
+      const services = [];
+      if (currentPMSData.service_eco_oil) services.push('ECO OIL');
+      if (currentPMSData.service_oil_filter) services.push('OIL FILTER');
+      if (currentPMSData.service_gasket_drain) services.push('GASKET, DRAIN PLUG');
+      if (currentPMSData.service_windshield_washer) services.push('WINDSHIELD WASHER FLUID');
+      if (currentPMSData.service_engine_treatment) services.push('ENGINE TREATMENT');
+      if (currentPMSData.service_ethanol_drier) services.push('ETHANOL DRIER');
+      if (currentPMSData.service_radiator_cap) services.push('RADIATOR CAP STICKER');
+      if (currentPMSData.service_parts_misc) services.push('PARTS MATERIAL/MISC');
+      if (currentPMSData.service_parts_lubricants) services.push('PARTS MATERIAL/LUBRICANTS');
+      if (currentPMSData.service_bactaleen) services.push('BACTALEEN ULTRAMIST');
+      if (currentPMSData.service_engine_flush) services.push('ENGINE FLUSH');
+      if (currentPMSData.service_petrol_decarb) services.push('PETROL DECARB');
+      if (currentPMSData.service_brake_lube) services.push('BRAKE LUBE');
+      if (currentPMSData.service_brake_cleaner) services.push('BRAKE CLEANER');
+      if (currentPMSData.service_klima_fresh) services.push('KLIMA FRESH');
+
+      const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>PMS Request - ${currentPMSData.request_id}</title>
+          <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body {
+              font-family: Arial, sans-serif;
+              padding: 30px;
+              color: #333;
+              line-height: 1.6;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+              border-bottom: 3px solid #dc143c;
+              padding-bottom: 20px;
+            }
+            .header h1 {
+              color: #dc143c;
+              font-size: 28px;
+              margin-bottom: 10px;
+            }
+            .header h2 {
+              color: #666;
+              font-size: 18px;
+              font-weight: normal;
+            }
+            .section {
+              margin-bottom: 25px;
+              page-break-inside: avoid;
+            }
+            .section-title {
+              background: #dc143c;
+              color: white;
+              padding: 10px 15px;
+              font-size: 16px;
+              font-weight: bold;
+              margin-bottom: 15px;
+              text-transform: uppercase;
+            }
+            .detail-row {
+              display: flex;
+              padding: 8px 15px;
+              border-bottom: 1px solid #eee;
+            }
+            .detail-row:last-child {
+              border-bottom: none;
+            }
+            .label {
+              font-weight: bold;
+              width: 200px;
+              flex-shrink: 0;
+              color: #555;
+            }
+            .value {
+              flex: 1;
+              color: #333;
+            }
+            .service-tag {
+              display: inline-block;
+              background: #f0f0f0;
+              padding: 5px 10px;
+              margin: 3px;
+              border-radius: 4px;
+              font-size: 12px;
+            }
+            .approver-section {
+              margin-top: 50px;
+              padding-top: 20px;
+              border-top: 3px solid #dc143c;
+              text-align: center;
+            }
+            .approver-section .detail-row {
+              justify-content: center;
+              border: none;
+              font-size: 16px;
+            }
+            .approver-section .label,
+            .approver-section .value {
+              width: auto;
+            }
+            .footer {
+              margin-top: 50px;
+              text-align: center;
+              font-size: 12px;
+              color: #999;
+              border-top: 1px solid #ddd;
+              padding-top: 20px;
+            }
+            @media print {
+              body {
+                padding: 20px;
+              }
+              .section {
+                page-break-inside: avoid;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>MITSUBISHI MOTORS</h1>
+            <h2>Preventive Maintenance Service Request</h2>
+          </div>
+
+          <!-- PMS Request Information -->
+          <div class="section">
+            <div class="section-title">PMS REQUEST INFORMATION</div>
+            <div class="detail-row">
+              <span class="label">Request ID:</span>
+              <span class="value">${currentPMSData.request_id}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Status:</span>
+              <span class="value">${currentPMSData.request_status}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Date Submitted:</span>
+              <span class="value">${new Date(currentPMSData.created_at).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'})}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">PMS Date:</span>
+              <span class="value">${currentPMSData.pms_date ? new Date(currentPMSData.pms_date).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'}) : 'N/A'}</span>
+            </div>
+            ${currentPMSData.pms_time ? `
+            <div class="detail-row">
+              <span class="label">PMS Time:</span>
+              <span class="value">${currentPMSData.pms_time}</span>
+            </div>
+            ` : ''}
+          </div>
+
+          <!-- Customer Information -->
+          <div class="section">
+            <div class="section-title">CUSTOMER INFORMATION</div>
+            ${currentPMSData.customer_name ? `
+            <div class="detail-row">
+              <span class="label">Customer Name:</span>
+              <span class="value">${currentPMSData.customer_name}</span>
+            </div>
+            ` : ''}
+            ${currentPMSData.customer_address ? `
+            <div class="detail-row">
+              <span class="label">Customer Address:</span>
+              <span class="value">${currentPMSData.customer_address}</span>
+            </div>
+            ` : ''}
+            ${currentPMSData.driver_name ? `
+            <div class="detail-row">
+              <span class="label">Driver:</span>
+              <span class="value">${currentPMSData.driver_name}</span>
+            </div>
+            ` : ''}
+            ${currentPMSData.driver_contact ? `
+            <div class="detail-row">
+              <span class="label">Driver Contact No.:</span>
+              <span class="value">${currentPMSData.driver_contact}</span>
+            </div>
+            ` : ''}
+            ${currentPMSData.mobile_number ? `
+            <div class="detail-row">
+              <span class="label">Mobile Number:</span>
+              <span class="value">${currentPMSData.mobile_number}</span>
+            </div>
+            ` : ''}
+            ${currentPMSData.selling_dealer ? `
+            <div class="detail-row">
+              <span class="label">Selling Dealer:</span>
+              <span class="value">${currentPMSData.selling_dealer}</span>
+            </div>
+            ` : ''}
+            ${currentPMSData.delivery_kms ? `
+            <div class="detail-row">
+              <span class="label">Delivery KMS:</span>
+              <span class="value">${currentPMSData.delivery_kms}</span>
+            </div>
+            ` : ''}
+            ${currentPMSData.delivery_date ? `
+            <div class="detail-row">
+              <span class="label">Delivery Date:</span>
+              <span class="value">${new Date(currentPMSData.delivery_date).toLocaleDateString()}</span>
+            </div>
+            ` : ''}
+          </div>
+
+          <!-- Customer Vehicle Information -->
+          <div class="section">
+            <div class="section-title">CUSTOMER VEHICLE INFORMATION</div>
+            ${currentPMSData.vehicle_no ? `
+            <div class="detail-row">
+              <span class="label">Vehicle No:</span>
+              <span class="value">${currentPMSData.vehicle_no}</span>
+            </div>
+            ` : ''}
+            ${currentPMSData.chassis_no ? `
+            <div class="detail-row">
+              <span class="label">Chassis No:</span>
+              <span class="value">${currentPMSData.chassis_no}</span>
+            </div>
+            ` : ''}
+            ${currentPMSData.year_make_model ? `
+            <div class="detail-row">
+              <span class="label">Year/Make/Model:</span>
+              <span class="value">${currentPMSData.year_make_model}</span>
+            </div>
+            ` : ''}
+            ${currentPMSData.reg_no ? `
+            <div class="detail-row">
+              <span class="label">Reg No:</span>
+              <span class="value">${currentPMSData.reg_no}</span>
+            </div>
+            ` : ''}
+            ${currentPMSData.engine_no ? `
+            <div class="detail-row">
+              <span class="label">Engine No:</span>
+              <span class="value">${currentPMSData.engine_no}</span>
+            </div>
+            ` : ''}
+            ${currentPMSData.color ? `
+            <div class="detail-row">
+              <span class="label">Color:</span>
+              <span class="value">${currentPMSData.color}</span>
+            </div>
+            ` : ''}
+            ${currentPMSData.stock_no ? `
+            <div class="detail-row">
+              <span class="label">Stock No:</span>
+              <span class="value">${currentPMSData.stock_no}</span>
+            </div>
+            ` : ''}
+            ${currentPMSData.model_no ? `
+            <div class="detail-row">
+              <span class="label">Model No:</span>
+              <span class="value">${currentPMSData.model_no}</span>
+            </div>
+            ` : ''}
+            ${currentPMSData.car_line ? `
+            <div class="detail-row">
+              <span class="label">Car Line:</span>
+              <span class="value">${currentPMSData.car_line}</span>
+            </div>
+            ` : ''}
+            ${currentPMSData.prod_date ? `
+            <div class="detail-row">
+              <span class="label">Prod. Date:</span>
+              <span class="value">${new Date(currentPMSData.prod_date).toLocaleDateString()}</span>
+            </div>
+            ` : ''}
+            ${currentPMSData.tag_no ? `
+            <div class="detail-row">
+              <span class="label">Tag No:</span>
+              <span class="value">${currentPMSData.tag_no}</span>
+            </div>
+            ` : ''}
+            ${currentPMSData.eng_trans ? `
+            <div class="detail-row">
+              <span class="label">Eng/Trans:</span>
+              <span class="value">${currentPMSData.eng_trans}</span>
+            </div>
+            ` : ''}
+            <div class="detail-row">
+              <span class="label">Current Odometer:</span>
+              <span class="value">${currentPMSData.current_odometer || 0} KM</span>
+            </div>
+          </div>
+
+          <!-- Services -->
+          <div class="section">
+            <div class="section-title">SERVICES</div>
+            <div class="detail-row">
+              <div class="value">
+                ${services.length > 0 ?
+                  services.map(service => `<span class="service-tag">${service}</span>`).join(' ') :
+                  'No services selected'
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Other Concerns -->
+          ${currentPMSData.other_concerns ? `
+          <div class="section">
+            <div class="section-title">OTHER CONCERNS</div>
+            <div class="detail-row">
+              <div class="value">${currentPMSData.other_concerns}</div>
+            </div>
+          </div>
+          ` : ''}
+
+          <!-- Approver Information -->
+          ${currentPMSData.request_status === 'Approved' && currentPMSData.approver_name ? `
+          <div class="approver-section">
+            <div class="detail-row">
+              <span class="label">Approved by:</span>
+              <span class="value">${currentPMSData.approver_name}</span>
+            </div>
+            ${currentPMSData.approved_at ? `
+            <div class="detail-row">
+              <span class="label">Date Approved:</span>
+              <span class="value">${new Date(currentPMSData.approved_at).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'})}</span>
+            </div>
+            ` : ''}
+          </div>
+          ` : ''}
+
+          <div class="footer">
+            <p>This is a computer-generated document. No signature is required.</p>
+            <p>Printed on: ${new Date().toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'})}</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+
+      // Wait for content to load then print
+      printWindow.onload = function() {
+        printWindow.focus();
+        printWindow.print();
+      };
     }
 
     // Add form event handlers

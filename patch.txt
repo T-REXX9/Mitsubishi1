@@ -1,3 +1,4 @@
 pages/pms_record.php
 pages/main/pms-requests.php
-
+pages/my_pms_inquiries.php
+pages/agent_pms_inquiries.php

@@ -33,6 +33,7 @@ if (!empty($agent['ProfileImage'])) {
 
 // Fetch ALL PMS inquiries (both assigned and unassigned)
 try {
+    // Updated to use new field names: vehicle_no (instead of plate_number) and year_make_model (instead of model)
     $stmt_inquiries = $pdo->prepare("
         SELECT
             pi.id as inquiry_id,
@@ -42,8 +43,8 @@ try {
             pi.created_at,
             pi.updated_at,
             pi.assigned_agent_id,
-            cpr.plate_number,
-            cpr.model,
+            COALESCE(cpr.vehicle_no, cpr.plate_number) as plate_number,
+            COALESCE(cpr.year_make_model, cpr.model) as model,
             cpr.pms_info,
             cpr.pms_date,
             acc.FirstName,
