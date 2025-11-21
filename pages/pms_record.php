@@ -56,61 +56,121 @@ $error_message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         // Validate required fields
-        $required_fields = ['plate_number', 'model', 'current_odometer', 'pms_info', 'pms_date'];
+        $required_fields = [
+            'customer_name', 'customer_address', 'mobile_number',
+            'vehicle_no', 'chassis_no', 'year_make_model', 'reg_no', 'engine_no', 'model_no', 'car_line', 'current_odometer',
+            'pms_date', 'pms_time'
+        ];
         $missing_fields = [];
-        
+
         foreach ($required_fields as $field) {
             if (empty($_POST[$field])) {
                 $missing_fields[] = ucwords(str_replace('_', ' ', $field));
             }
         }
-        
+
         if (!empty($missing_fields)) {
             throw new Exception("Please fill in all required fields: " . implode(', ', $missing_fields));
+        }
+
+        // Check time slot availability (max 3 bookings per slot)
+        $pms_date = $_POST['pms_date'];
+        $pms_time = $_POST['pms_time'];
+
+        $stmt_check = $connect->prepare("
+            SELECT COUNT(*) FROM car_pms_records
+            WHERE pms_date = ? AND pms_time = ?
+            AND request_status IN ('Pending', 'Approved', 'Scheduled')
+        ");
+        $stmt_check->execute([$pms_date, $pms_time]);
+        $booking_count = $stmt_check->fetchColumn();
+
+        if ($booking_count >= 3) {
+            throw new Exception("Time is already booked, choose another time");
         }
 
         // Sanitize odometer value - remove any non-numeric characters
         $current_odometer = preg_replace('/\D/', '', $_POST['current_odometer']);
         $current_odometer = $current_odometer === '' ? 0 : intval($current_odometer);
 
-        // Get customer needs/problem description
-        $customer_needs = $_POST['customer_needs'] ?? null;
-        
+        // Get service checkboxes
+        $service_eco_oil = isset($_POST['service_eco_oil']) ? 1 : 0;
+        $service_oil_filter = isset($_POST['service_oil_filter']) ? 1 : 0;
+        $service_gasket_drain = isset($_POST['service_gasket_drain']) ? 1 : 0;
+        $service_windshield_washer = isset($_POST['service_windshield_washer']) ? 1 : 0;
+        $service_engine_treatment = isset($_POST['service_engine_treatment']) ? 1 : 0;
+        $service_ethanol_drier = isset($_POST['service_ethanol_drier']) ? 1 : 0;
+        $service_radiator_cap = isset($_POST['service_radiator_cap']) ? 1 : 0;
+        $service_parts_misc = isset($_POST['service_parts_misc']) ? 1 : 0;
+        $service_parts_lubricants = isset($_POST['service_parts_lubricants']) ? 1 : 0;
+        $service_bactaleen = isset($_POST['service_bactaleen']) ? 1 : 0;
+        $service_engine_flush = isset($_POST['service_engine_flush']) ? 1 : 0;
+        $service_petrol_decarb = isset($_POST['service_petrol_decarb']) ? 1 : 0;
+        $service_brake_lube = isset($_POST['service_brake_lube']) ? 1 : 0;
+        $service_brake_cleaner = isset($_POST['service_brake_cleaner']) ? 1 : 0;
+        $service_klima_fresh = isset($_POST['service_klima_fresh']) ? 1 : 0;
+
         // Handle file upload
         $uploaded_receipt = null;
         if (isset($_FILES['uploaded_receipt']) && $_FILES['uploaded_receipt']['error'] === UPLOAD_ERR_OK) {
             $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
             $file_type = $_FILES['uploaded_receipt']['type'];
-            
+
             if (in_array($file_type, $allowed_types)) {
                 $uploaded_receipt = file_get_contents($_FILES['uploaded_receipt']['tmp_name']);
             } else {
                 throw new Exception('Invalid file type. Only JPG, PNG, PDF, and DOCX files are allowed.');
             }
         }
-        
+
         // Insert PMS record into database with customer_id and default status
         $stmt_insert = $connect->prepare("
             INSERT INTO car_pms_records (
-                customer_id, plate_number, model, transmission, engine_type, color, current_odometer,
-                pms_info, pms_date, next_pms_due, customer_needs, service_notes_findings, uploaded_receipt,
+                customer_id, customer_name, customer_address, driver_name, driver_contact, mobile_number,
+                selling_dealer, delivery_kms, delivery_date,
+                vehicle_no, chassis_no, year_make_model, reg_no, engine_no, color, stock_no, model_no, car_line,
+                prod_date, tag_no, eng_trans, current_odometer,
+                pms_date, pms_time, service_adviser_id,
+                service_eco_oil, service_oil_filter, service_gasket_drain, service_windshield_washer,
+                service_engine_treatment, service_ethanol_drier, service_radiator_cap, service_parts_misc,
+                service_parts_lubricants, service_bactaleen, service_engine_flush, service_petrol_decarb,
+                service_brake_lube, service_brake_cleaner, service_klima_fresh,
+                other_concerns, uploaded_receipt,
                 request_status, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', NOW(), NOW())
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', NOW(), NOW())
         ");
 
         $stmt_insert->execute([
-            $_SESSION['user_id'], // Add customer_id
-            $_POST['plate_number'],
-            $_POST['model'],
-            $_POST['transmission'] ?? null,
-            $_POST['engine_type'] ?? null,
+            $_SESSION['user_id'], // customer_id
+            $_POST['customer_name'],
+            $_POST['customer_address'],
+            $_POST['driver_name'] ?? null,
+            $_POST['driver_contact'] ?? null,
+            $_POST['mobile_number'],
+            $_POST['selling_dealer'] ?? null,
+            $_POST['delivery_kms'] ?? null,
+            !empty($_POST['delivery_date']) ? $_POST['delivery_date'] : null,
+            $_POST['vehicle_no'],
+            $_POST['chassis_no'],
+            $_POST['year_make_model'],
+            $_POST['reg_no'],
+            $_POST['engine_no'],
             $_POST['color'] ?? null,
-            $current_odometer, // Use sanitized odometer value
-            $_POST['pms_info'],
-            $_POST['pms_date'],
-            $_POST['next_pms_due'] ?? null,
-            $customer_needs,
-            $_POST['service_notes_findings'] ?? null,
+            $_POST['stock_no'] ?? null,
+            $_POST['model_no'],
+            $_POST['car_line'],
+            !empty($_POST['prod_date']) ? $_POST['prod_date'] : null,
+            $_POST['tag_no'] ?? null,
+            $_POST['eng_trans'] ?? null,
+            $current_odometer,
+            $pms_date,
+            $pms_time,
+            !empty($_POST['service_adviser_id']) ? $_POST['service_adviser_id'] : null,
+            $service_eco_oil, $service_oil_filter, $service_gasket_drain, $service_windshield_washer,
+            $service_engine_treatment, $service_ethanol_drier, $service_radiator_cap, $service_parts_misc,
+            $service_parts_lubricants, $service_bactaleen, $service_engine_flush, $service_petrol_decarb,
+            $service_brake_lube, $service_brake_cleaner, $service_klima_fresh,
+            $_POST['other_concerns'] ?? null,
             $uploaded_receipt
         ]);
 
@@ -456,45 +516,122 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endif; ?>
 
                 <form method="POST" action="" enctype="multipart/form-data">
-                    <!-- Car Details -->
+                    <!-- CUSTOMER INFORMATION Section -->
                     <div class="form-section">
                         <h3 class="section-title">
-                            <i class="fas fa-car-side"></i>
-                            Car Details
+                            <i class="fas fa-user"></i>
+                            CUSTOMER INFORMATION
                         </h3>
                         <div class="form-grid">
                             <div class="form-group">
-                                <label class="form-label required">Plate Number</label>
-                                <input type="text" name="plate_number" class="form-input" 
-                                       value="<?php echo htmlspecialchars($_POST['plate_number'] ?? ''); ?>" required>
+                                <label class="form-label required">Customer Name</label>
+                                <input type="text" name="customer_name" class="form-input"
+                                       value="<?php echo htmlspecialchars($_POST['customer_name'] ?? ''); ?>" required>
+                            </div>
+                            <div class="form-group full-width">
+                                <label class="form-label required">Customer Address</label>
+                                <input type="text" name="customer_address" class="form-input"
+                                       value="<?php echo htmlspecialchars($_POST['customer_address'] ?? ''); ?>" required>
                             </div>
                             <div class="form-group">
-                                <label class="form-label required">Model</label>
-                                <input type="text" name="model" class="form-input" 
-                                       value="<?php echo htmlspecialchars($_POST['model'] ?? ($selected_vehicle['model_name'] ?? '')); ?>" required>
+                                <label class="form-label">Driver</label>
+                                <input type="text" name="driver_name" class="form-input"
+                                       value="<?php echo htmlspecialchars($_POST['driver_name'] ?? ''); ?>">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Transmission</label>
-                                <div class="radio-group">
-                                    <label><input type="radio" name="transmission" value="Automatic" 
-                                           <?php echo (($_POST['transmission'] ?? '') === 'Automatic') ? 'checked' : ''; ?>> Automatic</label>
-                                    <label><input type="radio" name="transmission" value="Manual"
-                                           <?php echo (($_POST['transmission'] ?? '') === 'Manual') ? 'checked' : ''; ?>> Manual</label>
-                                </div>
+                                <label class="form-label">Driver Contact No.</label>
+                                <input type="text" name="driver_contact" class="form-input"
+                                       value="<?php echo htmlspecialchars($_POST['driver_contact'] ?? ''); ?>">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Engine Type</label>
-                                <div class="radio-group">
-                                    <label><input type="radio" name="engine_type" value="Gasoline"
-                                           <?php echo (($_POST['engine_type'] ?? '') === 'Gasoline') ? 'checked' : ''; ?>> Gasoline</label>
-                                    <label><input type="radio" name="engine_type" value="Diesel"
-                                           <?php echo (($_POST['engine_type'] ?? '') === 'Diesel') ? 'checked' : ''; ?>> Diesel</label>
-                                </div>
+                                <label class="form-label required">Mobile Number</label>
+                                <input type="text" name="mobile_number" class="form-input"
+                                       value="<?php echo htmlspecialchars($_POST['mobile_number'] ?? ''); ?>" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Selling Dealer</label>
+                                <input type="text" name="selling_dealer" class="form-input"
+                                       value="<?php echo htmlspecialchars($_POST['selling_dealer'] ?? ''); ?>">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Delivery KMS</label>
+                                <input type="text" name="delivery_kms" class="form-input"
+                                       value="<?php echo htmlspecialchars($_POST['delivery_kms'] ?? ''); ?>">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Delivery Date</label>
+                                <input type="date" name="delivery_date" class="form-input"
+                                       value="<?php echo htmlspecialchars($_POST['delivery_date'] ?? ''); ?>">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CUSTOMER VEHICLE INFORMATION Section -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-car-side"></i>
+                            CUSTOMER VEHICLE INFORMATION
+                        </h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label required">Vehicle No</label>
+                                <input type="text" name="vehicle_no" class="form-input"
+                                       value="<?php echo htmlspecialchars($_POST['vehicle_no'] ?? ''); ?>" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required">Chassis No</label>
+                                <input type="text" name="chassis_no" class="form-input"
+                                       value="<?php echo htmlspecialchars($_POST['chassis_no'] ?? ''); ?>" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required">Year/Make/Model</label>
+                                <input type="text" name="year_make_model" class="form-input"
+                                       value="<?php echo htmlspecialchars($_POST['year_make_model'] ?? ''); ?>" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required">Reg No</label>
+                                <input type="text" name="reg_no" class="form-input"
+                                       value="<?php echo htmlspecialchars($_POST['reg_no'] ?? ''); ?>" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required">Engine No</label>
+                                <input type="text" name="engine_no" class="form-input"
+                                       value="<?php echo htmlspecialchars($_POST['engine_no'] ?? ''); ?>" required>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Color</label>
-                                <input type="text" name="color" class="form-input" 
+                                <input type="text" name="color" class="form-input"
                                        value="<?php echo htmlspecialchars($_POST['color'] ?? ''); ?>">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Stock No</label>
+                                <input type="text" name="stock_no" class="form-input"
+                                       value="<?php echo htmlspecialchars($_POST['stock_no'] ?? ''); ?>">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required">Model No</label>
+                                <input type="text" name="model_no" class="form-input"
+                                       value="<?php echo htmlspecialchars($_POST['model_no'] ?? ''); ?>" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required">Car Line</label>
+                                <input type="text" name="car_line" class="form-input"
+                                       value="<?php echo htmlspecialchars($_POST['car_line'] ?? ''); ?>" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Prod. Date</label>
+                                <input type="date" name="prod_date" class="form-input"
+                                       value="<?php echo htmlspecialchars($_POST['prod_date'] ?? ''); ?>">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Tag No</label>
+                                <input type="text" name="tag_no" class="form-input"
+                                       value="<?php echo htmlspecialchars($_POST['tag_no'] ?? ''); ?>">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Eng/Trans</label>
+                                <input type="text" name="eng_trans" class="form-input"
+                                       value="<?php echo htmlspecialchars($_POST['eng_trans'] ?? ''); ?>">
                             </div>
                             <div class="form-group">
                                 <label class="form-label required">Current Odometer (km)</label>
@@ -504,55 +641,146 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                        placeholder="e.g., 20000" required>
                                 <small style="color: #666; font-size: 0.85em;">Enter numbers only (e.g., 20000)</small>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label required">PMS Info</label>
-                                <select name="pms_info" class="form-select" required>
-                                    <option value="">Select PMS Type</option>
-                                    <option value="First 1K KM" <?php echo (($_POST['pms_info'] ?? '') === 'First 1K KM') ? 'selected' : ''; ?>>First 1K KM</option>
-                                    <option value="5K KM" <?php echo (($_POST['pms_info'] ?? '') === '5K KM') ? 'selected' : ''; ?>>5K KM</option>
-                                    <option value="10K KM" <?php echo (($_POST['pms_info'] ?? '') === '10K KM') ? 'selected' : ''; ?>>10K KM</option>
-                                    <option value="15K KM" <?php echo (($_POST['pms_info'] ?? '') === '15K KM') ? 'selected' : ''; ?>>15K KM</option>
-                                    <option value="20K KM" <?php echo (($_POST['pms_info'] ?? '') === '20K KM') ? 'selected' : ''; ?>>20K KM</option>
-                                    <option value="General PMS" <?php echo (($_POST['pms_info'] ?? '') === 'General PMS') ? 'selected' : ''; ?>>General PMS</option>
-                                </select>
-                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PMS INFORMATION Section -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-calendar-alt"></i>
+                            PMS INFORMATION
+                        </h3>
+                        <div class="form-grid">
                             <div class="form-group">
                                 <label class="form-label required">PMS Date</label>
-                                <input type="date" name="pms_date" class="form-input" 
+                                <input type="date" name="pms_date" id="pms_date" class="form-input"
                                        value="<?php echo htmlspecialchars($_POST['pms_date'] ?? ''); ?>" required>
                             </div>
+                            <div class="form-group">
+                                <label class="form-label required">PMS Time</label>
+                                <select name="pms_time" id="pms_time" class="form-select" required>
+                                    <option value="">Select Time</option>
+                                    <option value="07:45" <?php echo (($_POST['pms_time'] ?? '') === '07:45') ? 'selected' : ''; ?>>7:45 AM</option>
+                                    <option value="08:45" <?php echo (($_POST['pms_time'] ?? '') === '08:45') ? 'selected' : ''; ?>>8:45 AM</option>
+                                    <option value="09:45" <?php echo (($_POST['pms_time'] ?? '') === '09:45') ? 'selected' : ''; ?>>9:45 AM</option>
+                                    <option value="10:45" <?php echo (($_POST['pms_time'] ?? '') === '10:45') ? 'selected' : ''; ?>>10:45 AM</option>
+                                    <option value="11:45" <?php echo (($_POST['pms_time'] ?? '') === '11:45') ? 'selected' : ''; ?>>11:45 AM</option>
+                                    <option value="13:00" <?php echo (($_POST['pms_time'] ?? '') === '13:00') ? 'selected' : ''; ?>>1:00 PM</option>
+                                    <option value="14:00" <?php echo (($_POST['pms_time'] ?? '') === '14:00') ? 'selected' : ''; ?>>2:00 PM</option>
+                                    <option value="15:00" <?php echo (($_POST['pms_time'] ?? '') === '15:00') ? 'selected' : ''; ?>>3:00 PM</option>
+                                </select>
+                                <div id="time-slot-warning" style="display: none; color: #ff6b6b; margin-top: 5px; font-size: 0.85em;">
+                                    <i class="fas fa-exclamation-triangle"></i> <span id="warning-text"></span>
+                                </div>
+                            </div>
                             <div class="form-group full-width">
-                                <label class="form-label">Next PMS Due</label>
-                                <input type="text" name="next_pms_due" class="form-input" 
-                                       value="<?php echo htmlspecialchars($_POST['next_pms_due'] ?? ''); ?>"
-                                       placeholder="e.g., 25K KM or specific date">
+                                <div style="background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); padding: 10px; border-radius: 6px; color: #000; font-size: 0.9em;">
+                                    <i class="fas fa-info-circle"></i> <strong>Note:</strong> Please arrive earlier than your scheduled time. If you are late by 15 minutes, you will be considered a walk-in and will need to line up until it is your turn.
+                                </div>
+                            </div>
+                            <div class="form-group full-width">
+                                <label class="form-label">Advisor (prefer service adviser)</label>
+                                <input type="text" name="service_adviser_id" class="form-input"
+                                       value="<?php echo htmlspecialchars($_POST['service_adviser_id'] ?? ''); ?>"
+                                       placeholder="Optional - Service adviser name or ID">
                             </div>
                         </div>
                     </div>
 
-                    <!-- Customer Needs / Problem Description -->
+                    <!-- SERVICES Section -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-tools"></i>
+                            SERVICES
+                        </h3>
+                        <div class="checkbox-grid">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="service_eco_oil" name="service_eco_oil" value="1"
+                                       <?php echo isset($_POST['service_eco_oil']) ? 'checked' : ''; ?>>
+                                <label for="service_eco_oil">ECO OIL</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="service_oil_filter" name="service_oil_filter" value="1"
+                                       <?php echo isset($_POST['service_oil_filter']) ? 'checked' : ''; ?>>
+                                <label for="service_oil_filter">OIL FILTER</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="service_gasket_drain" name="service_gasket_drain" value="1"
+                                       <?php echo isset($_POST['service_gasket_drain']) ? 'checked' : ''; ?>>
+                                <label for="service_gasket_drain">GASKET, DRAIN PLUG</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="service_windshield_washer" name="service_windshield_washer" value="1"
+                                       <?php echo isset($_POST['service_windshield_washer']) ? 'checked' : ''; ?>>
+                                <label for="service_windshield_washer">WINDSHIELD WASHER FLUID</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="service_engine_treatment" name="service_engine_treatment" value="1"
+                                       <?php echo isset($_POST['service_engine_treatment']) ? 'checked' : ''; ?>>
+                                <label for="service_engine_treatment">ENGINE TREATMENT</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="service_ethanol_drier" name="service_ethanol_drier" value="1"
+                                       <?php echo isset($_POST['service_ethanol_drier']) ? 'checked' : ''; ?>>
+                                <label for="service_ethanol_drier">ETHANOL DRIER</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="service_radiator_cap" name="service_radiator_cap" value="1"
+                                       <?php echo isset($_POST['service_radiator_cap']) ? 'checked' : ''; ?>>
+                                <label for="service_radiator_cap">RADIATOR CAP STICKER</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="service_parts_misc" name="service_parts_misc" value="1"
+                                       <?php echo isset($_POST['service_parts_misc']) ? 'checked' : ''; ?>>
+                                <label for="service_parts_misc">PARTS MATERIAL/MISC</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="service_parts_lubricants" name="service_parts_lubricants" value="1"
+                                       <?php echo isset($_POST['service_parts_lubricants']) ? 'checked' : ''; ?>>
+                                <label for="service_parts_lubricants">PARTS MATERIAL/LUBRICANTS</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="service_bactaleen" name="service_bactaleen" value="1"
+                                       <?php echo isset($_POST['service_bactaleen']) ? 'checked' : ''; ?>>
+                                <label for="service_bactaleen">BACTALEEN ULTRAMIST</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="service_engine_flush" name="service_engine_flush" value="1"
+                                       <?php echo isset($_POST['service_engine_flush']) ? 'checked' : ''; ?>>
+                                <label for="service_engine_flush">ENGINE FLUSH</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="service_petrol_decarb" name="service_petrol_decarb" value="1"
+                                       <?php echo isset($_POST['service_petrol_decarb']) ? 'checked' : ''; ?>>
+                                <label for="service_petrol_decarb">PETROL DECARB</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="service_brake_lube" name="service_brake_lube" value="1"
+                                       <?php echo isset($_POST['service_brake_lube']) ? 'checked' : ''; ?>>
+                                <label for="service_brake_lube">BRAKE LUBE</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="service_brake_cleaner" name="service_brake_cleaner" value="1"
+                                       <?php echo isset($_POST['service_brake_cleaner']) ? 'checked' : ''; ?>>
+                                <label for="service_brake_cleaner">BRAKE CLEANER</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="service_klima_fresh" name="service_klima_fresh" value="1"
+                                       <?php echo isset($_POST['service_klima_fresh']) ? 'checked' : ''; ?>>
+                                <label for="service_klima_fresh">KLIMA FRESH</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- OTHER CONCERNS Section -->
                     <div class="form-section">
                         <h3 class="section-title">
                             <i class="fas fa-comment-dots"></i>
-                            State Your Needs or Problem
+                            OTHER CONCERNS
                         </h3>
                         <div class="form-group full-width">
-                            <label class="form-label required">Describe your vehicle issues or maintenance needs</label>
-                            <textarea name="customer_needs" class="form-textarea" rows="5"
-                                      placeholder="Please describe any issues, problems, or maintenance needs you're experiencing with your vehicle. Be as detailed as possible to help our service team assist you better."
-                                      required><?php echo htmlspecialchars($_POST['customer_needs'] ?? ''); ?></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Service Notes -->
-                    <div class="form-section">
-                        <h3 class="section-title">
-                            <i class="fas fa-clipboard-list"></i>
-                            Service Notes / Findings
-                        </h3>
-                        <div class="form-group">
-                            <textarea name="service_notes_findings" class="form-textarea" rows="4"
-                                      placeholder="Any notes, findings, or recommendations from the service"><?php echo htmlspecialchars($_POST['service_notes_findings'] ?? ''); ?></textarea>
+                            <textarea name="other_concerns" class="form-textarea" rows="5"
+                                      placeholder="Please describe any other concerns, issues, or special requests you may have..."><?php echo htmlspecialchars($_POST['other_concerns'] ?? ''); ?></textarea>
                         </div>
                     </div>
 
@@ -560,7 +788,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="form-section">
                         <h3 class="section-title">
                             <i class="fas fa-upload"></i>
-                            Uploaded Receipt / Job Order
+                            UPLOADED RECEIPT
                         </h3>
                         <div class="form-group">
                             <div class="file-upload">
@@ -578,7 +806,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <button type="submit" class="submit-btn">
                         <i class="fas fa-save"></i>
-                        Save PMS Record
+                        Submit PMS Request
                     </button>
                 </form>
             </div>
@@ -587,10 +815,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script>
         // File upload handling
-        document.getElementById('uploaded_receipt').addEventListener('change', function() {
-            const fileName = this.files[0]?.name || '';
-            document.querySelector('.file-name').textContent = fileName;
-        });
+        const uploadInput = document.getElementById('uploaded_receipt');
+        if (uploadInput) {
+            uploadInput.addEventListener('change', function() {
+                const fileName = this.files[0]?.name || '';
+                const fileNameSpan = document.querySelector('.file-name');
+                if (fileNameSpan) {
+                    fileNameSpan.textContent = fileName;
+                }
+            });
+        }
 
         // Odometer input validation - only allow numbers
         const odometerInput = document.querySelector('input[name="current_odometer"]');
@@ -605,6 +839,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     this.value = this.value.replace(/\D/g, '');
                 }, 0);
             });
+        }
+
+        // Time slot availability check
+        const pmsDateInput = document.getElementById('pms_date');
+        const pmsTimeInput = document.getElementById('pms_time');
+        const warningDiv = document.getElementById('time-slot-warning');
+        const warningText = document.getElementById('warning-text');
+
+        function checkTimeSlotAvailability() {
+            const date = pmsDateInput?.value;
+            const time = pmsTimeInput?.value;
+
+            if (!date || !time || !warningDiv || !warningText) return;
+
+            // Make AJAX request to check availability
+            fetch('check_pms_time_slot.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `pms_date=${encodeURIComponent(date)}&pms_time=${encodeURIComponent(time)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.available === false) {
+                    warningDiv.style.display = 'block';
+                    warningText.textContent = 'Time is already booked, choose another time';
+                    pmsTimeInput.setCustomValidity('This time slot is full');
+                } else if (data.count >= 2) {
+                    warningDiv.style.display = 'block';
+                    warningDiv.style.color = '#ffa500';
+                    warningText.textContent = `Only ${3 - data.count} slot(s) remaining for this time`;
+                    pmsTimeInput.setCustomValidity('');
+                } else {
+                    warningDiv.style.display = 'none';
+                    pmsTimeInput.setCustomValidity('');
+                }
+            })
+            .catch(error => {
+                console.error('Error checking time slot:', error);
+            });
+        }
+
+        if (pmsDateInput && pmsTimeInput) {
+            pmsDateInput.addEventListener('change', checkTimeSlotAvailability);
+            pmsTimeInput.addEventListener('change', checkTimeSlotAvailability);
         }
     </script>
 </body>

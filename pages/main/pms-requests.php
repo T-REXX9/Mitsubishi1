@@ -273,19 +273,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 ");
                 $stmt->execute([$pms_id, $sales_agent_id]);
                 $details = $stmt->fetch(PDO::FETCH_ASSOC);
-                
+
                 if ($details) {
                     // Format the data for display
-                    $services = [];
-                    if ($details['service_oil_change']) $services[] = 'Oil Change';
-                    if ($details['service_oil_filter_replacement']) $services[] = 'Oil Filter Replacement';
-                    if ($details['service_air_filter_replacement']) $services[] = 'Air Filter Replacement';
-                    if ($details['service_tire_rotation']) $services[] = 'Tire Rotation';
-                    if ($details['service_fluid_top_up']) $services[] = 'Fluid Top-Up';
-                    if ($details['service_spark_plug_check']) $services[] = 'Spark Plug Check';
-                    if (!empty($details['service_others'])) $services[] = $details['service_others'];
-                    
-                    $details['services_performed'] = $services;
                     $details['has_receipt'] = !empty($details['uploaded_receipt']);
                     
                     // Remove the actual blob data to avoid large response
@@ -1045,6 +1035,24 @@ $pms_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     function displayPMSDetails(data) {
+      // Build services list from new service checkboxes
+      const services = [];
+      if (data.service_eco_oil) services.push('ECO OIL');
+      if (data.service_oil_filter) services.push('OIL FILTER');
+      if (data.service_gasket_drain) services.push('GASKET, DRAIN PLUG');
+      if (data.service_windshield_washer) services.push('WINDSHIELD WASHER FLUID');
+      if (data.service_engine_treatment) services.push('ENGINE TREATMENT');
+      if (data.service_ethanol_drier) services.push('ETHANOL DRIER');
+      if (data.service_radiator_cap) services.push('RADIATOR CAP STICKER');
+      if (data.service_parts_misc) services.push('PARTS MATERIAL/MISC');
+      if (data.service_parts_lubricants) services.push('PARTS MATERIAL/LUBRICANTS');
+      if (data.service_bactaleen) services.push('BACTALEEN ULTRAMIST');
+      if (data.service_engine_flush) services.push('ENGINE FLUSH');
+      if (data.service_petrol_decarb) services.push('PETROL DECARB');
+      if (data.service_brake_lube) services.push('BRAKE LUBE');
+      if (data.service_brake_cleaner) services.push('BRAKE CLEANER');
+      if (data.service_klima_fresh) services.push('KLIMA FRESH');
+
       const content = `
         <div class="details-grid">
           <!-- Request Information -->
@@ -1062,86 +1070,104 @@ $pms_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
               <span class="label">Date Submitted:</span>
               <span class="value">${new Date(data.created_at).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'})}</span>
             </div>
-            ${data.scheduled_date ? `
-            <div class="detail-row">
-              <span class="label">Scheduled Date:</span>
-              <span class="value">${new Date(data.scheduled_date).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'})}</span>
-            </div>
-            ` : ''}
             ${data.rejection_reason ? `
             <div class="detail-row">
               <span class="label">Rejection Reason:</span>
               <span class="value" style="color: #e74c3c;">${data.rejection_reason}</span>
             </div>
             ` : ''}
+            ${data.agent_notes ? `
+            <div class="detail-row">
+              <span class="label">Agent Notes:</span>
+              <div class="value notes-content">${data.agent_notes}</div>
+            </div>
+            ` : ''}
           </div>
 
           <!-- Customer Information -->
           <div class="detail-section">
-            <h4><i class="fas fa-user"></i> Customer Information</h4>
+            <h4><i class="fas fa-user"></i> CUSTOMER INFORMATION</h4>
+            ${data.customer_name ? `
             <div class="detail-row">
-              <span class="label">Name:</span>
-              <span class="value">${data.FirstName} ${data.LastName}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Email:</span>
-              <span class="value">${data.Email || 'N/A'}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Mobile:</span>
-              <span class="value">${data.mobile_number || 'N/A'}</span>
-            </div>
-            ${data.age ? `
-            <div class="detail-row">
-              <span class="label">Age:</span>
-              <span class="value">${data.age} years old</span>
+              <span class="label">Customer Name:</span>
+              <span class="value">${data.customer_name}</span>
             </div>
             ` : ''}
-            ${data.gender ? `
+            ${data.customer_address ? `
             <div class="detail-row">
-              <span class="label">Gender:</span>
-              <span class="value">${data.gender}</span>
+              <span class="label">Customer Address:</span>
+              <span class="value">${data.customer_address}</span>
             </div>
             ` : ''}
-            ${data.employment_status ? `
+            ${data.driver_name ? `
             <div class="detail-row">
-              <span class="label">Employment:</span>
-              <span class="value">${data.employment_status}</span>
+              <span class="label">Driver:</span>
+              <span class="value">${data.driver_name}</span>
             </div>
             ` : ''}
-            ${data.company_name ? `
+            ${data.driver_contact ? `
             <div class="detail-row">
-              <span class="label">Company:</span>
-              <span class="value">${data.company_name}</span>
+              <span class="label">Driver Contact No.:</span>
+              <span class="value">${data.driver_contact}</span>
+            </div>
+            ` : ''}
+            ${data.mobile_number ? `
+            <div class="detail-row">
+              <span class="label">Mobile Number:</span>
+              <span class="value">${data.mobile_number}</span>
+            </div>
+            ` : ''}
+            ${data.selling_dealer ? `
+            <div class="detail-row">
+              <span class="label">Selling Dealer:</span>
+              <span class="value">${data.selling_dealer}</span>
+            </div>
+            ` : ''}
+            ${data.delivery_kms ? `
+            <div class="detail-row">
+              <span class="label">Delivery KMS:</span>
+              <span class="value">${data.delivery_kms}</span>
+            </div>
+            ` : ''}
+            ${data.delivery_date ? `
+            <div class="detail-row">
+              <span class="label">Delivery Date:</span>
+              <span class="value">${new Date(data.delivery_date).toLocaleDateString()}</span>
             </div>
             ` : ''}
           </div>
 
           <!-- Vehicle Information -->
           <div class="detail-section">
-            <h4><i class="fas fa-car"></i> Vehicle Information</h4>
+            <h4><i class="fas fa-car"></i> CUSTOMER VEHICLE INFORMATION</h4>
+            ${data.vehicle_no ? `
             <div class="detail-row">
-              <span class="label">Model:</span>
-              <span class="value">${data.model}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Plate Number:</span>
-              <span class="value">${data.plate_number}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Current Odometer:</span>
-              <span class="value">${data.current_odometer} KM</span>
-            </div>
-            ${data.transmission ? `
-            <div class="detail-row">
-              <span class="label">Transmission:</span>
-              <span class="value">${data.transmission}</span>
+              <span class="label">Vehicle No:</span>
+              <span class="value">${data.vehicle_no}</span>
             </div>
             ` : ''}
-            ${data.engine_type ? `
+            ${data.chassis_no ? `
             <div class="detail-row">
-              <span class="label">Engine Type:</span>
-              <span class="value">${data.engine_type}</span>
+              <span class="label">Chassis No:</span>
+              <span class="value">${data.chassis_no}</span>
+            </div>
+            ` : ''}
+            ${data.year_make_model ? `
+            <div class="detail-row">
+              <span class="label">Year/Make/Model:</span>
+              <span class="value">${data.year_make_model}</span>
+            </div>
+            ` : ''}
+            ${data.reg_no ? `
+            <div class="detail-row">
+              <span class="label">Reg No:</span>
+              <span class="value">${data.reg_no}</span>
+            </div>
+            ` : ''}
+            ${data.engine_no ? `
+            <div class="detail-row">
+              <span class="label">Engine No:</span>
+              <span class="value">${data.engine_no}</span>
             </div>
             ` : ''}
             ${data.color ? `
@@ -1150,52 +1176,103 @@ $pms_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
               <span class="value">${data.color}</span>
             </div>
             ` : ''}
-          </div>
-
-          <!-- Service Information -->
-          <div class="detail-section">
-            <h4><i class="fas fa-tools"></i> Service Information</h4>
+            ${data.stock_no ? `
             <div class="detail-row">
-              <span class="label">PMS Type:</span>
-              <span class="value">${data.pms_info}</span>
+              <span class="label">Stock No:</span>
+              <span class="value">${data.stock_no}</span>
             </div>
+            ` : ''}
+            ${data.model_no ? `
             <div class="detail-row">
-              <span class="label">Service Date:</span>
-              <span class="value">${data.pms_date ? new Date(data.pms_date).toLocaleDateString() : 'N/A'}</span>
+              <span class="label">Model No:</span>
+              <span class="value">${data.model_no}</span>
             </div>
-            ${data.next_pms_due ? `
+            ` : ''}
+            ${data.car_line ? `
             <div class="detail-row">
-              <span class="label">Next PMS Due:</span>
-              <span class="value">${data.next_pms_due}</span>
+              <span class="label">Car Line:</span>
+              <span class="value">${data.car_line}</span>
+            </div>
+            ` : ''}
+            ${data.prod_date ? `
+            <div class="detail-row">
+              <span class="label">Prod. Date:</span>
+              <span class="value">${new Date(data.prod_date).toLocaleDateString()}</span>
+            </div>
+            ` : ''}
+            ${data.tag_no ? `
+            <div class="detail-row">
+              <span class="label">Tag No:</span>
+              <span class="value">${data.tag_no}</span>
+            </div>
+            ` : ''}
+            ${data.eng_trans ? `
+            <div class="detail-row">
+              <span class="label">Eng/Trans:</span>
+              <span class="value">${data.eng_trans}</span>
             </div>
             ` : ''}
             <div class="detail-row">
-              <span class="label">Services Performed:</span>
+              <span class="label">Current Odometer:</span>
+              <span class="value">${data.current_odometer || 0} KM</span>
+            </div>
+          </div>
+
+          <!-- PMS Information -->
+          <div class="detail-section">
+            <h4><i class="fas fa-calendar-alt"></i> PMS INFORMATION</h4>
+            <div class="detail-row">
+              <span class="label">PMS Date:</span>
+              <span class="value">${data.pms_date ? new Date(data.pms_date).toLocaleDateString() : 'N/A'}</span>
+            </div>
+            ${data.pms_time ? `
+            <div class="detail-row">
+              <span class="label">PMS Time:</span>
+              <span class="value">${data.pms_time}</span>
+            </div>
+            ` : ''}
+            ${data.service_adviser_id ? `
+            <div class="detail-row">
+              <span class="label">Service Adviser:</span>
+              <span class="value">${data.service_adviser_id}</span>
+            </div>
+            ` : ''}
+          </div>
+
+          <!-- Services -->
+          <div class="detail-section">
+            <h4><i class="fas fa-tools"></i> SERVICES</h4>
+            <div class="detail-row">
+              <span class="label">Selected Services:</span>
               <div class="value">
-                ${data.services_performed.length > 0 ? 
-                  data.services_performed.map(service => `<span class="service-tag">${service}</span>`).join(' ') : 
+                ${services.length > 0 ?
+                  services.map(service => `<span class="service-tag">${service}</span>`).join(' ') :
                   '<span style="color: #999;">No services selected</span>'
                 }
               </div>
             </div>
-            ${data.service_notes_findings ? `
-            <div class="detail-row">
-              <span class="label">Notes/Findings:</span>
-              <div class="value notes-content">${data.service_notes_findings}</div>
-            </div>
-            ` : ''}
           </div>
+
+          <!-- Other Concerns -->
+          ${data.other_concerns ? `
+          <div class="detail-section">
+            <h4><i class="fas fa-comment-dots"></i> OTHER CONCERNS</h4>
+            <div class="detail-row">
+              <div class="value notes-content">${data.other_concerns}</div>
+            </div>
+          </div>
+          ` : ''}
 
           <!-- Receipt Information -->
           <div class="detail-section">
-            <h4><i class="fas fa-receipt"></i> Uploaded Receipt</h4>
+            <h4><i class="fas fa-receipt"></i> UPLOADED RECEIPT</h4>
             <div class="detail-row">
               <span class="label">Receipt:</span>
               <div class="value">
-                ${data.has_receipt ? 
+                ${data.has_receipt || data.uploaded_receipt ?
                   `<button class="btn btn-primary btn-sm" onclick="viewReceipt(${data.pms_id})">
                     <i class="fas fa-eye"></i> View Receipt
-                  </button>` : 
+                  </button>` :
                   '<span style="color: #999;">No receipt uploaded</span>'
                 }
               </div>
@@ -1203,7 +1280,7 @@ $pms_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
           </div>
         </div>
       `;
-      
+
       document.getElementById('detailsContent').innerHTML = content;
     }
 
