@@ -358,6 +358,8 @@ function getOrderDetails()
 	$order_id = $_GET['order_id'] ?? null;
 	$account_id = $_SESSION['user_id'];
 
+	error_log('order_backend:get_order_details start order_id=' . $order_id . ' account_id=' . $account_id);
+
 	if (!$order_id) {
 		echo json_encode(['success' => false, 'error' => 'Order ID required']);
 		if (ob_get_level() > 0) { ob_end_flush(); }
@@ -369,14 +371,16 @@ function getOrderDetails()
 		$cusStmt = $connect->prepare("SELECT cusID FROM customer_information WHERE account_id = ?");
 		$cusStmt->execute([$account_id]);
 		$customer = $cusStmt->fetch(PDO::FETCH_ASSOC);
-		
+
 		if (!$customer) {
+			error_log('order_backend:get_order_details customer profile not found for account_id=' . $account_id);
 			echo json_encode(['success' => false, 'error' => 'Customer profile not found']);
 			if (ob_get_level() > 0) { ob_end_flush(); }
 			exit;
 		}
-		
+
 		$customer_id = $customer['cusID'];
+		error_log('order_backend:get_order_details resolved customer_id=' . $customer_id);
 
 		// Check if payment_history table exists
 		$tableExists = false;
@@ -496,16 +500,37 @@ function getOrderDetails()
                     WHERE o.order_id = ? AND o.customer_id = ?";
 		}
 
+		error_log('order_backend:get_order_details executing query for order_id=' . $order_id . ' customer_id=' . $customer_id);
 		$stmt = $connect->prepare($sql);
 		$stmt->execute([$order_id, $customer_id]);
 		$order = $stmt->fetch(PDO::FETCH_ASSOC);
 
 		if (!$order) {
-			echo json_encode(['success' => false, 'error' => 'Order not found']);
+			// Debug: Check if order exists at all
+			$checkStmt = $connect->prepare("SELECT order_id, customer_id FROM orders WHERE order_id = ?");
+			$checkStmt->execute([$order_id]);
+			$checkOrder = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+			if ($checkOrder) {
+				error_log('order_backend:get_order_details order exists but customer_id mismatch. Order customer_id=' . $checkOrder['customer_id'] . ' vs requested customer_id=' . $customer_id);
+				echo json_encode([
+					'success' => false,
+					'error' => 'Order not found or access denied',
+					'debug' => [
+						'order_exists' => true,
+						'order_customer_id' => $checkOrder['customer_id'],
+						'requested_customer_id' => $customer_id
+					]
+				]);
+			} else {
+				error_log('order_backend:get_order_details order does not exist order_id=' . $order_id);
+				echo json_encode(['success' => false, 'error' => 'Order not found']);
+			}
 			if (ob_get_level() > 0) { ob_end_flush(); }
 			exit;
 		}
 
+		error_log('order_backend:get_order_details success order_id=' . $order_id);
 		echo json_encode([
 			'success' => true,
 			'data' => $order
@@ -513,6 +538,7 @@ function getOrderDetails()
 		if (ob_get_level() > 0) { ob_end_flush(); }
 		exit;
 	} catch (Exception $e) {
+		error_log('order_backend:get_order_details exception: ' . $e->getMessage());
 		echo json_encode([
 			'success' => false,
 			'error' => 'Failed to fetch order details: ' . $e->getMessage()
