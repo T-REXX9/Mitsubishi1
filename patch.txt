@@ -5,3 +5,4 @@ pages/agent_pms_inquiries.php
 api/loan-applications.php
 includes/backend/loan_application_backend.php
 includes/backend/order_backend.php
+includes/api/create_order.php
