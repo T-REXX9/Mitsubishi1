@@ -231,17 +231,43 @@ function approveApplication()
 
 		// Create order from approved loan application
 		$orderNumber = generateLoanOrderNumber();
-		$effectivePrice = ($loanData['promotional_price'] && $loanData['promotional_price'] > 0 && $loanData['promotional_price'] < $loanData['base_price']) 
-							? $loanData['promotional_price'] 
+		$effectivePrice = ($loanData['promotional_price'] && $loanData['promotional_price'] > 0 && $loanData['promotional_price'] < $loanData['base_price'])
+							? $loanData['promotional_price']
 							: $loanData['base_price'];
+
+		// Calculate financial values for the order
+		$downPayment = $loanData['down_payment'] ?? 0;
+		$financingTerm = $loanData['financing_term'] ?? 12;
+		$monthlyPayment = $loanData['monthly_payment'] ?? 0;
+		$downPaymentPercentage = $effectivePrice > 0 ? ($downPayment / $effectivePrice) * 100 : 0;
+		$amountFinance = $effectivePrice - $downPayment;
+		$financePercentage = $effectivePrice > 0 ? ($amountFinance / $effectivePrice) * 100 : 0;
 
 		$orderSql = "INSERT INTO orders (
 						order_number, customer_id, sales_agent_id, vehicle_id, client_type,
 						vehicle_model, vehicle_variant, vehicle_color, model_year,
-						base_price, discount_amount, total_price, payment_method,
-						down_payment, financing_term, monthly_payment, order_status,
-						order_notes, created_at, order_date
-					) VALUES (?, ?, ?, ?, 'handled', ?, ?, ?, YEAR(NOW()), ?, 0, ?, 'financing', ?, ?, ?, 'confirmed', ?, NOW(), NOW())";
+						base_price, body_package_price, aircon_package_price, white_color_surcharge, other_charges,
+						total_unit_price, nominal_discount, promo_discount, discount_amount, amount_to_invoice, total_price,
+						payment_method, finance_percentage, amount_finance, down_payment_percentage, down_payment,
+						net_down_payment, financing_term, monthly_payment,
+						insurance_premium, cptl_premium, lto_registration, chattel_mortgage_fee, chattel_income, extended_warranty,
+						total_incidentals, reservation_fee, total_cash_outlay,
+						gross_dealer_incentive_pct, gross_dealer_incentive, sfm_retain, sfm_additional, net_dealer_incentive,
+						tipster_fee, accessories_cost, other_expenses, se_share, net_negative,
+						order_status, order_notes, created_at, order_date
+					) VALUES (
+						?, ?, ?, ?, 'handled',
+						?, ?, ?, YEAR(NOW()),
+						?, 0, 0, 0, 0,
+						?, 0, 0, 0, ?, ?,
+						'financing', ?, ?, ?, ?,
+						?, ?, ?,
+						0, 0, 0, 0, 0, 0,
+						0, 0, ?,
+						0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0,
+						'confirmed', ?, NOW(), NOW()
+					)";
 
 		$orderStmt = $connect->prepare($orderSql);
 		$orderSuccess = $orderStmt->execute([
@@ -253,10 +279,17 @@ function approveApplication()
 			$loanData['variant'],
 			$loanData['popular_color'] ?? 'Standard',
 			$effectivePrice,
-			$effectivePrice,
-			$loanData['down_payment'] ?? 0,
-			$loanData['financing_term'] ?? 12,
-			$loanData['monthly_payment'] ?? 0,
+			$effectivePrice, // total_unit_price = base_price (no add-ons from loan)
+			$effectivePrice, // amount_to_invoice = total_unit_price (no discounts from loan)
+			$effectivePrice, // total_price
+			$financePercentage,
+			$amountFinance,
+			$downPaymentPercentage,
+			$downPayment,
+			$downPayment, // net_down_payment = down_payment (no incidentals from loan)
+			$financingTerm,
+			$monthlyPayment,
+			$downPayment, // total_cash_outlay = down_payment (no incidentals from loan)
 			'Order created from approved loan application #' . $id . '. ' . $approval_notes
 		]);
 
@@ -268,12 +301,12 @@ function approveApplication()
 
 		// Generate payment schedule if financing terms are available
 		if (($loanData['down_payment'] ?? 0) > 0 && ($loanData['financing_term'] ?? 0) > 0 && ($loanData['monthly_payment'] ?? 0) > 0) {
-			$paymentScheduleSql = "INSERT INTO payment_schedule (order_id, payment_number, due_date, amount_due, status) VALUES (?, ?, ?, ?, 'pending')";
+			$paymentScheduleSql = "INSERT INTO payment_schedule (order_id, customer_id, payment_number, due_date, amount_due, status) VALUES (?, ?, ?, ?, ?, 'pending')";
 			$paymentScheduleStmt = $connect->prepare($paymentScheduleSql);
-			
+
 			for ($i = 1; $i <= ($loanData['financing_term'] ?? 12); $i++) {
 				$dueDate = date('Y-m-d', strtotime("+$i month"));
-				$paymentScheduleStmt->execute([$orderId, $i, $dueDate, $loanData['monthly_payment'] ?? 0]);
+				$paymentScheduleStmt->execute([$orderId, $loanData['cusID'], $i, $dueDate, $loanData['monthly_payment'] ?? 0]);
 			}
 		}
 

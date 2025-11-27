@@ -2,3 +2,6 @@ pages/pms_record.php
 pages/main/pms-requests.php
 pages/my_pms_inquiries.php
 pages/agent_pms_inquiries.php
+api/loan-applications.php
+includes/backend/loan_application_backend.php
+includes/backend/order_backend.php
